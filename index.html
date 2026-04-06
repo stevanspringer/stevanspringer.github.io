@@ -1,132 +1,410 @@
-<hmtl>
-  <head>
-    <title>Stevan Springer - Publications</title>
-    <style>
-       td {
-        vertical-align: top;
-      }
-     </style>
-  </head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SPRINGER LAB – UPEI BIOLOGY</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Variables — JUST_SO base + viridis accents ── */
+:root{
+  --bg:#f5f3ef;--paper:#fff;--bord:#ccc8c0;--ink:#1a1714;--mut:#888078;
+  /* viridis blues (top nav) */
+  --vb-lo:#9dd8c8;   /* unselected bg   */
+  --vb-lo-bord:#6bbfad; /* unselected border */
+  --vb-lo-hover:#6bbfad;
+  --vb-hi:#2c7bb6;   /* selected bg     */
+  --vb-hi-bord:#1d5a8a;
+  /* viridis greens (section chips) */
+  --vg-lo:#b8de8a;   /* unselected bg   */
+  --vg-lo-bord:#8ec04a;
+  --vg-lo-hover:#8ec04a;
+  --vg-hi:#35974a;   /* selected bg     */
+  --vg-hi-bord:#1e6b33;
+  /* viridis yellow (page bg) */
+  --page-bg:#fff;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'DM Mono',monospace;background:var(--page-bg);color:var(--ink);display:flex;flex-direction:column;}
 
-  <!-- Global site tag (gtag.js) - Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=UA-109980821-1"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
+/* ── Header — same as JUST_SO ── */
+header{
+  display:flex;align-items:center;gap:14px;
+  padding:7px 18px;
+  background:var(--paper);
+  border-bottom:1px solid var(--bord);
+  flex-shrink:0;
+}
+.logo{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);}
 
-  gtag('config', 'UA-109980821-1');
-</script>
+/* Top nav buttons — viridis blues */
+.nav-area{margin-left:auto;display:flex;gap:7px;}
 
+.nbtn{
+  font-size:12px;padding:4px 10px;
+  border:1px solid var(--vb-lo-bord);
+  background:var(--vb-lo);
+  color:var(--ink);
+  border-radius:2px;cursor:pointer;
+  font-family:'DM Mono',monospace;
+}
+.nbtn:hover:not(.nbtn-on){background:var(--vb-lo-hover);border-color:var(--vb-hi-bord);color:var(--ink);}
+
+/* Selected: dark viridis blue */
+.nbtn.nbtn-on{
+  background:var(--vb-hi);
+  border-color:var(--vb-hi-bord);
+  color:#fff;
+}
+
+/* ── legBar strip — exact match ── */
+#legBar{
+  display:flex;align-items:center;
+  padding:4px 18px;gap:0;
+  background:var(--paper);
+  border-bottom:1px solid var(--bord);
+  flex-shrink:0;
+}
+.ll{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-right:5px;}
+.lg{display:flex;align-items:center;gap:2px;margin-right:18px;}
+
+/* Section chips — viridis greens */
+.sec-chip{
+  padding:2px 7px;border-radius:2px;font-size:12px;
+  cursor:pointer;
+  border:1px solid var(--vg-lo-bord);
+  background:var(--vg-lo);
+  color:var(--ink);user-select:none;
+  font-family:'DM Mono',monospace;
+}
+.sec-chip:hover:not(.on){background:var(--vg-lo-hover);border-color:var(--vg-hi-bord);}
+.sec-chip.on{background:var(--vg-hi);border-color:var(--vg-hi-bord);color:#fff;}
+
+/* ── Content area ── */
+#content{
+  flex:1;overflow-y:auto;
+  background:var(--page-bg);
+  padding:18px 18px;
+}
+
+/* ── Panel — matches JUST_SO cell / phd style ── */
+.panel{
+  background:var(--paper);
+  border:1px solid var(--bord);
+  border-radius:2px;
+  margin-bottom:14px;
+}
+.phd{
+  font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink);font-weight:400;
+  padding:4px 12px 3px;
+  border-bottom:1px solid var(--bord);
+  height:24px;
+  display:flex;align-items:center;
+  font-family:'DM Mono',monospace;
+}
+.panel-body{
+  padding:14px 16px;
+  font-size:12px;
+  line-height:1.8;
+  color:var(--mut);
+  font-family:'DM Mono',monospace;
+}
+.panel-body p+p{margin-top:8px;}
+.panel-body h3{
+  font-size:12px;font-weight:400;
+  color:var(--ink);
+  letter-spacing:.06em;text-transform:uppercase;
+  margin-top:14px;margin-bottom:4px;
+}
+.panel-body h3:first-child{margin-top:0;}
+.panel-body ul{margin-left:16px;}
+.panel-body li{margin-bottom:3px;}
+
+.placeholder-note{
+  color:var(--mut);
+  padding:24px 0;
+  text-align:center;
+  font-size:12px;
+}
+
+/* page/section visibility */
+.page{display:none;}
+.page.active{display:block;}
+.section{display:none;}
+.section.active{display:block;}
+
+/* Publications */
+.pub{
+  padding:8px 0;
+  border-bottom:1px solid var(--bord);
+  line-height:1.6;
+  color:var(--mut);
+}
+.pub:last-child{border-bottom:none;}
+.pub-title{color:var(--ink);}
+.pub-title a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--bord);}
+.pub-title a:hover{border-bottom-color:var(--ink);}
+.pub-journal{font-style:italic;}
+</style>
+</head>
 <body>
-<p style="font-family:helvetica">
 
+<!-- ── HEADER ── -->
+<header>
+  <span class="logo">Springer Lab &ndash; UPEI Biology</span>
+  <div class="nav-area">
+    <button class="nbtn nbtn-on" data-page="website">Website</button>
+    <button class="nbtn"         data-page="protocols">Protocols</button>
+    <button class="nbtn"         data-page="inventory">Inventory</button>
+  </div>
+</header>
 
-<table width="700">
-<tbody>
-<tr>
-<td width="50">2017</td>
-<td width="650"><a href="https://drive.google.com/open?id=1NaF9sEL2ZCrqocAChbOljEYq-t6V03NN" target="_blank" rel="noopener">The Alzheimer&#8217;s disease-protective CD33 splice variant mediates adaptive loss of function via diversion to an intracellular pool</a><br />
-Siddiqui S, Springer SA <em>et al.</em> (2017) <strong>Journal of Biological Chemistry</strong> 292:15312-15320</td>
-</tr>
-<tr>
-<td width="50"></td>
-<td width="650"><a href="https://drive.google.com/open?id=1LpFJzpH3vvfhp_89syuI0L5Hf_iUEaLa" target="_blank" rel="noopener">Studies on the detection, expression, glycosylation, dimerization and ligand binding of mouse Siglec-E</a><br />
-Siddiqui S, Schwartz F, Springer SA <em>et al.</em> (2017) <strong>Journal of Biological Chemistry</strong> 292:1029-1037</td>
-</tr>
-<tr>
-<td width="50">2016</td>
-<td width="650"><a href="https://goo.gl/TQS6A8" target="_blank" rel="noopener">Separating spandrels from phenotypic targets of selection in adaptive molecular evolution</a><br />
-Springer SA, Manhart M, Morozov AV (2016) <strong>Evolutionary Biology: Biodiversification from Genotype to Phenotype</strong>, Chapter 18. P. Pontarotti (ed)</td>
-</tr>
-<tr>
-<td width="50"></td>
-<td width="650"><a href="https://drive.google.com/open?id=1RyVPgfAQaIHvwmwIA8aOnUyvkxnLxAjb" target="_blank" rel="noopener">Des nouvelles variations génétiques préservent les facultés cognitives des personnes âgées</a><br />
-Springer SA, Gagneux P (2016) <strong>Médicine et Science</strong> 32:10-12</td>
-</tr>
-<tr>
-<td width="50"></td>
-<td width="650"><a href="https://goo.gl/WNYUad" target="_blank" rel="noopener">Reply to Liu and Jiang: Maintenance of postreproductive cognitive capacity by inclusive fitness</a><br />
-Springer SA, Schwartz F, Altheide T, Varki NM, Varki A, Gagneux P (2016) <strong>PNAS</strong> 113:E1591-E1592</td>
-</tr>
-<tr>
-<td width="50"></td>
-<td width="650"><a href="https://goo.gl/WNYUad" target="_blank" rel="noopener">Human-specific alleles of CD33 and other genes protect against postreproductive cognitive decline</a><br />
-Schwartz F<sup>★</sup>, Springer SA<sup> ★</sup>, Altheide T, Varki NM, Gagneux P, Varki A (2016) <strong>PNAS</strong> 113:74-79</td>
-</tr>
-<tr>
-<td width="50"></td>
-<td width="650"><a href="https://goo.gl/BT8ycd" target="_blank" rel="noopener">Glycomics: revealing the dynamic ecology and evolution of sugar molecules</a><br />
-Springer SA, Gagneux P (2016) <strong>Journal of Proteomics</strong> 135:90-100</td>
-</tr>
-<tr>
-<td width="50">2015</td>
-<td width="650"><a href="https://drive.google.com/open?id=0B2xJFqNZjrDwRlVwV1djWXYybWc" target="_blank" rel="noopener">Evolutionary analysis and classification of OATs, OCTs, OCTNs, and SLC22 transporters</a><br />
-Zhu C, Nigam KB, Date RC, Springer SA, Saier MH, Wu W, Nigam SK <strong>PLoS One</strong> 10(11): e0140569</td>
-</tr>
-<tr>
-<td width="50">2014</td>
-<td width="650"><a href="https://goo.gl/ez4PUV" target="_blank" rel="noopener">Parallel evolution of a self signal: humans and new world monkeys independently lost the cell surface sugar Neu5Gc</a><br />
-Springer SA, Diaz SL, Gagneux P (2014) <strong>Immunogenetics</strong> 66:671-674</td>
-</tr>
-<tr>
-<td width="50">2013</td>
-<td width="650"><a href="https://goo.gl/YBjXCj" target="_blank" rel="noopener">Duplicate abalone egg coat proteins bind sperm lysin similarly, but evolve oppositely, consistent with molecular mimicry at fertilization</a><br />
-Aagaard J, Springer SA, Soelberg S, Swanson WJ (2013) <strong>PLoS Genetics</strong> 9(2): e1003287</td>
-</tr>
-<tr>
-<td width="50"></td>
-<td width="650"><a href="https://goo.gl/TTV3wk" target="_blank" rel="noopener">Glycan evolution in response to collaboration conflict and constraint</a><br />
-Springer SA, Gagneux P (2013) <strong>Journal of Biological Chemistry</strong> 28:6904-6911</td>
-</tr>
-<tr>
-<td width="50">2011</td>
-<td width="650"><a href="https://goo.gl/ckadXU" target="_blank" rel="noopener">Sexual selection by female immunity against paternal antigens can fix loss of function alleles</a><br />
-Ghaderi D<sup>★</sup>, Springer SA<sup> ★</sup>, Ma F, Coehn M, Secrest P, Taylor R, Varki A, Gagneux P (2011) <strong>PNAS</strong> 108:17443-17448</td>
-</tr>
-<tr>
-<td width="50"></td>
-<td width="650"><a href="https://goo.gl/Xi471y" target="_blank" rel="noopener">Beyond the phenotypic gambit: molecular behavioral ecology and the evolution of genetic architecture</a><br />
-Springer SA, Crespi BJ, Swanson WJ (2011) <strong>Molecular Ecology</strong> 20:2240-2257</td>
-</tr>
-<tr>
-<td width="50">2009</td>
-<td width="650"><a href="https://goo.gl/P8qAA7" target="_blank" rel="noopener">Coevolution of interacting fertilization proteins</a><br />
-Clark NL, Gasper J, Sekino M, Springer SA, Aquadro CF, Swanson WJ (2009) <strong>PLoS Genetics</strong> 5(7): e1000570</td>
-</tr>
-<tr>
-<td width="50">2008</td>
-<td width="650"><a href="https://drive.google.com/open?id=0B2xJFqNZjrDwUzZ3aEppeWlqY1E" target="_blank" rel="noopener">Oyster sperm bindin is a combinatorial fucose lectin with remarkable intra-species diversity</a><br />
-Springer SA, Moy GW, Friend DS, Swanson WJ, Vacquier VD (2008) <strong>Int J Dev Biol</strong> 52:759-768</td>
-</tr>
-<tr>
-<td width="50"></td>
-<td width="650"><a href="https://drive.google.com/open?id=0B2xJFqNZjrDwWVV3SjJvU1JFV0k" target="_blank" rel="noopener">Extraordinary intraspecific polymorphism in oyster sperm bindin</a><br />
-Moy GW<sup>★</sup>, Springer SA<sup>★</sup>, Adams SL, Swanson WJ, Vacquier VD (2008) <strong>PNAS</strong> 105:1993-1998</td>
-</tr>
-<tr>
-<td width="50">2007</td>
-<td width="650"><a href="https://drive.google.com/open?id=0B2xJFqNZjrDwYWxxUlphd0ZqNTg" target="_blank" rel="noopener">Adaptive gamete-recognition divergence in a hybridizing Mytilus population</a><br />
-Springer SA and Crespi BJ (2007) <strong>Evolution</strong> 61:772-783</td>
-</tr>
-<tr>
-<td width="50"></td>
-<td width="650"><a href="https://drive.google.com/open?id=0B2xJFqNZjrDwQzhGVTNrM3lwQVk" target="_blank" rel="noopener">Environment-specific heterozygote deficiency and developmental instability in hybrid Mytilus</a><br />
-Springer SA and Heath DD (2007) <strong>Marine Biology Research</strong> 3:182-187</td>
-</tr>
-<tr>
-<td width="50">2004</td>
-<td width="650"><a href="https://drive.google.com/open?id=0B2xJFqNZjrDwVWJ3RlliNTI1Z2c" target="_blank" rel="noopener">Implications of the Copernican Principle for my Masters thesis</a><br />
-Springer SA (2004) <strong>Annals of Improbable Research</strong> 10.4:20-21</td>
-</tr>
-<tr>
-<td width="50">2003</td>
-<td width="650"><a href="https://drive.google.com/open?id=0B2xJFqNZjrDwNTJsdWNoQXRpVTA" target="_blank" rel="noopener">Social slime molds meet their match</a><br />
-Crespi B and Springer SA (2003) <strong>Science</strong> 299:56-57</td>
-</tr>
-</tbody>
-</table> 
+<!-- ── legBar (section strip — visible on Website only) ── -->
+<div id="legBar">
+  <div class="lg">
+    <span class="sec-chip on" data-section="people">People</span>
+    <span class="sec-chip"    data-section="projects">Projects</span>
+    <span class="sec-chip"    data-section="programs">Programs</span>
+    <span class="sec-chip"    data-section="publications">Publications</span>
+  </div>
+</div>
 
-</p>
+<!-- ── CONTENT ── -->
+<div id="content">
+
+  <!-- ══ WEBSITE ══ -->
+  <div class="page active" id="page-website">
+
+    <div class="section active" id="section-people">
+      <div class="panel">
+        <div class="phd">People</div>
+        <div class="panel-body">
+          <h3>Principal Investigator</h3>
+          <p>Dr. [Name] Springer — Associate Professor, Department of Biology, UPEI. Research interests: [placeholder]. Office: [placeholder].</p>
+          <h3>Graduate Students</h3>
+          <ul>
+            <li>[Student A] — MSc candidate. Project: [placeholder].</li>
+            <li>[Student B] — PhD candidate. Project: [placeholder].</li>
+          </ul>
+          <h3>Undergraduate Researchers</h3>
+          <ul>
+            <li>[Student C] — Honours thesis: [placeholder].</li>
+            <li>[Student D] — NSERC USRA, [year].</li>
+          </ul>
+          <h3>Alumni</h3>
+          <p>[Past lab members and their current positions will appear here.]</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="section-projects">
+      <div class="panel">
+        <div class="phd">Projects</div>
+        <div class="panel-body">
+          <h3>Project A — [Placeholder Title]</h3>
+          <p>[Brief description of research goals, methods, and significance. This section will be expanded with full project details, collaborators, and funding sources.]</p>
+          <h3>Project B — [Placeholder Title]</h3>
+          <p>[Brief description. Placeholder text for a second active research project in the lab.]</p>
+          <h3>Project C — [Placeholder Title]</h3>
+          <p>[Brief description. Placeholder text for a third project, which may be collaborative or student-led.]</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="section-programs">
+      <div class="panel">
+        <div class="phd">Programs</div>
+        <div class="panel-body">
+          <h3>Graduate Program</h3>
+          <p>[Information about MSc and PhD opportunities in the Springer Lab, admission requirements, and how to apply.]</p>
+          <h3>Undergraduate Research</h3>
+          <p>[NSERC USRA opportunities, honours thesis supervision, and summer research positions.]</p>
+          <h3>Outreach &amp; Education</h3>
+          <p>[Public outreach, course involvement, or training programs associated with the lab.]</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section" id="section-publications">
+      <div class="panel">
+        <div class="phd">Publications</div>
+        <div class="panel-body">
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2024 Glycans immunity disease.pdf" target="_blank">Editorial – Glycans: molecules at the interface of immunity and disease</a></span><br>
+            Springer SA, Siddiqui SS (2024) <span class="pub-journal">Frontiers in Immunology</span> 14:1354723
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2022 Muscle injury senescence regeneration.pdf" target="_blank">Muscle injury induces a transient senescence‐like state that is required for myofiber growth during muscle regeneration</a></span><br>
+            Young LV, Wakelin G, Cameron AWR, Springer SA, et al. (2022) <span class="pub-journal">The FASEB Journal</span> 36(11):e22587
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2019 CD33 splice variant controversies.pdf" target="_blank">Controversies about the subcellular localization and mechanisms of action of the Alzheimer's disease protective CD33 splice variant</a></span><br>
+            Sudeshna S, Siddiqui S et al. Springer SA, Ghosh P, Varki A (2019) <span class="pub-journal">Acta Neuropathol</span> 138(4):671–672
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2017 CD33 splice variant intracellular pool.pdf" target="_blank">The Alzheimer's disease-protective CD33 splice variant mediates adaptive loss of function via diversion to an intracellular pool</a></span><br>
+            Siddiqui S, Springer SA et al. (2017) <span class="pub-journal">Journal of Biological Chemistry</span> 292:15312–15320
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2017 Siglec-E expression glycosylation.pdf" target="_blank">Studies on the detection, expression, glycosylation, dimerization and ligand binding of mouse Siglec-E</a></span><br>
+            Siddiqui S, Schwartz F, Springer SA et al. (2017) <span class="pub-journal">Journal of Biological Chemistry</span> 292:1029–1037
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2016 Spandrels adaptive molecular evolution.pdf" target="_blank">Separating spandrels from phenotypic targets of selection in adaptive molecular evolution</a></span><br>
+            Springer SA, Manhart M, Morozov AV (2016) In <span class="pub-journal">Evolutionary Biology: Convergent Evolution, Evolution of Complex Traits, Concepts and Methods</span> (pp. 309–325) P. Pontarotti (ed), doi 10.1007/978-3-319-41324-2_18
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2016 Variations genetiques facultes cognitives.pdf" target="_blank">Des nouvelles variations génétiques préservent les facultés cognitives des personnes âgées</a></span><br>
+            Springer SA, Gagneux P (2016) <span class="pub-journal">Médicine et Science</span> 32:10–12
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2016 Postreproductive cognition inclusive fitness.pdf" target="_blank">Maintenance of postreproductive cognitive capacity by inclusive fitness</a></span><br>
+            Springer SA, Schwartz F, Altheide T, Varki NM, Varki A, Gagneux P (2016) <span class="pub-journal">PNAS</span> 113:E1591–E1592
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2016 CD33 alleles cognitive decline.pdf" target="_blank">Human-specific alleles of CD33 and other genes protect against postreproductive cognitive decline</a></span><br>
+            Schwartz F★, Springer SA★, Altheide T, Varki NM, Gagneux P, Varki A (2016) <span class="pub-journal">PNAS</span> 113:74–79
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2016 Glycomics ecology evolution sugars.pdf" target="_blank">Glycomics: revealing the dynamic ecology and evolution of sugar molecules</a></span><br>
+            Springer SA, Gagneux P (2016) <span class="pub-journal">Journal of Proteomics</span> 135:90–100
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2015 SLC22 transporter classification.pdf" target="_blank">Evolutionary analysis and classification of OATs, OCTs, OCTNs, and SLC22 transporters</a></span><br>
+            Zhu C, Nigam KB, Date RC, Springer SA, Saier MH, Wu W, Nigam SK (2015) <span class="pub-journal">PLoS One</span> 10(11):e0140569
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2014 Neu5Gc parallel evolution primates.pdf" target="_blank">Parallel evolution of a self-signal: humans and new world monkeys independently lost the cell surface sugar Neu5Gc</a></span><br>
+            Springer SA, Diaz SL, Gagneux P (2014) <span class="pub-journal">Immunogenetics</span> 66:671–674
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2013 Abalone egg coat molecular mimicry.pdf" target="_blank">Duplicate abalone egg coat proteins bind sperm lysin similarly, but evolve oppositely, consistent with molecular mimicry at fertilization</a></span><br>
+            Aagaard J, Springer SA, Soelberg S, Swanson WJ (2013) <span class="pub-journal">PLoS Genetics</span> 9(2):e1003287
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2013 Glycan evolution collaboration conflict.pdf" target="_blank">Glycan evolution in response to collaboration conflict and constraint</a></span><br>
+            Springer SA, Gagneux P (2013) <span class="pub-journal">Journal of Biological Chemistry</span> 28:6904–6911
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2011 Female immunity paternal antigens alleles.pdf" target="_blank">Sexual selection by female immunity against paternal antigens can fix loss of function alleles</a></span><br>
+            Ghaderi D★, Springer SA★, Ma F, Coehn M, Secrest P, Taylor R, Varki A, Gagneux P (2011) <span class="pub-journal">PNAS</span> 108:17443–17448
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2011 Phenotypic gambit behavioral ecology.pdf" target="_blank">Beyond the phenotypic gambit: molecular behavioral ecology and the evolution of genetic architecture</a></span><br>
+            Springer SA, Crespi BJ, Swanson WJ (2011) <span class="pub-journal">Molecular Ecology</span> 20:2240–2257
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2009 Fertilization protein coevolution.pdf" target="_blank">Coevolution of interacting fertilization proteins</a></span><br>
+            Clark NL, Gasper J, Sekino M, Springer SA, Aquadro CF, Swanson WJ (2009) <span class="pub-journal">PLoS Genetics</span> 5(7):e1000570
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2008 Oyster bindin fucose lectin.pdf" target="_blank">Oyster sperm bindin is a combinatorial fucose lectin with remarkable intra-species diversity</a></span><br>
+            Springer SA, Moy GW, Friend DS, Swanson WJ, Vacquier VD (2008) <span class="pub-journal">Int J Dev Biol</span> 52:759–768
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2008 Oyster bindin polymorphism.pdf" target="_blank">Extraordinary intraspecific polymorphism in oyster sperm bindin</a></span><br>
+            Moy GW★, Springer SA★, Adams SL, Swanson WJ, Vacquier VD (2008) <span class="pub-journal">PNAS</span> 105:1993–1998
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2007 Mytilus gamete recognition divergence.pdf" target="_blank">Adaptive gamete-recognition divergence in a hybridizing Mytilus population</a></span><br>
+            Springer SA, Crespi BJ (2007) <span class="pub-journal">Evolution</span> 61:772–783
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2007 Mytilus heterozygote developmental instability.pdf" target="_blank">Environment-specific heterozygote deficiency and developmental instability in hybrid Mytilus</a></span><br>
+            Springer SA, Heath DD (2007) <span class="pub-journal">Marine Biology Research</span> 3:182–187
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2004 Copernican Principle Masters thesis.pdf" target="_blank">Implications of the Copernican Principle for my Masters thesis</a></span><br>
+            Springer SA (2004) <span class="pub-journal">Annals of Improbable Research</span> 10.4:20–21
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="publications/Springer 2003 Social slime molds.pdf" target="_blank">Social slime molds meet their match</a></span><br>
+            Crespi BJ, Springer SA (2003) <span class="pub-journal">Science</span> 299:56–57
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /page-website -->
+
+  <!-- ══ PROTOCOLS ══ -->
+  <div class="page" id="page-protocols">
+    <div class="panel">
+      <div class="phd">Protocols</div>
+      <div class="panel-body">
+        <p class="placeholder-note">Content coming soon. This section will contain lab protocols, SOPs, and reference methods.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ INVENTORY ══ -->
+  <div class="page" id="page-inventory">
+    <div class="panel">
+      <div class="phd">Inventory</div>
+      <div class="panel-body">
+        <p class="placeholder-note">Content coming soon. This section will track lab equipment, reagents, and consumables.</p>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /content -->
+
+<script>
+'use strict';
+
+// ── Top nav ──────────────────────────────────────────────────────────
+const legBar  = document.getElementById('legBar');
+const navBtns = document.querySelectorAll('.nbtn');
+const pages   = document.querySelectorAll('.page');
+
+navBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    navBtns.forEach(b => b.classList.remove('nbtn-on'));
+    pages.forEach(p => p.classList.remove('active'));
+    btn.classList.add('nbtn-on');
+    document.getElementById('page-' + btn.dataset.page).classList.add('active');
+    legBar.style.display = btn.dataset.page === 'website' ? '' : 'none';
+  });
+});
+
+// ── Section chips ─────────────────────────────────────────────────────
+const chips    = document.querySelectorAll('.sec-chip');
+const sections = document.querySelectorAll('.section');
+
+chips.forEach(chip => {
+  chip.addEventListener('click', () => {
+    chips.forEach(c => c.classList.remove('on'));
+    sections.forEach(s => s.classList.remove('active'));
+    chip.classList.add('on');
+    document.getElementById('section-' + chip.dataset.section).classList.add('active');
+  });
+});
+</script>
 </body>
 </html>
