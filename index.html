@@ -19,15 +19,15 @@
   --page-bg:#fff;
 
   /* People — viridis green */
-  --c-people-lo:#b8de8a; --c-people-lo-b:#8ec04a; --c-people-hi:#35974a; --c-people-hi-b:#1e6b33;
+  --c-people-lo:#b8de8a; --c-people-lo-b:#8ec04a; --c-people-hi-b:#1e6b33;
   /* Projects — viridis lime */
-  --c-projects-lo:#e5f5a0; --c-projects-lo-b:#c0d840; --c-projects-hi:#8db024; --c-projects-hi-b:#5e7a10;
+  --c-projects-lo:#e5f5a0; --c-projects-lo-b:#c0d840; --c-projects-hi-b:#5e7a10;
   /* Programs — pure yellow */
-  --c-programs-lo:#fff0a0; --c-programs-lo-b:#e6c800; --c-programs-hi:#c49b00; --c-programs-hi-b:#8a6d00;
+  --c-programs-lo:#fff0a0; --c-programs-lo-b:#e6c800; --c-programs-hi-b:#8a6d00;
   /* Publications — pure orange */
-  --c-pubs-lo:#ffd0a0;    --c-pubs-lo-b:#f07000;    --c-pubs-hi:#c05000;    --c-pubs-hi-b:#803000;
+  --c-pubs-lo:#ffd0a0;    --c-pubs-lo-b:#f07000;    --c-pubs-hi-b:#803000;
   /* Press — pure red */
-  --c-press-lo:#ffb0b0;   --c-press-lo-b:#e03030;   --c-press-hi:#b00000;   --c-press-hi-b:#780000;
+  --c-press-lo:#ffb0b0;   --c-press-lo-b:#e03030;   --c-press-hi-b:#780000;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{height:100%;overflow:hidden;}
@@ -41,13 +41,13 @@ header{
   border-bottom:1px solid var(--bord);
   flex-shrink:0;
 }
-.logo{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);}
+.logo{font-size:18px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);}
 
 /* Top nav buttons — viridis blues */
 .nav-area{margin-left:auto;display:flex;gap:7px;}
 
 .nbtn{
-  font-size:12px;padding:4px 10px;
+  font-size:18px;padding:4px 10px;
   border:1px solid var(--vb-lo-bord);
   background:var(--vb-lo);
   color:var(--ink);
@@ -70,12 +70,12 @@ header{
   background:var(--paper);
   flex-shrink:0;
 }
-.ll{color:var(--mut);font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-right:5px;}
-.lg{display:flex;align-items:center;gap:2px;margin-right:18px;}
+.ll{color:var(--mut);font-size:18px;text-transform:uppercase;letter-spacing:.06em;margin-right:5px;}
+.lg{display:flex;align-items:center;gap:7px;margin-right:18px;}
 
 /* Section chips — per-chip colours */
 .sec-chip{
-  padding:2px 7px;border-radius:2px;font-size:12px;
+  padding:4px 10px;border-radius:2px;font-size:18px;
   cursor:pointer;border:1px solid;
   color:var(--ink);user-select:none;
   font-family:'DM Mono',monospace;
@@ -86,11 +86,17 @@ header{
 .sec-chip[data-section="publications"]{ background:var(--c-pubs-lo);      border-color:var(--c-pubs-lo-b); }
 .sec-chip[data-section="press"]       { background:var(--c-press-lo);     border-color:var(--c-press-lo-b); }
 
-.sec-chip[data-section="people"]:hover:not(.on),       .sec-chip[data-section="people"].on       { background:var(--c-people-lo-b);  border-color:var(--c-people-hi-b);  color:var(--ink); }
-.sec-chip[data-section="projects"]:hover:not(.on),     .sec-chip[data-section="projects"].on     { background:var(--c-projects-lo-b);border-color:var(--c-projects-hi-b);color:var(--ink); }
-.sec-chip[data-section="programs"]:hover:not(.on),     .sec-chip[data-section="programs"].on     { background:var(--c-programs-lo-b);border-color:var(--c-programs-hi-b);color:var(--ink); }
-.sec-chip[data-section="publications"]:hover:not(.on), .sec-chip[data-section="publications"].on { background:var(--c-pubs-lo-b);    border-color:var(--c-pubs-hi-b);    color:var(--ink); }
-.sec-chip[data-section="press"]:hover:not(.on),        .sec-chip[data-section="press"].on        { background:var(--c-press-lo-b);   border-color:var(--c-press-hi-b);   color:var(--ink); }
+.sec-chip[data-section="people"]:hover:not(.on)       { background:var(--c-people-lo-b);  border-color:var(--c-people-hi-b); }
+.sec-chip[data-section="projects"]:hover:not(.on)     { background:var(--c-projects-lo-b);border-color:var(--c-projects-hi-b); }
+.sec-chip[data-section="programs"]:hover:not(.on)     { background:var(--c-programs-lo-b);border-color:var(--c-programs-hi-b); }
+.sec-chip[data-section="publications"]:hover:not(.on) { background:var(--c-pubs-lo-b);    border-color:var(--c-pubs-hi-b); }
+.sec-chip[data-section="press"]:hover:not(.on)        { background:var(--c-press-lo-b);   border-color:var(--c-press-hi-b); }
+
+.sec-chip[data-section="people"].on       { background:var(--c-people-lo-b);  border-color:var(--c-people-hi-b);  color:#fff; }
+.sec-chip[data-section="projects"].on     { background:var(--c-projects-lo-b);border-color:var(--c-projects-hi-b);color:#fff; }
+.sec-chip[data-section="programs"].on     { background:var(--c-programs-lo-b);border-color:var(--c-programs-hi-b);color:#fff; }
+.sec-chip[data-section="publications"].on { background:var(--c-pubs-lo-b);    border-color:var(--c-pubs-hi-b);    color:#fff; }
+.sec-chip[data-section="press"].on        { background:var(--c-press-lo-b);   border-color:var(--c-press-hi-b);   color:#fff; }
 
 /* ── Content area ── */
 #content{
@@ -106,7 +112,7 @@ header{
   margin-bottom:14px;
 }
 .phd{
-  font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+  font-size:18px;letter-spacing:.06em;text-transform:uppercase;
   color:var(--ink);font-weight:400;
   padding:4px 12px 3px;
   border-bottom:1px solid var(--bord);
@@ -114,33 +120,20 @@ header{
   display:flex;flex-direction:column;justify-content:center;
   font-family:'DM Mono',monospace;
 }
-.phd-sub{
-  font-size:12px;letter-spacing:0;text-transform:none;
-  color:var(--mut);margin-top:2px;padding-bottom:2px;
-}
 .panel-body{
   padding:14px 16px;
-  font-size:12px;
+  font-size:18px;
   line-height:1.8;
   color:var(--mut);
   font-family:'DM Mono',monospace;
 }
 .panel-body p+p{margin-top:8px;}
-.panel-body h3{
-  font-size:12px;font-weight:400;
-  color:var(--ink);
-  letter-spacing:.06em;text-transform:uppercase;
-  margin-top:14px;margin-bottom:4px;
-}
-.panel-body h3:first-child{margin-top:0;}
-.panel-body ul{margin-left:16px;}
-.panel-body li{margin-bottom:3px;}
 
 .placeholder-note{
   color:var(--mut);
   padding:24px 0;
   text-align:center;
-  font-size:12px;
+  font-size:18px;
 }
 
 /* page/section visibility */
@@ -165,14 +158,6 @@ header{
 .person-desc{color:var(--mut);line-height:1.7;display:block;margin-top:4px;}
 .person-next{color:var(--mut);font-style:italic;margin-top:4px;display:block;}
 
-/* Compact student table */
-.student-table{width:100%;border-collapse:collapse;}
-.student-table tr{border-bottom:1px solid var(--bord);}
-.student-table tr:last-child{border-bottom:none;}
-.student-table td{padding:5px 8px 5px 0;vertical-align:top;font-size:12px;}
-.student-table .st-year{color:var(--mut);white-space:nowrap;padding-right:14px;width:60px;}
-.student-table .st-name{color:var(--ink);white-space:nowrap;padding-right:14px;width:180px;}
-.student-table .st-topic{color:var(--mut);}
 
 /* Publications */
 .pub{
@@ -692,12 +677,10 @@ header{
       </div>
     </div>
 
-  </div>
-
     <div class="section" id="section-press">
 
       <div class="panel">
-        <div class="phd">For Science! — CBC PEI Series</div>
+        <div class="phd">Series — For Science!</div>
         <div class="panel-body">
           <p style="color:var(--mut);margin-bottom:10px;">I worked with CBC hosts Sheryl MacKay and Steve Bruce to initiate a series highlighting science in PEI.</p>
 
@@ -783,7 +766,8 @@ header{
         </div>
       </div>
     </div>
-<!-- /page-website -->
+
+  </div><!-- /page-website -->
 
   <!-- ══ PROTOCOLS ══ -->
   <div class="page" id="page-protocols">
@@ -808,8 +792,8 @@ header{
 <script>
 'use strict';
 
-// ── Top nav ──────────────────────────────────────────────────────────
 const legBar  = document.getElementById('legBar');
+const content = document.getElementById('content');
 const navBtns = document.querySelectorAll('.nbtn');
 const pages   = document.querySelectorAll('.page');
 const chips   = document.querySelectorAll('.sec-chip');
@@ -820,27 +804,30 @@ function activateSection(sectionId) {
   if (el) el.classList.add('active');
 }
 
+function resetToWebsite() {
+  chips.forEach(c => c.classList.remove('on'));
+  document.querySelector('.sec-chip[data-section="people"]').classList.add('on');
+  activateSection('people');
+}
+
 navBtns.forEach(btn => {
   btn.addEventListener('click', () => {
     navBtns.forEach(b => b.classList.remove('nbtn-on'));
     pages.forEach(p => p.classList.remove('active'));
     btn.classList.add('nbtn-on');
     document.getElementById('page-' + btn.dataset.page).classList.add('active');
+    content.scrollTop = 0;
     legBar.style.display = btn.dataset.page === 'website' ? '' : 'none';
-    if (btn.dataset.page === 'website') {
-      chips.forEach(c => c.classList.remove('on'));
-      document.querySelector('.sec-chip[data-section="people"]').classList.add('on');
-      activateSection('people');
-    }
+    if (btn.dataset.page === 'website') resetToWebsite();
   });
 });
 
-// ── Section chips ─────────────────────────────────────────────────────
 chips.forEach(chip => {
   chip.addEventListener('click', () => {
     chips.forEach(c => c.classList.remove('on'));
     chip.classList.add('on');
     activateSection(chip.dataset.section);
+    content.scrollTop = 0;
   });
 });
 </script>
