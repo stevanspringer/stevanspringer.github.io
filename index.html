@@ -8,7 +8,7 @@
 <style>
 /* ── Variables — JUST_SO base + viridis accents ── */
 :root{
-  --bg:#f5f3ef;--paper:#fff;--bord:#ccc8c0;--ink:#1a1714;--mut:#888078;
+  --paper:#fff;--bord:#ccc8c0;--ink:#1a1714;--mut:#888078;
   /* viridis blues (top nav) */
   --vb-lo:#9dd8c8;   /* unselected bg   */
   --vb-lo-bord:#6bbfad; /* unselected border */
@@ -85,19 +85,19 @@ header{
 .sec-chip[data-section="projects"]    { background:var(--c-projects-lo);  border-color:var(--c-projects-lo-b); }
 .sec-chip[data-section="programs"]    { background:var(--c-programs-lo);  border-color:var(--c-programs-lo-b); }
 .sec-chip[data-section="publications"]{ background:var(--c-pubs-lo);      border-color:var(--c-pubs-lo-b); }
-.sec-chip[data-section="media"]       { background:var(--c-press-lo);     border-color:var(--c-press-lo-b); }
+.sec-chip[data-section="press"]       { background:var(--c-press-lo);     border-color:var(--c-press-lo-b); }
 
 .sec-chip[data-section="people"]:hover:not(.on)       { background:var(--c-people-lo-b);  border-color:var(--c-people-hi-b); }
 .sec-chip[data-section="projects"]:hover:not(.on)     { background:var(--c-projects-lo-b);border-color:var(--c-projects-hi-b); }
 .sec-chip[data-section="programs"]:hover:not(.on)     { background:var(--c-programs-lo-b);border-color:var(--c-programs-hi-b); }
 .sec-chip[data-section="publications"]:hover:not(.on) { background:var(--c-pubs-lo-b);    border-color:var(--c-pubs-hi-b); }
-.sec-chip[data-section="media"]:hover:not(.on)        { background:var(--c-press-lo-b);   border-color:var(--c-press-hi-b); }
+.sec-chip[data-section="press"]:hover:not(.on)        { background:var(--c-press-lo-b);   border-color:var(--c-press-hi-b); }
 
 .sec-chip[data-section="people"].on       { background:var(--c-people-hi);  border-color:var(--c-people-hi-b);  color:#fff; }
 .sec-chip[data-section="projects"].on     { background:var(--c-projects-hi); border-color:var(--c-projects-hi-b);color:#fff; }
 .sec-chip[data-section="programs"].on     { background:var(--c-programs-hi); border-color:var(--c-programs-hi-b);color:#fff; }
 .sec-chip[data-section="publications"].on { background:var(--c-pubs-hi);     border-color:var(--c-pubs-hi-b);    color:#fff; }
-.sec-chip[data-section="media"].on        { background:var(--c-press-hi);    border-color:var(--c-press-hi-b);   color:#fff; }
+.sec-chip[data-section="press"].on        { background:var(--c-press-hi);    border-color:var(--c-press-hi-b);   color:#fff; }
 
 /* ── Content area ── */
 #content{
@@ -218,7 +218,7 @@ header{
     <span class="sec-chip"    data-section="projects">Projects</span>
     <span class="sec-chip"    data-section="programs">Programs</span>
     <span class="sec-chip"    data-section="publications">Publications</span>
-    <span class="sec-chip"    data-section="media">Press</span>
+    <span class="sec-chip"    data-section="press">Press</span>
   </div>
 </div>
 
@@ -339,7 +339,6 @@ header{
               <span class="person-name">Heather Ling — <span class="person-role">MSc Student (2023F – 2024F)</span></span>
               <span class="person-desc">Transmissible cancer in blue mussels</span>
               <span class="person-next">Heather went on to work at the Atlantic Veterinary College</span>
-              <span class="person-next">Works as a veterinary pharmacist at the Atlantic Veterinary College</span>
             </div>
           </div>
 
@@ -504,123 +503,49 @@ header{
       </div>
     </div>
 
-    <div class="section" id="section-media">
-
-      <div class="panel">
-        <div class="phd">For Science! — CBC PEI Series<span class="phd-sub">Worked with CBC hosts Sheryl MacKay and Steve Bruce to initiate a series highlighting science in PEI</span></div>
-        <div class="panel-body">
-
-          <div class="pub">
-            <span class="pub-title"><a href="https://www.cbc.ca/listen/live-radio/1-30-island-morning/clip/16162805-upei-biology-department-gets-equipment" target="_blank">Joel Ross | High-tech equipment at UPEI will open doors for researchers in genetics and cancer research</a></span><br>
-            <span class="pub-journal">CBC Island Morning</span> · Aug. 11, 2025
-          </div>
-
-          <div class="pub">
-            <span class="pub-title"><a href="https://www.cbc.ca/listen/live-radio/1-130-mainstreet-pei/clip/16154254-avc-scientist-seeking-ways-improve-fish-health" target="_blank">Shawna Semple | AVC scientist seeking ways to improve fish health on PEI</a></span><br>
-            <span class="pub-journal">CBC Mainstreet PEI</span> · Jun. 24, 2025
-          </div>
-
-          <div class="pub">
-            <span class="pub-title"><a href="https://www.cbc.ca/listen/live-radio/1-130-mainstreet-pei/clip/16132527-for-science-emma-ladouceur" target="_blank">Emma Ladouceur | Restoration ecology: helping to repair natural environments after they've been damaged</a></span><br>
-            <span class="pub-journal">CBC Mainstreet PEI</span> · Mar. 6, 2025
-          </div>
-
-          <div class="pub">
-            <span class="pub-title"><a href="https://www.cbc.ca/listen/live-radio/1-130-mainstreet-pei/clip/16130227-for-science-stevan-springer" target="_blank">Stevan Springer | The stories in our genes, studying molecular adaptation</a></span><br>
-            <span class="pub-journal">CBC Mainstreet PEI</span> · Feb. 24, 2025
-          </div>
-
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="phd">Interviews</div>
-        <div class="panel-body">
-
-          <div class="pub">
-            <span class="pub-title"><a href="https://www.cbc.ca/listen/live-radio/1-130-mainstreet-pei/clip/16130227-for-science-stevan-springer" target="_blank">CBC PEI – For Science! – The stories in our genes, studying molecular adaptation</a></span><br>
-            <span class="pub-journal">CBC Mainstreet PEI</span> · Feb. 24, 2025
-          </div>
-
-          <div class="pub">
-            <span class="pub-title"><a href="https://www.cbc.ca/radio/quirks/quirks-quarks-june-24-listener-questions-1.6886429" target="_blank">CBC Quirks and Quarks – Why birds are more brightly coloured than mammals?</a></span><br>
-            <span class="pub-journal">CBC Quirks & Quarks</span> · Jun. 24, 2023
-          </div>
-
-          <div class="pub">
-            <span class="pub-title"><a href="https://www.cbc.ca/radio/quirks/quirks-quarks-for-dec-5-2015-1.3351168/evolution-and-alzheimers-1.3351343" target="_blank">CBC Quirks and Quarks – Recent mutations in humans protect against dementia</a></span><br>
-            <span class="pub-journal">CBC Quirks & Quarks</span> · Dec. 5, 2015
-          </div>
-
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="phd">Articles</div>
-        <div class="panel-body">
-
-          <div class="pub">
-            <span class="pub-title"><a href="https://www.cbc.ca/news/canada/prince-edward-island/pei-school-science-fair-1.7169393" target="_blank">Students flex their brainpower at P.E.I. Science Fair</a></span><br>
-            <span class="pub-journal">CBC PEI</span> · Apr. 10, 2024
-          </div>
-
-          <div class="pub">
-            <span class="pub-title"><a href="https://www.science.org/content/article/anti-alzheimer-s-gene-may-have-led-rise-grandparents" target="_blank">Anti-Alzheimer's gene may have led to the rise of grandparents</a></span><br>
-            <span class="pub-journal">Science</span> · Nov. 30, 2015
-          </div>
-
-          <div class="pub">
-            <span class="pub-title"><a href="https://www.npr.org/sections/health-shots/2015/12/01/458070834/grandkids-could-be-the-reason-why-humans-live-long-lives" target="_blank">Grandkids could be one reason humans live long lives</a></span><br>
-            <span class="pub-journal">NPR</span> · Dec. 1, 2015
-          </div>
-
-          <div class="pub">
-            <span class="pub-title"><a href="https://www.telegraph.co.uk/news/science/science-news/12025521/Grandparent-genes-discovered-by-scientists.html" target="_blank">Grandparent genes discovered by scientists</a></span><br>
-            <span class="pub-journal">The Telegraph</span> · Nov. 30, 2015
-          </div>
-
-          <div class="pub">
-            <span class="pub-title"><a href="https://www.dailymail.co.uk/sciencetech/article-3340049/Gene-variations-protect-elderly-dementia.html" target="_blank">'Grandparent gene' protects the elderly from dementia so they can pass on wisdom</a></span><br>
-            <span class="pub-journal">Daily Mail</span> · Nov. 30, 2015
-          </div>
-
-          <div class="pub">
-            <span class="pub-title"><a href="https://www.telegraph.co.uk/news/science/science-news/3324902/Exotic-sex-lives-of-oysters-revealed.html" target="_blank">Exotic sex lives of oysters revealed</a></span><br>
-            <span class="pub-journal">The Telegraph</span> · Feb. 11, 2008
-          </div>
-
-        </div>
-      </div>
-    </div>
-
     <div class="section" id="section-publications">
       <div class="panel">
         <div class="phd">Publications</div>
         <div class="panel-body">
 
-          <div class="pub">
+          <div class="pub" style="display:flex;gap:10px;align-items:flex-start;">
+            <img src="data:image/jpeg;base64,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" style="width:100px;flex-shrink:0;border:1px solid var(--bord);">
+            <div>
             <span class="pub-title"><a href="publications/Springer 2024 Glycans immunity disease.pdf" target="_blank">Editorial – Glycans: molecules at the interface of immunity and disease</a></span><br>
             Springer SA, Siddiqui SS (2024) <span class="pub-journal">Frontiers in Immunology</span> 14:1354723
+                      </div>
           </div>
 
-          <div class="pub">
+          <div class="pub" style="display:flex;gap:10px;align-items:flex-start;">
+            <img src="data:image/jpeg;base64,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" style="width:100px;flex-shrink:0;border:1px solid var(--bord);">
+            <div>
             <span class="pub-title"><a href="publications/Springer 2022 Muscle injury senescence regeneration.pdf" target="_blank">Muscle injury induces a transient senescence‐like state that is required for myofiber growth during muscle regeneration</a></span><br>
             Young LV, Wakelin G, Cameron AWR, Springer SA, et al. (2022) <span class="pub-journal">The FASEB Journal</span> 36(11):e22587
+                      </div>
           </div>
 
-          <div class="pub">
+          <div class="pub" style="display:flex;gap:10px;align-items:flex-start;">
+            <img src="data:image/jpeg;base64,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" style="width:100px;flex-shrink:0;border:1px solid var(--bord);">
+            <div>
             <span class="pub-title"><a href="publications/Springer 2019 CD33 splice variant controversies.pdf" target="_blank">Controversies about the subcellular localization and mechanisms of action of the Alzheimer's disease protective CD33 splice variant</a></span><br>
             Sudeshna S, Siddiqui S et al. Springer SA, Ghosh P, Varki A (2019) <span class="pub-journal">Acta Neuropathol</span> 138(4):671–672
+                      </div>
           </div>
 
-          <div class="pub">
+          <div class="pub" style="display:flex;gap:10px;align-items:flex-start;">
+            <img src="data:image/jpeg;base64,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" style="width:100px;flex-shrink:0;border:1px solid var(--bord);">
+            <div>
             <span class="pub-title"><a href="publications/Springer 2017 CD33 splice variant intracellular pool.pdf" target="_blank">The Alzheimer's disease-protective CD33 splice variant mediates adaptive loss of function via diversion to an intracellular pool</a></span><br>
             Siddiqui S, Springer SA et al. (2017) <span class="pub-journal">Journal of Biological Chemistry</span> 292:15312–15320
+                      </div>
           </div>
 
-          <div class="pub">
+          <div class="pub" style="display:flex;gap:10px;align-items:flex-start;">
+            <img src="data:image/jpeg;base64,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" style="width:100px;flex-shrink:0;border:1px solid var(--bord);">
+            <div>
             <span class="pub-title"><a href="publications/Springer 2017 Siglec-E expression glycosylation.pdf" target="_blank">Studies on the detection, expression, glycosylation, dimerization and ligand binding of mouse Siglec-E</a></span><br>
             Siddiqui S, Schwartz F, Springer SA et al. (2017) <span class="pub-journal">Journal of Biological Chemistry</span> 292:1029–1037
+                      </div>
           </div>
 
           <div class="pub" style="display:flex;gap:10px;align-items:flex-start;">
@@ -680,7 +605,7 @@ header{
           </div>
 
           <div class="pub" style="display:flex;gap:10px;align-items:flex-start;">
-            <img src="data:image/jpeg;base64,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" style="width:100px;flex-shrink:0;border:1px solid var(--bord);">
+            <img src="data:image/jpeg;base64,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" style="width:100px;flex-shrink:0;border:1px solid var(--bord);">
             <div>
             <span class="pub-title"><a href="publications/Springer 2013 Abalone egg coat molecular mimicry.pdf" target="_blank">Duplicate abalone egg coat proteins bind sperm lysin similarly, but evolve oppositely, consistent with molecular mimicry at fertilization</a></span><br>
             Aagaard J, Springer SA, Soelberg S, Swanson WJ (2013) <span class="pub-journal">PLoS Genetics</span> 9(2):e1003287
@@ -771,7 +696,97 @@ header{
       </div>
     </div>
 
-  </div><!-- /page-website -->
+  </div>
+
+    <div class="section" id="section-press">
+
+      <div class="panel">
+        <div class="phd">For Science! — CBC PEI Series<span class="phd-sub">Worked with CBC hosts Sheryl MacKay and Steve Bruce to initiate a series highlighting science in PEI</span></div>
+        <div class="panel-body">
+
+          <div class="pub">
+            <span class="pub-title"><a href="https://www.cbc.ca/listen/live-radio/1-30-island-morning/clip/16162805-upei-biology-department-gets-equipment" target="_blank">Joel Ross | High-tech equipment at UPEI will open doors for researchers in genetics and cancer research</a></span><br>
+            <span class="pub-journal">CBC Island Morning</span> · Aug. 11, 2025
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="https://www.cbc.ca/listen/live-radio/1-130-mainstreet-pei/clip/16154254-avc-scientist-seeking-ways-improve-fish-health" target="_blank">Shawna Semple | AVC scientist seeking ways to improve fish health on PEI</a></span><br>
+            <span class="pub-journal">CBC Mainstreet PEI</span> · Jun. 24, 2025
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="https://www.cbc.ca/listen/live-radio/1-130-mainstreet-pei/clip/16132527-for-science-emma-ladouceur" target="_blank">Emma Ladouceur | Restoration ecology: helping to repair natural environments after they've been damaged</a></span><br>
+            <span class="pub-journal">CBC Mainstreet PEI</span> · Mar. 6, 2025
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="https://www.cbc.ca/listen/live-radio/1-130-mainstreet-pei/clip/16130227-for-science-stevan-springer" target="_blank">Stevan Springer | The stories in our genes, studying molecular adaptation</a></span><br>
+            <span class="pub-journal">CBC Mainstreet PEI</span> · Feb. 24, 2025
+          </div>
+
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="phd">Interviews</div>
+        <div class="panel-body">
+
+          <div class="pub">
+            <span class="pub-title"><a href="https://www.cbc.ca/listen/live-radio/1-130-mainstreet-pei/clip/16130227-for-science-stevan-springer" target="_blank">CBC PEI – For Science! – The stories in our genes, studying molecular adaptation</a></span><br>
+            <span class="pub-journal">CBC Mainstreet PEI</span> · Feb. 24, 2025
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="https://www.cbc.ca/radio/quirks/quirks-quarks-june-24-listener-questions-1.6886429" target="_blank">CBC Quirks and Quarks – Why birds are more brightly coloured than mammals?</a></span><br>
+            <span class="pub-journal">CBC Quirks & Quarks</span> · Jun. 24, 2023
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="https://www.cbc.ca/radio/quirks/quirks-quarks-for-dec-5-2015-1.3351168/evolution-and-alzheimers-1.3351343" target="_blank">CBC Quirks and Quarks – Recent mutations in humans protect against dementia</a></span><br>
+            <span class="pub-journal">CBC Quirks & Quarks</span> · Dec. 5, 2015
+          </div>
+
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="phd">Articles</div>
+        <div class="panel-body">
+
+          <div class="pub">
+            <span class="pub-title"><a href="https://www.cbc.ca/news/canada/prince-edward-island/pei-school-science-fair-1.7169393" target="_blank">Students flex their brainpower at P.E.I. Science Fair</a></span><br>
+            <span class="pub-journal">CBC PEI</span> · Apr. 10, 2024
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="https://www.science.org/content/article/anti-alzheimer-s-gene-may-have-led-rise-grandparents" target="_blank">Anti-Alzheimer's gene may have led to the rise of grandparents</a></span><br>
+            <span class="pub-journal">Science</span> · Nov. 30, 2015
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="https://www.npr.org/sections/health-shots/2015/12/01/458070834/grandkids-could-be-the-reason-why-humans-live-long-lives" target="_blank">Grandkids could be one reason humans live long lives</a></span><br>
+            <span class="pub-journal">NPR</span> · Dec. 1, 2015
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="https://www.telegraph.co.uk/news/science/science-news/12025521/Grandparent-genes-discovered-by-scientists.html" target="_blank">Grandparent genes discovered by scientists</a></span><br>
+            <span class="pub-journal">The Telegraph</span> · Nov. 30, 2015
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="https://www.dailymail.co.uk/sciencetech/article-3340049/Gene-variations-protect-elderly-dementia.html" target="_blank">'Grandparent gene' protects the elderly from dementia so they can pass on wisdom</a></span><br>
+            <span class="pub-journal">Daily Mail</span> · Nov. 30, 2015
+          </div>
+
+          <div class="pub">
+            <span class="pub-title"><a href="https://www.telegraph.co.uk/news/science/science-news/3324902/Exotic-sex-lives-of-oysters-revealed.html" target="_blank">Exotic sex lives of oysters revealed</a></span><br>
+            <span class="pub-journal">The Telegraph</span> · Feb. 11, 2008
+          </div>
+
+        </div>
+      </div>
+    </div>
+<!-- /page-website -->
 
   <!-- ══ PROTOCOLS ══ -->
   <div class="page" id="page-protocols">
