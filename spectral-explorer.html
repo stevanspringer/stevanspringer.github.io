@@ -284,7 +284,6 @@
   <select id="yscale-input" class="tb-sel">
     <option value="raw">Raw</option>
     <option value="norm">Normalize to 1</option>
-    <option value="log">Log scale</option>
   </select>
   <span class="lbl tb-group-lbl">X:</span>
   <label class="lbl tb-sub-lbl" for="xmin-input">min</label>
@@ -324,8 +323,9 @@
 
 <script>
 // Figure-internal text stays at 12px — this is NOT interface text
-const SVG_FS   = '12px';
-const SVG_FONT = "'DM Mono', monospace";
+const SVG_FS    = '12px';
+const SVG_FS_LG = '14px';   // used for the per-panel peak wavelength label
+const SVG_FONT  = "'DM Mono', monospace";
 const INK      = '#1a1714';
 const MUT      = '#888078';
 const BORD     = '#ccc8c0';
@@ -477,28 +477,26 @@ function processWells(raw) {
 // ─── Y-scale transforms ───────────────────────────────────────────────────────
 // Produce a transformed copy of `wells` for the chosen Y-scale mode.
 //   'raw'  : identity
-//   'norm' : per-well, divide y values by that well's curve max (so each well peaks at 1)
-//   'log'  : log10(max(y, 1)) globally — clips negatives and sub-1 values to log 0
+//   'norm' : per-well min-max normalization, (y - min) / (max - min), using the
+//            union of curve and raw points as the range. After this, each well's
+//            lowest observed value sits at 0 and its highest at 1, with no
+//            clipping. Note: this makes dim noisy wells visually indistinguishable
+//            from strong-signal wells — view raw mode alongside if in doubt.
 // Returns wells with the same shape (.pts, .curve, .peakWl, .name, .plateIdx).
 function transformWells(wells, mode) {
   if (mode === 'norm') {
     return wells.map(w => {
-      const peak = Math.max(...w.curve.map(p=>p.y));
-      const s = peak > 0 ? 1/peak : 1;
+      let lo = Infinity, hi = -Infinity;
+      for (const p of w.curve) { if (p.y < lo) lo = p.y; if (p.y > hi) hi = p.y; }
+      for (const p of w.pts)   { if (p.y < lo) lo = p.y; if (p.y > hi) hi = p.y; }
+      const range = hi - lo;
+      const norm = (range > 0) ? (y => (y - lo) / range) : (() => 0.5);
       return {
         ...w,
-        pts:   w.pts  .map(p => ({ wl: p.wl, y: p.y * s })),
-        curve: w.curve.map(p => ({ x:  p.x,  y: p.y * s }))
+        pts:   w.pts  .map(p => ({ wl: p.wl, y: norm(p.y) })),
+        curve: w.curve.map(p => ({ x:  p.x,  y: norm(p.y) }))
       };
     });
-  }
-  if (mode === 'log') {
-    const lg = y => Math.log10(Math.max(y, 1));
-    return wells.map(w => ({
-      ...w,
-      pts:   w.pts  .map(p => ({ wl: p.wl, y: lg(p.y) })),
-      curve: w.curve.map(p => ({ x:  p.x,  y: lg(p.y) }))
-    }));
   }
   return wells; // raw
 }
@@ -524,7 +522,6 @@ function readManualX(id) {
 // Format the upper Y-tick label for a given mode and yMax value.
 function yMaxLabel(mode, yMax) {
   if (mode === 'norm') return '1';
-  if (mode === 'log')  return yMax.toFixed(1);
   // raw: use Ω, the legacy label
   return '\u03A9';
 }
@@ -556,24 +553,45 @@ function computeDomains(wells, mode, manualXMin, manualXMax) {
     xTickHi = ceilTo (xHi, 100);
   }
 
+  // Y-domain depends on mode.
+  //   raw:  data-driven, [yLo - 5%, yHi + 5%], ticks at 0 and yHi (Ω).
+  //   norm: fixed [-0.05, 1.05] with ticks at 0 and 1, regardless of outliers.
+  //         Noisy raw points outside this range get clipped — by design, since
+  //         per-well normalization can blow up dim wells' noise floor.
+  let yMin, yMax, yTopVal;
+  if (mode === 'norm') {
+    yMin    = -0.05;
+    yMax    =  1.05;
+    yTopVal =  1;
+  } else {
+    yMin    = yLo - yPad;
+    yMax    = yHi + yPad;
+    yTopVal = yHi;
+  }
+
   return {
     xMin, xMax, xTickLo, xTickHi,
-    yMin: yLo - yPad,
-    yMax: yHi + yPad,
-    yOmega: yHi,
-    yMaxLabel: yMaxLabel(mode, yHi)
+    yMin, yMax,
+    yOmega: yTopVal,
+    yMaxLabel: yMaxLabel(mode, yTopVal)
   };
 }
+
+// Monotonically-increasing counter for unique clipPath IDs. Each panel renders
+// inside its own <g> with a clip rect matching the plot area; the curve and
+// raw points reference this clip so anything outside the configured X (and Y)
+// bounds is cropped at the panel edge instead of bleeding into neighbors.
+let _panelClipId = 0;
 
 // Draw one well panel into a d3 selection `g` already translated to its origin.
 // `yTopVal` is the upper Y-axis tick value, `yTopLbl` its display label.
 function drawPanel(g, w, side, xSc, ySc, xTickLo, xTickHi, yTopVal, yTopLbl) {
   g.append('rect').attr('width',side).attr('height',side).attr('fill','#ffffff');
-  // Zero-intensity reference line (only drawn if 0 is inside the y-domain)
-  if (ySc.domain()[0] <= 0 && ySc.domain()[1] >= 0) {
-    g.append('line').attr('x1',0).attr('x2',side).attr('y1',ySc(0)).attr('y2',ySc(0))
-      .attr('stroke','#e0e0e0').attr('stroke-width',0.5);
-  }
+  // Clip rect for the curve and points — sized to the plot area so anything
+  // outside the X/Y bounds gets cropped at the panel edge.
+  const clipId = `panel-clip-${_panelClipId++}`;
+  g.append('defs').append('clipPath').attr('id', clipId)
+    .append('rect').attr('x',0).attr('y',0).attr('width',side).attr('height',side);
   g.append('g').call(
     d3.axisLeft(ySc).tickValues([0,yTopVal]).tickFormat((_,i)=>i===0?'0':yTopLbl).tickSize(3)
   ).call(ax=>{
@@ -588,14 +606,19 @@ function drawPanel(g, w, side, xSc, ySc, xTickLo, xTickHi, yTopVal, yTopLbl) {
     ax.select('.domain').attr('stroke',BORD).attr('stroke-width',0.75);
     ax.selectAll('.tick line').attr('stroke',BORD);
     ax.selectAll('.tick text').attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
-      .attr('font-weight','400').attr('fill',MUT);
+      .attr('font-weight','400').attr('fill',MUT)
+      // Anchor lower tick to start, higher to end, so the labels grow inward
+      // from the plot edges instead of overhanging and getting clipped.
+      .attr('text-anchor', (_,i) => i===0 ? 'start' : 'end');
   });
   const lineCol = wavelengthToColor(w.peakWl);
   g.append('path').datum(w.curve)
+    .attr('clip-path', `url(#${clipId})`)
     .attr('fill','none').attr('stroke',lineCol).attr('stroke-width',6)
     .attr('stroke-linejoin','round').attr('stroke-linecap','round')
     .attr('d',d3.line().x(d=>xSc(d.x)).y(d=>ySc(d.y)).curve(d3.curveCatmullRom));
-  g.append('g').selectAll('circle.pt').data(w.pts).enter().append('circle')
+  g.append('g').attr('clip-path', `url(#${clipId})`)
+    .selectAll('circle.pt').data(w.pts).enter().append('circle')
     .attr('class','pt')
     .attr('cx',d=>xSc(d.wl)).attr('cy',d=>ySc(d.y))
     .attr('r',1).attr('fill','#999').attr('opacity',0.55);
@@ -605,7 +628,7 @@ function drawPanel(g, w, side, xSc, ySc, xTickLo, xTickHi, yTopVal, yTopLbl) {
     .attr('font-weight','400').attr('fill',INK).text(w.name);
   g.append('text').attr('x',side-3).attr('y',16)
     .attr('text-anchor','end').attr('dominant-baseline','hanging')
-    .attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
+    .attr('font-family',SVG_FONT).attr('font-size',SVG_FS_LG)
     .attr('font-weight','400').attr('fill',MUT).text(Math.round(w.peakWl));
 }
 
@@ -716,8 +739,7 @@ function draw(wells, plate) {
 
 // Human-readable Y-axis description for the plot title.
 function titleYDesc(mode, yMax) {
-  if (mode === 'norm') return 'Normalized to peak per well';
-  if (mode === 'log')  return `log\u2081\u2080 intensity, max = ${yMax.toFixed(2)}`;
+  if (mode === 'norm') return 'Normalized per well (min \u2192 0, max \u2192 1)';
   return `Samples Normalized by OD600,  \u03A9 = ${(Math.round(yMax/1000)*1000).toLocaleString()}`;
 }
 
