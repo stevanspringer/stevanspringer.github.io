@@ -120,8 +120,33 @@
     font-size: var(--fs);
     font-weight: 400;
     color: var(--vb-lo-text);
+    gap: 8px;
   }
   #statusLeft  { flex: 1; }
+  #statusFileName { color: var(--vb-lo-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
+  #statusCounter  { color: var(--vb-lo-text); white-space: nowrap; }
+
+  /* Arrow nav buttons inside status bar */
+  .nav-btn {
+    font-family: var(--font);
+    font-size: var(--fs);
+    font-weight: 400;
+    height: 24px;
+    width: 28px;
+    padding: 0;
+    border: 1px solid var(--vb-lo-bord);
+    background: transparent;
+    color: var(--vb-lo-text);
+    border-radius: 2px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .1s;
+    flex-shrink: 0;
+  }
+  .nav-btn:hover:not(:disabled) { background: var(--vb-lo-bord); }
+  .nav-btn:disabled { opacity: 0.35; cursor: default; }
 
   /* ══════════════════════════════════════════════════
      ROW 3 — Toolbar
@@ -269,13 +294,16 @@
   <button class="abtn"  id="uploadBtn">Load File</button>
   <button class="fbtn"  id="loadExBtn">Load Example</button>
   <button class="fbtn"  id="dlExBtn">Download Example</button>
-  <input type="file" id="file-input" accept=".txt">
+  <input type="file" id="file-input" accept=".txt" multiple>
 </div>
 
 <!-- Row 2: Status bar — 32px, light viridis blue -->
 <div id="statusBar">
   <span id="statusLeft"></span>
-  <span id="statusRight"></span>
+  <span id="statusFileName"></span>
+  <button class="nav-btn" id="navPrev" title="Previous file">&#8592;</button>
+  <button class="nav-btn" id="navNext" title="Next file">&#8594;</button>
+  <span id="statusCounter"></span>
 </div>
 
 <!-- Row 3: Toolbar — 40px -->
@@ -284,6 +312,7 @@
   <select id="yscale-input" class="tb-sel">
     <option value="raw">Raw</option>
     <option value="norm">Normalize to 1</option>
+    <option value="brightest">Brightest</option>
   </select>
   <span class="lbl tb-group-lbl">X:</span>
   <label class="lbl tb-sub-lbl" for="xmin-input">min</label>
@@ -292,6 +321,8 @@
   <input type="number" id="xmax-input" class="tb-num" value="700" min="300" max="900" step="1">
   <label class="lbl tb-sub-lbl" for="offset-input" title="Wavelength calibration offset added to raw values from the instrument">&lambda; offset</label>
   <input type="number" id="offset-input" class="tb-num" value="25" min="-100" max="100" step="1">
+  <label class="lbl tb-sub-lbl" id="toffset-lbl" for="toffset-input" title="Time offset added to all displayed hour values (hours)" style="display:none">t offset</label>
+  <input type="number" id="toffset-input" class="tb-num" value="0" min="-9999" max="9999" step="0.5" style="display:none;width:64px">
   <div class="tb-gap"></div>
   <label class="lbl" for="ncols-input">Columns:</label>
   <input type="number" id="ncols-input" class="tb-num" value="12" min="1" max="24">
@@ -308,7 +339,7 @@
     <h2>No data loaded</h2>
     <p>Click <strong>Load File</strong> to open a SpectraMax .txt file,<br>
        or <strong>Load Example</strong> to explore the built-in dataset.</p>
-    <div class="drop-hint">or drag &amp; drop a file anywhere on this page</div>
+    <div class="drop-hint">or drag &amp; drop files anywhere on this page</div>
   </div>
 
   <div id="main">
@@ -501,6 +532,99 @@ function transformWells(wells, mode) {
   return wells; // raw
 }
 
+// ─── Brightest-scan computation ───────────────────────────────────────────────
+// Extract a numeric timestamp from a filename so files can be ordered and
+// relative hours computed.  The convention is that the last underscore-or-dash
+// separated token before the extension encodes the finish time of the scan.
+// Supported patterns (all as the LAST token of the stem):
+//   HHMMSS          e.g. 143022  → decimal hours 14 + 30/60 + 22/3600
+//   HHMM            e.g. 1430    → decimal hours 14.5
+//   ISO-like        e.g. 20240501T143022 or 20240501_143022
+// If none match, returns 0 so the file still participates in comparisons.
+function parseFilenameTime(name) {
+  // strip extension
+  const stem = name.replace(/\.[^.]+$/, '');
+  // take last token after any _ or - or space
+  const parts = stem.split(/[_\-\s]+/);
+  const last = parts[parts.length - 1];
+  // try YYYYMMDDTHHMMSS or YYYYMMDD_HHMMSS (last 6 chars are HHMMSS)
+  const m6 = last.match(/(\d{2})(\d{2})(\d{2})$/);
+  if (m6) {
+    const h = parseInt(m6[1]), m = parseInt(m6[2]), s = parseInt(m6[3]);
+    if (h < 24 && m < 60 && s < 60) return h + m/60 + s/3600;
+  }
+  // try HHMM (4 digits)
+  const m4 = last.match(/^(\d{2})(\d{2})$/);
+  if (m4) {
+    const h = parseInt(m4[1]), m = parseInt(m4[2]);
+    if (h < 24 && m < 60) return h + m/60;
+  }
+  return 0;
+}
+
+// Given the whole fileQueue (already sorted by drop order, assumed chronological),
+// parse every file and for each well name pick the scan with the highest peak
+// intensity (max over LOESS curve). Returns an array of well objects with an
+// extra `hoursOffset` field (rounded to nearest hour, with t offset applied).
+// `wavelengthOffset` and `timeOffset` come from the toolbar inputs.
+function computeBrightest(queue, wavelengthOffset, timeOffset) {
+  if (!queue.length) return { wells: [], plate: null };
+
+  // Parse all files
+  const parsed = queue.map(entry => {
+    try {
+      const { wells: raw, plate } = parseSpectraMax(entry.text, wavelengthOffset);
+      const wells = processWells(raw);
+      const t = parseFilenameTime(entry.name);
+      return { wells, plate, t };
+    } catch(e) {
+      return { wells: [], plate: null, t: 0 };
+    }
+  });
+
+  // Time of the first (index 0) file is the t=0 baseline
+  const t0 = parsed[0].t;
+  // If first file's time is later than a subsequent file's raw clock value,
+  // we've wrapped midnight. Add 24h to later files when that happens.
+  const times = parsed.map((p, i) => {
+    let dt = p.t - t0;
+    if (dt < 0) dt += 24; // midnight wrap
+    return dt;
+  });
+
+  // Use the plate from the first successfully-parsed file
+  const plate = parsed.find(p => p.plate)?.plate || null;
+
+  // Collect all well names preserving order of first appearance
+  const wellOrder = [];
+  const seen = new Set();
+  for (const { wells } of parsed) {
+    for (const w of wells) {
+      if (!seen.has(w.name)) { seen.add(w.name); wellOrder.push(w.name); }
+    }
+  }
+
+  // For each well name, find the scan with the highest peak on the LOESS curve
+  const result = [];
+  for (const name of wellOrder) {
+    let best = null, bestPeak = -Infinity, bestFileIdx = 0;
+    for (let fi = 0; fi < parsed.length; fi++) {
+      const w = parsed[fi].wells.find(x => x.name === name);
+      if (!w) continue;
+      // Use max of LOESS curve as the brightness metric (same as peakWl uses)
+      const curveMax = Math.max(...w.curve.map(p => p.y));
+      if (curveMax > bestPeak) { bestPeak = curveMax; best = w; bestFileIdx = fi; }
+    }
+    if (!best) continue;
+    // Hours offset: time of winning file relative to first file, + user t offset
+    const rawHours = times[bestFileIdx] + timeOffset;
+    const hoursOffset = Math.round(rawHours);
+    result.push({ ...best, hoursOffset, brightestFileIdx: bestFileIdx });
+  }
+
+  return { wells: result, plate };
+}
+
 // ─── Draw screen grid ─────────────────────────────────────────────────────────
 let currentWells = null;
 let currentPlate = null;
@@ -585,7 +709,8 @@ let _panelClipId = 0;
 
 // Draw one well panel into a d3 selection `g` already translated to its origin.
 // `yTopVal` is the upper Y-axis tick value, `yTopLbl` its display label.
-function drawPanel(g, w, side, xSc, ySc, xTickLo, xTickHi, yTopVal, yTopLbl) {
+// `topLeftLabel` (optional) is shown top-left — used in brightest mode for hours.
+function drawPanel(g, w, side, xSc, ySc, xTickLo, xTickHi, yTopVal, yTopLbl, topLeftLabel) {
   g.append('rect').attr('width',side).attr('height',side).attr('fill','#ffffff');
   // Clip rect for the curve and points — sized to the plot area so anything
   // outside the X/Y bounds gets cropped at the panel edge.
@@ -630,6 +755,12 @@ function drawPanel(g, w, side, xSc, ySc, xTickLo, xTickHi, yTopVal, yTopLbl) {
     .attr('text-anchor','end').attr('dominant-baseline','hanging')
     .attr('font-family',SVG_FONT).attr('font-size',SVG_FS_LG)
     .attr('font-weight','400').attr('fill',MUT).text(Math.round(w.peakWl));
+  if (topLeftLabel != null) {
+    g.append('text').attr('x',3).attr('y',2)
+      .attr('text-anchor','start').attr('dominant-baseline','hanging')
+      .attr('font-family',SVG_FONT).attr('font-size',SVG_FS_LG)
+      .attr('font-weight','400').attr('fill',MUT).text(topLeftLabel);
+  }
 }
 
 // Draw an empty-slot placeholder (used in plate-layout mode for unused wells).
@@ -676,8 +807,6 @@ function draw(wells, plate) {
   currentWells = wells;
   currentPlate = plate;
   const uiCols = Math.max(1, Math.min(24, parseInt(document.getElementById('ncols-input').value)||12));
-  // Plate mode: use only when (a) we detected a plate format, and (b) the user
-  // hasn't overridden the columns input away from the plate width. Override → pack.
   const usePlate = !!(plate && uiCols === plate.cols);
   const nCols = usePlate ? plate.cols : uiCols;
   const nRows = usePlate ? plate.rows : Math.ceil(wells.length / nCols);
@@ -686,52 +815,72 @@ function draw(wells, plate) {
   const cellW = side+mg.left+mg.right, cellH = side+mg.top+mg.bottom;
 
   const mode = document.getElementById('yscale-input').value || 'raw';
-  const tWells = transformWells(wells, mode);
+
+  // Show/hide t offset controls
+  const isBrightest = (mode === 'brightest');
+  document.getElementById('toffset-lbl').style.display   = isBrightest ? '' : 'none';
+  document.getElementById('toffset-input').style.display = isBrightest ? '' : 'none';
+
+  // In brightest mode, recompute from the whole queue rather than using the
+  // currently-displayed single-file wells. Nav arrows become irrelevant.
+  let drawWells = wells;
+  let drawPlate = plate;
+  if (isBrightest && fileQueue.length > 0) {
+    const toff = getToffset();
+    const { wells: bw, plate: bp } = computeBrightest(fileQueue, getOffset(), toff);
+    drawWells = bw;
+    drawPlate = bp;
+    // Update status left for brightest mode
+    document.getElementById('statusLeft').textContent =
+      `${fileQueue.length} file${fileQueue.length>1?'s':''} · brightest`;
+  }
+
+  const tWells = (isBrightest) ? drawWells : transformWells(drawWells, mode);
   const dom    = computeDomains(tWells, mode, readManualX('xmin-input'), readManualX('xmax-input'));
 
   const grid = document.getElementById('grid');
   grid.innerHTML = '';
-  grid.style.gridTemplateColumns = `repeat(${nCols},${cellW}px)`;
+  const usedPlate = !!(drawPlate && uiCols === (drawPlate||{}).cols);
+  const finalCols = usedPlate ? drawPlate.cols : uiCols;
+  grid.style.gridTemplateColumns = `repeat(${finalCols},${cellW}px)`;
 
-  if (usePlate) {
-    // Build a sparse plate: one cell per slot, filled where a well exists.
+  function renderPanel(g, w) {
+    const xSc = d3.scaleLinear().domain([dom.xMin,dom.xMax]).range([0,side]);
+    const ySc = d3.scaleLinear().domain([dom.yMin,dom.yMax]).range([side,0]);
+    const topLeft = (isBrightest && w.hoursOffset != null) ? `${w.hoursOffset}h` : null;
+    drawPanel(g, w, side, xSc, ySc, dom.xTickLo, dom.xTickHi, dom.yOmega, dom.yMaxLabel, topLeft);
+  }
+
+  if (usedPlate) {
     const wellByIdx = new Map(tWells.map(w => [w.plateIdx, w]));
-    const totalSlots = plate.rows * plate.cols;
+    const totalSlots = drawPlate.rows * drawPlate.cols;
     for (let i=0;i<totalSlots;i++) {
       const cell = document.createElement('div');
       cell.className = 'panel-cell';
       const svg = d3.create('svg').attr('width',cellW).attr('height',cellH);
       const g   = svg.append('g').attr('transform',`translate(${mg.left},${mg.top})`);
       const w = wellByIdx.get(i);
-      if (w) {
-        const xSc = d3.scaleLinear().domain([dom.xMin,dom.xMax]).range([0,side]);
-        const ySc = d3.scaleLinear().domain([dom.yMin,dom.yMax]).range([side,0]);
-        drawPanel(g, w, side, xSc, ySc, dom.xTickLo, dom.xTickHi, dom.yOmega, dom.yMaxLabel);
-      } else {
-        drawEmptyPanel(g, plateCoord(i, plate.cols).name, side);
-      }
+      if (w) renderPanel(g, w);
+      else   drawEmptyPanel(g, plateCoord(i, drawPlate.cols).name, side);
       cell.appendChild(svg.node());
       grid.appendChild(cell);
     }
   } else {
-    // Packed grid (no plate, or user overrode columns): one cell per well, left-to-right.
     tWells.forEach(w => {
       const cell = document.createElement('div');
       cell.className = 'panel-cell';
       const svg = d3.create('svg').attr('width',cellW).attr('height',cellH);
       const g   = svg.append('g').attr('transform',`translate(${mg.left},${mg.top})`);
-      const xSc = d3.scaleLinear().domain([dom.xMin,dom.xMax]).range([0,side]);
-      const ySc = d3.scaleLinear().domain([dom.yMin,dom.yMax]).range([side,0]);
-      drawPanel(g, w, side, xSc, ySc, dom.xTickLo, dom.xTickHi, dom.yOmega, dom.yMaxLabel);
+      renderPanel(g, w);
       cell.appendChild(svg.node());
       grid.appendChild(cell);
     });
   }
 
   drawColorbar();
-  const plateLabel = usePlate ? ` · ${plate.rows*plate.cols}-well plate layout` : '';
+  const usedPlateLabel = usedPlate ? ` · ${drawPlate.rows*drawPlate.cols}-well plate layout` : '';
   document.getElementById('plotTitle').textContent =
-    `Spectra (${titleYDesc(mode, dom.yOmega)})${plateLabel}`;
+    `Spectra (${titleYDesc(mode, dom.yOmega)})${usedPlateLabel}`;
   document.getElementById('welcome').style.display = 'none';
   document.getElementById('main').style.display    = 'block';
   document.getElementById('downloadBtn').disabled  = false;
@@ -740,7 +889,7 @@ function draw(wells, plate) {
 // Human-readable Y-axis description for the plot title.
 function titleYDesc(mode, yMax) {
   if (mode === 'norm') return 'Normalized per well (min \u2192 0, max \u2192 1)';
-  return `Samples Normalized by OD600,  \u03A9 = ${(Math.round(yMax/1000)*1000).toLocaleString()}`;
+  return `\u03A9 = ${(Math.round(yMax/1000)*1000).toLocaleString()}`;
 }
 
 function drawColorbar() {
@@ -755,10 +904,22 @@ function downloadPNG() {
   if (!currentWells) return;
   const targetW  = Math.max(400, Math.min(16000, parseInt(document.getElementById('width-input').value)||2000));
   const uiCols   = Math.max(1, Math.min(24, parseInt(document.getElementById('ncols-input').value)||12));
-  // Mirror draw()'s plate-mode decision so the PNG matches the on-screen layout.
-  const usePlate = !!(currentPlate && uiCols === currentPlate.cols);
-  const nCols    = usePlate ? currentPlate.cols : uiCols;
-  const nRows    = usePlate ? currentPlate.rows : Math.ceil(currentWells.length / nCols);
+  const mode     = document.getElementById('yscale-input').value || 'raw';
+  const isBrightest = (mode === 'brightest');
+
+  // In brightest mode recompute across all files; otherwise use current single-file wells
+  let exportWells, exportPlate;
+  if (isBrightest && fileQueue.length > 0) {
+    const { wells: bw, plate: bp } = computeBrightest(fileQueue, getOffset(), getToffset());
+    exportWells = bw; exportPlate = bp;
+  } else {
+    exportWells = isBrightest ? currentWells : transformWells(currentWells, mode);
+    exportPlate = currentPlate;
+  }
+
+  const usePlate = !!(exportPlate && uiCols === exportPlate.cols);
+  const nCols    = usePlate ? exportPlate.cols : uiCols;
+  const nRows    = usePlate ? exportPlate.rows : Math.ceil(exportWells.length / nCols);
   const mg       = {top:18, right:10, bottom:22, left:28};
   const side     = 120;
   const cellW    = side+mg.left+mg.right, cellH = side+mg.top+mg.bottom;
@@ -766,9 +927,7 @@ function downloadPNG() {
   const footerH  = 42+20+16+10;
   const totalW   = gridW, totalH = gridH+footerH+14;
   const scale    = targetW/totalW;
-  const mode     = document.getElementById('yscale-input').value || 'raw';
-  const tWells   = transformWells(currentWells, mode);
-  const dom2     = computeDomains(tWells, mode, readManualX('xmin-input'), readManualX('xmax-input'));
+  const dom2     = computeDomains(exportWells, mode, readManualX('xmin-input'), readManualX('xmax-input'));
 
   const svgEl = document.createElementNS('http://www.w3.org/2000/svg','svg');
   svgEl.setAttribute('xmlns','http://www.w3.org/2000/svg');
@@ -778,37 +937,36 @@ function downloadPNG() {
   const root = d3.select(svgEl);
   root.append('rect').attr('width',totalW).attr('height',totalH).attr('fill','#ffffff');
 
+  function renderPngPanel(g, w) {
+    const xSc=d3.scaleLinear().domain([dom2.xMin,dom2.xMax]).range([0,side]);
+    const ySc=d3.scaleLinear().domain([dom2.yMin,dom2.yMax]).range([side,0]);
+    const topLeft = (isBrightest && w.hoursOffset != null) ? `${w.hoursOffset}h` : null;
+    drawPanel(g, w, side, xSc, ySc, dom2.xTickLo, dom2.xTickHi, dom2.yOmega, dom2.yMaxLabel, topLeft);
+  }
+
   if (usePlate) {
-    const wellByIdx = new Map(tWells.map(w => [w.plateIdx, w]));
-    const totalSlots = currentPlate.rows * currentPlate.cols;
+    const wellByIdx = new Map(exportWells.map(w => [w.plateIdx, w]));
+    const totalSlots = exportPlate.rows * exportPlate.cols;
     for (let i=0;i<totalSlots;i++) {
       const col=i%nCols, row=Math.floor(i/nCols);
       const ox=col*cellW+mg.left, oy=row*cellH+mg.top;
       const g=root.append('g').attr('transform',`translate(${ox},${oy})`);
       const w = wellByIdx.get(i);
-      if (w) {
-        const xSc=d3.scaleLinear().domain([dom2.xMin,dom2.xMax]).range([0,side]);
-        const ySc=d3.scaleLinear().domain([dom2.yMin,dom2.yMax]).range([side,0]);
-        drawPanel(g, w, side, xSc, ySc, dom2.xTickLo, dom2.xTickHi, dom2.yOmega, dom2.yMaxLabel);
-      } else {
-        drawEmptyPanel(g, plateCoord(i, currentPlate.cols).name, side);
-      }
+      if (w) renderPngPanel(g, w);
+      else   drawEmptyPanel(g, plateCoord(i, exportPlate.cols).name, side);
     }
   } else {
-    tWells.forEach((w, idx) => {
+    exportWells.forEach((w, idx) => {
       const col=idx%nCols, row=Math.floor(idx/nCols);
       const ox=col*cellW+mg.left, oy=row*cellH+mg.top;
       const g=root.append('g').attr('transform',`translate(${ox},${oy})`);
-      const xSc=d3.scaleLinear().domain([dom2.xMin,dom2.xMax]).range([0,side]);
-      const ySc=d3.scaleLinear().domain([dom2.yMin,dom2.yMax]).range([side,0]);
-      drawPanel(g, w, side, xSc, ySc, dom2.xTickLo, dom2.xTickHi, dom2.yOmega, dom2.yMaxLabel);
+      renderPngPanel(g, w);
     });
   }
 
   const fy=gridH+14;
   drawColorbarInto(root, totalW/2, fy, 'cbg-export');
-  // Title + subtitle below the colorbar (colorbar occupies ~30px including its label)
-  const plateLabel = usePlate ? ` · ${currentPlate.rows*currentPlate.cols}-well plate layout` : '';
+  const plateLabel = usePlate ? ` · ${exportPlate.rows*exportPlate.cols}-well plate layout` : '';
   root.append('text').attr('x',totalW/2).attr('y',fy+56)
     .attr('text-anchor','middle').attr('dominant-baseline','hanging')
     .attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
@@ -841,9 +999,24 @@ function downloadPNG() {
   img.src=url;
 }
 
-// ─── Loading pipeline ─────────────────────────────────────────────────────────
-let loadedRawText = null;   // kept so changing λ offset can re-parse without re-reading
+// ─── Multi-file queue ─────────────────────────────────────────────────────────
+// Each entry: { name, text }  (text read eagerly when files are queued)
+let fileQueue  = [];   // all loaded file entries
+let fileIndex  = 0;    // currently displayed entry
+
+// kept so changing λ offset can re-parse without re-reading
+let loadedRawText = null;
 let loadedFilename = '';
+
+function updateNavUI() {
+  const n = fileQueue.length;
+  const prev = document.getElementById('navPrev');
+  const next  = document.getElementById('navNext');
+  prev.disabled = (fileIndex <= 0);
+  next.disabled = (fileIndex >= n - 1);
+  document.getElementById('statusFileName').textContent = n ? fileQueue[fileIndex].name : '';
+  document.getElementById('statusCounter').textContent  = n > 1 ? `File: ${fileIndex+1} of ${n}` : '';
+}
 
 function showLoading() {
   document.getElementById('loading').style.display='block';
@@ -854,9 +1027,13 @@ function getOffset() {
   const v = parseFloat(document.getElementById('offset-input').value);
   return isNaN(v) ? 0 : v;
 }
-function handleText(text, filename) {
+function getToffset() {
+  const v = parseFloat(document.getElementById('toffset-input').value);
+  return isNaN(v) ? 0 : v;
+}
+function handleText(text, filename, isFresh) {
   showLoading();
-  const isFreshLoad = (text !== loadedRawText) || (filename !== loadedFilename);
+  if (isFresh == null) isFresh = (text !== loadedRawText) || (filename !== loadedFilename);
   loadedRawText  = text;
   loadedFilename = filename;
   loadedBasename = filename.replace(/\.[^.]+$/,'');
@@ -865,15 +1042,10 @@ function handleText(text, filename) {
       const { wells: raw, plate } = parseSpectraMax(text, getOffset());
       const wells = processWells(raw);
       if (!wells.length) throw new Error('No wells with valid spectral data found');
-      // On a fresh file load, snap the columns input to the plate width so the
-      // default layout matches the physical plate. Re-parses (e.g. λ-offset
-      // change) preserve whatever the user has set.
-      if (isFreshLoad && plate) {
+      if (isFresh && plate) {
         document.getElementById('ncols-input').value = plate.cols;
       }
-      // On a fresh file load, reset display-only controls to their defaults.
-      // (Re-parses triggered by changing λ offset preserve user adjustments.)
-      if (isFreshLoad) {
+      if (isFresh) {
         document.getElementById('yscale-input').value = 'raw';
         document.getElementById('xmin-input').value   = '400';
         document.getElementById('xmax-input').value   = '700';
@@ -881,8 +1053,8 @@ function handleText(text, filename) {
       draw(wells, plate);
       const plateStr = plate ? ` · ${plate.rows*plate.cols}-well plate` : '';
       document.getElementById('statusLeft').textContent=`Loaded ${wells.length} wells${plateStr}`;
-      document.getElementById('statusRight').textContent=filename;
       document.getElementById('statusBar').style.display='flex';
+      updateNavUI();
     } catch(e) {
       console.error(e);
       currentWells = null;
@@ -896,32 +1068,70 @@ function handleText(text, filename) {
     document.getElementById('loading').style.display='none';
   },30));
 }
-function readFile(file) {
-  const r=new FileReader();
-  r.onload=e=>handleText(e.target.result,file.name);
-  r.onerror=()=>alert('Could not read file');
-  r.readAsText(file,'latin1');
+
+// Read a single File object and add it to the queue (or replace queue if reset=true).
+function readFiles(files, reset) {
+  const arr = Array.from(files);
+  if (!arr.length) return;
+  let pending = arr.length;
+  const entries = new Array(arr.length);
+  arr.forEach((file, i) => {
+    const r = new FileReader();
+    r.onload = e => {
+      entries[i] = { name: file.name, text: e.target.result };
+      pending--;
+      if (pending === 0) {
+        if (reset) {
+          fileQueue = entries;
+          fileIndex = 0;
+        } else {
+          // merge: append, keeping existing
+          fileQueue = fileQueue.concat(entries);
+          // stay on current index
+        }
+        handleText(fileQueue[fileIndex].text, fileQueue[fileIndex].name, true);
+      }
+    };
+    r.onerror = () => alert('Could not read file: ' + file.name);
+    r.readAsText(file, 'latin1');
+  });
+}
+
+function navigateTo(idx) {
+  if (idx < 0 || idx >= fileQueue.length) return;
+  fileIndex = idx;
+  handleText(fileQueue[fileIndex].text, fileQueue[fileIndex].name, true);
 }
 
 // ─── UI wiring ────────────────────────────────────────────────────────────────
 document.getElementById('uploadBtn').addEventListener('click',()=>document.getElementById('file-input').click());
 document.getElementById('file-input').addEventListener('change',e=>{
-  const f=e.target.files[0]; if(f) readFile(f); e.target.value='';
+  const files = e.target.files;
+  if (files.length) readFiles(files, true);
+  e.target.value='';
 });
-document.getElementById('loadExBtn').addEventListener('click',()=>handleText(EXAMPLE_DATA,'example_spectra.txt'));
+document.getElementById('loadExBtn').addEventListener('click',()=>{
+  fileQueue = [{ name: 'example_spectra.txt', text: EXAMPLE_DATA }];
+  fileIndex = 0;
+  handleText(EXAMPLE_DATA, 'example_spectra.txt', true);
+});
 document.getElementById('dlExBtn').addEventListener('click',()=>{
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([EXAMPLE_DATA],{type:'text/plain'}));
   a.download='example_spectra.txt'; a.click();
 });
+document.getElementById('navPrev').addEventListener('click',()=>navigateTo(fileIndex-1));
+document.getElementById('navNext').addEventListener('click',()=>navigateTo(fileIndex+1));
+
 document.getElementById('ncols-input').addEventListener('change',()=>{ if(currentWells) draw(currentWells, currentPlate); });
 document.getElementById('ncols-input').addEventListener('keydown',e=>{ if(e.key==='Enter'&&currentWells) draw(currentWells, currentPlate); });
-// Display-only controls (Y mode, X bounds) just redraw — no re-parse needed.
 const redrawOnly = () => { if(currentWells) draw(currentWells, currentPlate); };
 document.getElementById('yscale-input').addEventListener('change', redrawOnly);
 document.getElementById('xmin-input').addEventListener('input', redrawOnly);
 document.getElementById('xmax-input').addEventListener('input', redrawOnly);
-// Changing the λ offset re-parses the held raw text (offset is applied during parse).
+// t offset: only relevant in brightest mode; redraw when changed
+document.getElementById('toffset-input').addEventListener('change', redrawOnly);
+document.getElementById('toffset-input').addEventListener('keydown', e=>{ if(e.key==='Enter') redrawOnly(); });
 function reparseWithCurrentOffset() {
   if (!loadedRawText) return;
   handleText(loadedRawText, loadedFilename);
@@ -937,7 +1147,8 @@ document.addEventListener('dragleave',e=>{e.preventDefault();dn--;if(dn<=0){dn=0
 document.addEventListener('dragover', e=>e.preventDefault());
 document.addEventListener('drop',     e=>{
   e.preventDefault();dn=0;dz.classList.remove('drag-over');
-  const f=e.dataTransfer.files[0]; if(f) readFile(f);
+  const files = e.dataTransfer.files;
+  if (files.length) readFiles(files, true);
 });
 
 // ─── Embedded example data ────────────────────────────────────────────────────
