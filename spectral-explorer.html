@@ -313,11 +313,11 @@
     <option value="raw">Raw</option>
     <option value="norm">Normalize to 1</option>
     <option value="brightest">Brightest</option>
+    <option value="timeseries">Time Series</option>
   </select>
-  <span class="lbl tb-group-lbl">X:</span>
-  <label class="lbl tb-sub-lbl" for="xmin-input">min</label>
+  <label class="lbl tb-sub-lbl" for="xmin-input">&lambda; min</label>
   <input type="number" id="xmin-input" class="tb-num" value="400" min="300" max="800" step="1">
-  <label class="lbl tb-sub-lbl" for="xmax-input">max</label>
+  <label class="lbl tb-sub-lbl" for="xmax-input">&lambda; max</label>
   <input type="number" id="xmax-input" class="tb-num" value="700" min="300" max="900" step="1">
   <label class="lbl tb-sub-lbl" for="offset-input" title="Wavelength calibration offset added to raw values from the instrument">&lambda; offset</label>
   <input type="number" id="offset-input" class="tb-num" value="25" min="-100" max="100" step="1">
@@ -803,6 +803,246 @@ function drawColorbarInto(parent, cx, oy, defsId) {
     .attr('font-weight','400').attr('fill',MUT).text('Wavelength (nm)');
 }
 
+// ─── Time series computation ──────────────────────────────────────────────────
+// Like computeBrightest but returns ALL scans for every well, with each scan's
+// peakWl, amplitude, and hour offset. Also computes per-well peakMedian and
+// peakBrightest (for Δ labels). Used exclusively by drawTimeSeries.
+function computeTimeSeries(queue, wavelengthOffset, timeOffset) {
+  if (!queue.length) return { wellSeries: [], plate: null };
+
+  const parsed = queue.map(entry => {
+    try {
+      const { wells: raw, plate } = parseSpectraMax(entry.text, wavelengthOffset);
+      const wells = processWells(raw);
+      const t = parseFilenameTime(entry.name);
+      return { wells, plate, t };
+    } catch(e) {
+      return { wells: [], plate: null, t: 0 };
+    }
+  });
+
+  const t0 = parsed[0].t;
+  const times = parsed.map(p => {
+    let dt = p.t - t0;
+    if (dt < 0) dt += 24;
+    return dt;
+  });
+
+  const plate = parsed.find(p => p.plate)?.plate || null;
+
+  const wellOrder = [];
+  const seen = new Set();
+  for (const { wells } of parsed) {
+    for (const w of wells) {
+      if (!seen.has(w.name)) { seen.add(w.name); wellOrder.push(w.name); }
+    }
+  }
+
+  const wellSeries = [];
+  for (const name of wellOrder) {
+    // Collect all timepoints for this well
+    const scans = [];
+    let plateIdx = 0;
+    for (let fi = 0; fi < parsed.length; fi++) {
+      const w = parsed[fi].wells.find(x => x.name === name);
+      if (!w) continue;
+      plateIdx = w.plateIdx;
+      const amp = Math.max(...w.curve.map(p => p.y));
+      scans.push({ hour: times[fi] + timeOffset, peakWl: w.peakWl, amp });
+    }
+    if (!scans.length) continue;
+
+    // peakBrightest = peakWl at the scan with highest amplitude
+    const brightestScan = scans.reduce((a, b) => b.amp > a.amp ? b : a);
+    const peakBrightest = brightestScan.peakWl;
+
+    // peakMedian = median of all peakWls across scans
+    const sortedWls = scans.map(s => s.peakWl).sort((a, b) => a - b);
+    const peakMedian = sortedWls[Math.floor(sortedWls.length / 2)];
+
+    wellSeries.push({ name, plateIdx, scans, peakBrightest, peakMedian });
+  }
+
+  return { wellSeries, plate };
+}
+
+// ─── Time series panel drawing ────────────────────────────────────────────────
+// Draws a peak-wavelength-over-time miniplot into `g`, same cell dimensions
+// as a regular spectral panel. Labels follow the original layout conventions:
+//   top-right line 1: well name
+//   top-right line 2: Δ (peakBrightest − peakMedian), coloured
+//   top-left: time of brightest scan (h)
+function drawTimeSeriesPanel(g, ws, side, hoursMax, yLo, yHi) {
+  g.append('rect').attr('width',side).attr('height',side).attr('fill','#ffffff');
+
+  // Y domain: from the shared λ bounds passed by the caller (manual or data-derived),
+  // with 5% padding each side. Ticks at yLo and yHi.
+  const yPad = (yHi - yLo) * 0.05 || 2;
+  const xSc = d3.scaleLinear().domain([0, hoursMax]).range([0, side]);
+  const ySc = d3.scaleLinear().domain([yLo - yPad, yHi + yPad]).range([side, 0]);
+
+  const AMP_THRESH = 500;
+
+  // Y axis: data min and max at the axis ends
+  g.append('g').call(
+    d3.axisLeft(ySc).tickValues([yLo, yHi]).tickFormat(d => Math.round(d)).tickSize(3)
+  ).call(ax => {
+    ax.select('.domain').attr('stroke',BORD).attr('stroke-width',0.75);
+    ax.selectAll('.tick line').attr('stroke',BORD);
+    ax.selectAll('.tick text').attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
+      .attr('font-weight','400').attr('fill',MUT);
+  });
+
+  // X axis: 0 and max hours
+  g.append('g').attr('transform',`translate(0,${side})`).call(
+    d3.axisBottom(xSc).tickValues([0, Math.round(hoursMax)]).tickFormat(d => `${d}h`).tickSize(3)
+  ).call(ax => {
+    ax.select('.domain').attr('stroke',BORD).attr('stroke-width',0.75);
+    ax.selectAll('.tick line').attr('stroke',BORD);
+    ax.selectAll('.tick text').attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
+      .attr('font-weight','400').attr('fill',MUT)
+      .attr('text-anchor', (_, i) => i === 0 ? 'start' : 'end');
+  });
+
+  // Median line — blue dashed horizontal
+  const medY = ySc(ws.peakMedian);
+  g.append('line').attr('x1',0).attr('x2',side).attr('y1',medY).attr('y2',medY)
+    .attr('stroke','#2c7bb6').attr('stroke-width',1.5)
+    .attr('stroke-dasharray','3,2').attr('opacity',0.7);
+
+  // Segments coloured by spectral colour when bright, grey dashed when dim
+  const scans = ws.scans;
+  for (let i = 0; i < scans.length - 1; i++) {
+    const s1 = scans[i], s2 = scans[i + 1];
+    const bright = s1.amp >= AMP_THRESH && s2.amp >= AMP_THRESH;
+    const midWl  = (s1.peakWl + s2.peakWl) / 2;
+    g.append('line')
+      .attr('x1', xSc(s1.hour)).attr('y1', ySc(s1.peakWl))
+      .attr('x2', xSc(s2.hour)).attr('y2', ySc(s2.peakWl))
+      .attr('stroke',   bright ? wavelengthToColor(midWl) : '#ccc')
+      .attr('stroke-width', bright ? 2 : 1)
+      .attr('stroke-dasharray', bright ? null : '2,2');
+  }
+
+  // Dots
+  for (const s of scans) {
+    const bright = s.amp >= AMP_THRESH;
+    g.append('circle')
+      .attr('cx', xSc(s.hour)).attr('cy', ySc(s.peakWl))
+      .attr('r', bright ? 2 : 1.5)
+      .attr('fill',    bright ? wavelengthToColor(s.peakWl) : '#ccc')
+      .attr('opacity', bright ? 1 : 0.5);
+  }
+
+  // Brightest scan marker (orange ring)
+  const brightScan = scans.reduce((a, b) => b.amp > a.amp ? b : a);
+  g.append('circle')
+    .attr('cx', xSc(brightScan.hour)).attr('cy', ySc(brightScan.peakWl))
+    .attr('r', 3.5).attr('fill','none')
+    .attr('stroke','#e07800').attr('stroke-width',1.5);
+
+  // Top-right line 1: well name
+  g.append('text').attr('x',side-3).attr('y',2)
+    .attr('text-anchor','end').attr('dominant-baseline','hanging')
+    .attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
+    .attr('font-weight','400').attr('fill',INK).text(ws.name);
+
+  // Top-right line 2: peak (purple) and median (blue) values side by side
+  // e.g.  "584  575"  — peak in purple, median in blue
+  const peakRounded   = Math.round(ws.peakBrightest);
+  const medianRounded = Math.round(ws.peakMedian);
+  // Draw peak value (purple) right-aligned
+  g.append('text').attr('x', side - 3).attr('y', 16)
+    .attr('text-anchor', 'end').attr('dominant-baseline', 'hanging')
+    .attr('font-family', SVG_FONT).attr('font-size', SVG_FS_LG)
+    .attr('font-weight', '400').attr('fill', '#7b3fa0')
+    .text(peakRounded);
+  // Draw median value (blue) to the left of the peak value
+  // Use a fixed character-width offset so they don't collide (~26px for 3 digits at 14px)
+  g.append('text').attr('x', side - 31).attr('y', 16)
+    .attr('text-anchor', 'end').attr('dominant-baseline', 'hanging')
+    .attr('font-family', SVG_FONT).attr('font-size', SVG_FS_LG)
+    .attr('font-weight', '400').attr('fill', '#2c7bb6')
+    .text(medianRounded);
+
+  // Top-left: time of brightest scan
+  g.append('text').attr('x',3).attr('y',2)
+    .attr('text-anchor','start').attr('dominant-baseline','hanging')
+    .attr('font-family',SVG_FONT).attr('font-size',SVG_FS_LG)
+    .attr('font-weight','400').attr('fill',MUT)
+    .text(`${Math.round(brightScan.hour)}h`);
+}
+
+function drawTimeSeries(wells, plate) {
+  if (!fileQueue.length) return;
+
+  const { wellSeries, plate: tsPlate } = computeTimeSeries(
+    fileQueue, getOffset(), getToffset()
+  );
+  if (!wellSeries.length) return;
+
+  // hoursMax across all wells/scans — shared X domain
+  const hoursMax = Math.max(...wellSeries.flatMap(ws => ws.scans.map(s => s.hour)));
+
+  // Y domain: use the same manual λ min/max the user set in the toolbar,
+  // falling back to the data range if they haven't been set.
+  const manYMin = readManualX('xmin-input');
+  const manYMax = readManualX('xmax-input');
+  const allWls  = wellSeries.flatMap(ws => ws.scans.map(s => s.peakWl));
+  const dataYLo = Math.min(...allWls), dataYHi = Math.max(...allWls);
+  const yLo = (manYMin != null) ? manYMin : dataYLo;
+  const yHi = (manYMax != null) ? manYMax : dataYHi;
+
+  const uiCols = Math.max(1, Math.min(24, parseInt(document.getElementById('ncols-input').value)||12));
+  const usedPlate = !!(tsPlate && uiCols === tsPlate.cols);
+  const finalCols = usedPlate ? tsPlate.cols : uiCols;
+
+  const mg   = {top:18, right:10, bottom:22, left:28};
+  const side = 120;
+  const cellW = side+mg.left+mg.right, cellH = side+mg.top+mg.bottom;
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = `repeat(${finalCols},${cellW}px)`;
+
+  if (usedPlate) {
+    const byIdx = new Map(wellSeries.map(ws => [ws.plateIdx, ws]));
+    const totalSlots = tsPlate.rows * tsPlate.cols;
+    for (let i = 0; i < totalSlots; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'panel-cell';
+      const svg = d3.create('svg').attr('width',cellW).attr('height',cellH);
+      const g   = svg.append('g').attr('transform',`translate(${mg.left},${mg.top})`);
+      const ws = byIdx.get(i);
+      if (ws) drawTimeSeriesPanel(g, ws, side, hoursMax, yLo, yHi);
+      else    drawEmptyPanel(g, plateCoord(i, tsPlate.cols).name, side);
+      cell.appendChild(svg.node());
+      grid.appendChild(cell);
+    }
+  } else {
+    wellSeries.forEach(ws => {
+      const cell = document.createElement('div');
+      cell.className = 'panel-cell';
+      const svg = d3.create('svg').attr('width',cellW).attr('height',cellH);
+      const g   = svg.append('g').attr('transform',`translate(${mg.left},${mg.top})`);
+      drawTimeSeriesPanel(g, ws, side, hoursMax, yLo, yHi);
+      cell.appendChild(svg.node());
+      grid.appendChild(cell);
+    });
+  }
+
+  drawColorbar();
+  document.getElementById('plotTitle').textContent =
+    `Peak wavelength over time · ${fileQueue.length} scan${fileQueue.length>1?'s':''} · Δ = brightest − median`;
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('main').style.display    = 'block';
+  document.getElementById('downloadBtn').disabled  = false;
+
+  document.getElementById('statusLeft').textContent =
+    `${fileQueue.length} file${fileQueue.length>1?'s':''} · time series`;
+}
+
+// ─── Draw screen grid ─────────────────────────────────────────────────────────
 function draw(wells, plate) {
   currentWells = wells;
   currentPlate = plate;
@@ -816,10 +1056,17 @@ function draw(wells, plate) {
 
   const mode = document.getElementById('yscale-input').value || 'raw';
 
-  // Show/hide t offset controls
-  const isBrightest = (mode === 'brightest');
-  document.getElementById('toffset-lbl').style.display   = isBrightest ? '' : 'none';
-  document.getElementById('toffset-input').style.display = isBrightest ? '' : 'none';
+  // Show/hide t offset controls — visible for brightest and timeseries modes
+  const isBrightest  = (mode === 'brightest');
+  const isTimeSeries = (mode === 'timeseries');
+  document.getElementById('toffset-lbl').style.display   = (isBrightest || isTimeSeries) ? '' : 'none';
+  document.getElementById('toffset-input').style.display = (isBrightest || isTimeSeries) ? '' : 'none';
+
+  // Time series mode: entirely different rendering path
+  if (isTimeSeries) {
+    drawTimeSeries(wells, plate);
+    return;
+  }
 
   // In brightest mode, recompute from the whole queue rather than using the
   // currently-displayed single-file wells. Nav arrows become irrelevant.
