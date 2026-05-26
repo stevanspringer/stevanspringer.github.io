@@ -1,0 +1,3108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta name="color-scheme" content="light">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme: light;
+  --paper:#fff;--bord:#ccc8c0;--ink:#1a1714;--mut:#888078;
+  --vb-lo:#bdd9f5;--vb-lo-b:#8bbfe8;--vb-hi:#2c7bb6;--vb-hi-b:#1d5a8a;
+  --ok:#35974a;--ok-lo:#b8de8a;--ok-b:#1e6b33;
+  --warn:#f07000;--warn-lo:#ffd0a0;--warn-b:#c05000;
+  --danger:#b00000;--danger-lo:#ffb0b0;
+  --yellow:#c49b00;--yellow-lo:#fde68a;--yellow-b:#8a6d00;
+}
+*{box-sizing:border-box;margin:0;padding:0;forced-color-adjust:none;}
+html,body{height:100%;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:#fff !important;}
+@media (prefers-color-scheme: dark){
+  html,body,#topnav,#subnav,#content,.inv-table,.inv-table td,.inv-table th,
+  .modal-box,.modal-col-left,.modal-col-right,
+  .form-field input,.form-field select,.form-field textarea,
+  .btn,.nbtn,.filter-select,#search-box{background-color:#fff !important;color:var(--ink) !important;}
+}
+#app{display:flex;flex-direction:column;height:100vh;}
+
+#topnav{display:flex;align-items:center;padding:6px 18px;gap:7px;background:var(--paper);border-bottom:1px solid var(--bord);flex-shrink:0;}
+.logo{font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-right:10px;white-space:nowrap;}
+.logo span{color:var(--mut);}
+.nav-spacer{flex:1;}
+
+#subnav{display:flex;align-items:center;padding:4px 18px;gap:7px;background:var(--paper);border-bottom:1px solid var(--bord);flex-shrink:0;flex-wrap:wrap;}
+.filter-group{display:flex;align-items:center;gap:5px;}
+.filter-group label{font-size:14px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;}
+.filter-select{padding:3px 8px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);cursor:pointer;outline:none;}
+.filter-sep{width:1px;height:20px;background:var(--bord);margin:0 2px;}
+#search-box{margin-left:auto;padding:3px 10px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);width:220px;outline:none;}
+#search-box:focus{border-color:var(--ink);}
+.lab-group-row td{padding:10px 8px 4px;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);border-top:2px solid var(--bord);border-bottom:1px solid var(--bord);}
+.lab-group-row.foreign td{color:var(--mut);}
+.modal-box.read-only :disabled{opacity:.55;cursor:not-allowed;}
+.modal-box.read-only #sec-sharing :disabled{opacity:1;cursor:auto;}
+/* Search-All mode: only the toggle button is highlighted blue — the toolbar and search
+   box stay neutral so the indicator is a clear, contained signal. */
+.scope-local{border-color:var(--vb-lo-b);}
+.scope-everywhere{background:var(--vb-hi) !important;border-color:var(--vb-hi-b) !important;color:#fff !important;}
+
+#content{flex:1;overflow-y:auto;padding:18px;background:#fff !important;}
+
+.inv-table{width:100%;border-collapse:collapse;font-size:14px;background:#fff;}
+.inv-table th{text-align:left;padding:6px 8px;font-weight:400;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);border-bottom:1px solid var(--bord);position:sticky;top:0;background:var(--paper);z-index:1;cursor:pointer;user-select:none;white-space:nowrap;box-shadow:0 1px 0 var(--bord);}
+.inv-table th:hover{color:var(--ink);}
+.inv-table th.sort-asc::after{content:' ▲';font-size:12px;}
+.inv-table th.sort-desc::after{content:' ▼';font-size:12px;}
+.inv-table th.no-sort{cursor:default;}
+.inv-table th.no-sort:hover{color:var(--mut);}
+.inv-table td{padding:6px 8px;border-bottom:1px solid #f0ede8;vertical-align:top;background:#fff;}
+.inv-table tr:hover td{background:#faf9f7 !important;}
+.section-hdr td{padding:10px 8px 4px;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);border-top:2px solid var(--bord);border-bottom:1px solid var(--bord);}
+
+.item-name a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--bord);}
+.item-name a:hover{border-bottom-color:var(--ink);}
+.item-sub{color:var(--mut);font-size:12px;margin-top:2px;}
+.loc-sub{color:var(--mut);font-size:12px;}
+.borrower-sub{color:var(--mut);font-size:12px;margin-top:3px;font-style:italic;}
+
+.status-btn{display:inline-block;box-sizing:border-box;width:120px;text-align:center;padding:1px 7px;border-radius:2px;font-size:14px;line-height:1.4;cursor:pointer;font-family:'DM Mono',monospace;border:1px solid var(--bord);background:var(--paper);color:var(--ink);white-space:nowrap;letter-spacing:.03em;}
+.status-btn.in-stock    {background:var(--paper);border-color:var(--bord);color:var(--ink);}
+.status-btn.order-now,
+.status-btn.requested   {background:var(--warn);border-color:var(--warn-b);color:#fff;}
+.status-btn.on-order    {background:var(--warn);border-color:var(--warn-b);color:#fff;}
+.status-btn.arrived     {background:var(--warn);border-color:var(--warn-b);color:#fff;}
+.status-btn.shared      {background:var(--ok);border-color:var(--ok-b);color:#fff;}
+.status-btn.out-of-stock{background:var(--danger);border-color:#800000;color:#fff;}
+.status-btn.bring-back  {background:#e60000;border-color:#b30000;color:#fff;}
+.status-btn.archived    {background:#b0a898;border-color:#888078;color:#fff;}
+
+.stock-cell{display:flex;align-items:center;gap:4px;white-space:nowrap;}
+.stock-num{min-width:28px;text-align:center;font-size:14px;border:1px solid transparent;border-radius:2px;padding:0 2px;}
+.stock-num:focus{border-color:var(--bord);outline:none;}
+.stock-num.readonly{cursor:not-allowed;color:var(--mut);}
+.stock-ok    {color:var(--ok);}
+.stock-warn  {color:var(--warn);}
+.stock-danger{color:var(--danger);}
+
+.btn{padding:5px 14px;border-radius:2px;font-size:14px;line-height:1.4;cursor:pointer;font-family:'DM Mono',monospace;border:1px solid var(--bord);background:var(--paper);color:var(--ink);}
+.btn:hover{background:#f0ede8;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+.btn-primary{background:var(--vb-hi)!important;color:#fff!important;border-color:var(--vb-hi-b)!important;}
+.btn-primary:hover{background:var(--vb-hi-b)!important;}
+.btn-ok,.btn-borrow{background:var(--ok)!important;color:#fff!important;border-color:var(--ok-b)!important;}
+.btn-ok:hover,.btn-borrow:hover{background:var(--ok-b)!important;}
+.btn-danger{background:#e03030!important;color:#fff!important;border-color:var(--danger)!important;}
+.btn-danger:hover{background:var(--danger)!important;}
+.btn-order{background:var(--warn)!important;color:#fff!important;border-color:var(--warn-b)!important;}
+.btn-order:hover{background:var(--warn-b)!important;}
+.btn-ask{background:var(--yellow)!important;color:#fff!important;border-color:var(--yellow-b)!important;}
+.btn-ask:hover{background:var(--yellow-b)!important;}
+.btn-sm{padding:5px 10px!important;}
+.nbtn{padding:5px 10px;border-radius:2px;font-size:14px;line-height:1.4;cursor:pointer;border:1px solid var(--vb-lo-b);background:var(--vb-lo);color:var(--ink);font-family:'DM Mono',monospace;}
+.nbtn:hover{background:var(--vb-lo-b);}
+
+/* ── Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-box{background:var(--paper);border:1px solid var(--bord);border-radius:3px;display:flex;flex-direction:row;max-height:90vh;width:920px;overflow:visible;}
+.modal-col-left{width:310px;flex-shrink:0;padding:22px;border-right:1px solid var(--bord);display:flex;flex-direction:column;overflow-y:auto;max-height:90vh;}
+.modal-col-right{flex:1;padding:22px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;min-width:0;max-height:90vh;}
+.modal-box h2{font-size:14px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:16px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.form-row-3{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;margin-top:8px;align-items:start;}
+.form-row-3 .form-field{min-width:0;}
+.form-full{grid-column:1/-1;}
+.form-field label{display:block;font-size:12px;color:var(--mut);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;}
+.form-field input,.form-field select,.form-field textarea{width:100%;padding:4px 7px;border:1px solid var(--bord);border-radius:2px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:var(--paper);outline:none;}
+.form-field input[type="date"]{width:auto;max-width:150px;}
+.field-with-view{display:flex;gap:4px;align-items:center;}
+.field-with-view .combo-wrap{flex:1;min-width:0;}
+.view-btn{flex:0 0 auto;width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;}
+.view-btn.is-active{background:var(--vb-hi)!important;color:#fff!important;border-color:var(--vb-hi-b)!important;}
+.view-btn:disabled{opacity:.35;cursor:not-allowed;}
+.view-btn svg{width:22px;height:22px;display:block;}
+
+/* Location section: blue background + divider between form fields and the box/list view. */
+#sec-location{background:var(--vb-lo) !important;border-color:var(--vb-lo-b);}
+#sec-location > #loc-panel-wrap{margin-top:10px;padding-top:10px;border-top:1px solid var(--bord);}
+.form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--ink);}
+.combo-wrap{display:flex;flex-direction:column;gap:2px;}
+.combo-sel,.combo-inp{width:100%;padding:4px 7px;border:1px solid var(--bord);border-radius:2px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:var(--paper);outline:none;}
+.combo-sel{cursor:pointer;}
+.combo-sel:focus,.combo-inp:focus{border-color:var(--ink);}
+.combo-back{font-size:11px;color:var(--mut);cursor:pointer;text-decoration:underline;align-self:flex-start;}
+.combo-back:hover{color:var(--ink);}
+.form-field textarea{resize:vertical;min-height:80px;}
+
+/* ── Three-section left column ───────────────────────────────────────── */
+.sec-card{border:1px solid var(--bord);border-radius:3px;padding:10px 12px;margin-bottom:10px;background:#fafaf8;}
+.sec-card:last-child{margin-bottom:0;}
+.sec-title{font-size:14px;font-weight:400;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin-bottom:8px;}
+.sec-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--bord);}
+.sec-actions-right{display:flex;gap:6px;}
+.sec-card.dirty{background:#fffdf3;border-color:var(--yellow-lo);}
+.sec-card.dirty .sec-title{color:var(--yellow-b);}
+.sec-update:not(:disabled){background:var(--vb-hi)!important;color:#fff!important;border-color:var(--vb-hi-b)!important;}
+.sec-update:not(:disabled):hover{background:var(--vb-hi-b)!important;}
+/* Modal action bar — 4 equal-width slots. Each visible button takes equal share of the
+   row width via flex:1, with a small gap providing breathing room. Buttons hidden by
+   display:none also drop out of the flex layout, so when fewer buttons are visible
+   (e.g. archived mode with 2) those remaining buttons take a proportionally larger share. */
+.modal-bottom-actions{display:flex;align-items:center;gap:8px;padding:10px 0 0;flex-shrink:0;}
+.modal-bottom-actions > button{flex:1;min-width:0;}
+/* The left column flexes vertically and the Notes textarea absorbs leftover space so the
+   modal stays a clean rectangle regardless of which side has more content. */
+/* Left column layout. Aim: when the modal grows taller (to match the right column),
+   the Information form's rows keep their compact natural spacing — only the Notes
+   textarea expands to soak up the extra height, so the form doesn't look stretched. */
+.modal-col-left{display:flex;flex-direction:column;}
+.modal-col-left #sec-info{display:flex;flex-direction:column;flex:1;min-height:0;}
+/* Positional row sizing: every row stays at its natural (auto) height EXCEPT the Notes
+   row, which is 1fr (absorbs leftover vertical space). Current row order:
+     1: Name (full)
+     2: Vendor / Catalog
+     3: Quantity / Type
+     4: CAS / SDS
+     5: URL (full)
+     6: Notes (full)            ← this is the 1fr row
+     7: Price / Date
+     8: Stock / Threshold
+   If a row is added or removed from the Information form, update the template. */
+.modal-col-left #sec-info .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;
+  grid-template-rows: auto auto auto auto auto 1fr auto auto;}
+/* The Notes form-field cell expands to fill its grid row; the textarea inside fills the cell. */
+.modal-col-left .form-full:has(#f-notes-text){display:flex;flex-direction:column;min-height:0;}
+#f-notes-text{flex:1;min-height:60px;resize:none;}
+
+/* ── Sharing & Location panels ── */
+/* Sharing card carries the policy accent on the card itself, not a nested panel. */
+.sec-card.policy-yes{background:var(--ok-lo) !important;border-color:var(--ok);}
+.sec-card.policy-ask{background:var(--warn-lo) !important;border-color:var(--warn);}
+.sec-card.policy-iou{background:var(--danger-lo) !important;border-color:var(--danger);}
+.sec-card.policy-yes .sec-title{color:var(--ok);}
+.sec-card.policy-ask .sec-title{color:var(--warn);}
+.sec-card.policy-iou .sec-title{color:var(--danger);}
+/* Sharing panel: every state fits on a single horizontal row. Inputs use placeholders
+   (no labels) so the row stays one line tall. */
+.sharing-row{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;}
+.sharing-row .sp-inp{padding:4px 7px;border:1px solid var(--bord);border-radius:2px;
+  font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:var(--paper);outline:none;min-width:0;}
+.sharing-row .sp-inp:focus{border-color:var(--ink);}
+.sharing-row .sp-inp-name{flex:1;}
+.sharing-row .sp-inp-date{width:140px;flex:0 0 auto;}
+.sharing-row .btn{flex:0 0 auto;}
+.muted-italic{font-size:14px;color:var(--mut);font-style:italic;}
+/* End of sharing panel CSS */
+
+/* Box/list view lives directly inside the Location section card — no inner panel wrapper. */
+.loc-inner{display:flex;flex-direction:column;}
+.loc-mode-line{font-size:12px;color:var(--mut);font-style:italic;margin-bottom:8px;}
+.loc-inner.loc-mode-add .loc-mode-line{color:var(--vb-hi);font-style:normal;}
+.loc-inner.loc-mode-remove .loc-mode-line{color:var(--danger);font-style:normal;}
+.loc-inner.loc-mode-remove .grid-cell.c-occupied,
+.loc-inner.loc-mode-remove .bli{cursor:not-allowed;}
+.loc-inner.loc-mode-remove .grid-cell.c-occupied:hover{background:var(--danger-lo);border-color:var(--danger);}
+.loc-inner.loc-mode-remove .bli:hover{background:var(--danger-lo);}
+
+/* Grid */
+.grid-outer{overflow:auto;margin-bottom:8px;}
+.grid-col-labels{display:flex;margin-left:26px;gap:2px;margin-bottom:2px;}
+.grid-col-lbl{width:28px;text-align:center;font-size:12px;color:var(--mut);}
+.grid-row{display:flex;align-items:center;gap:2px;margin-bottom:2px;}
+.grid-row-lbl{width:22px;font-size:12px;color:var(--mut);text-align:right;padding-right:4px;flex-shrink:0;}
+.grid-cell{width:28px;height:28px;background:var(--paper);border:1px solid var(--bord);border-radius:2px;display:flex;align-items:center;justify-content:center;cursor:default;position:relative;flex-shrink:0;transition:background .1s;}
+.grid-cell.c-placing{cursor:crosshair;background:#f0f8ff;}
+.grid-cell.c-placing:hover{background:#d0ecff;border-color:var(--vb-hi);}
+.grid-cell.c-occupied{cursor:pointer;}
+.grid-cell.c-staged{background:#d4edda;border-color:var(--ok);}
+.grid-marker{width:22px;height:22px;border-radius:2px;background:var(--mut);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:500;letter-spacing:-.02em;overflow:hidden;}
+/* `mk-owned` highlights every cell occupied by the item currently focused on the left
+   side of the modal — a softer, persistent indicator of "this is the item you're
+   editing." `mk-active` is the stronger highlight for the one specifically-clicked
+   coord (used for Use / move-to-empty-cell). They can compose: the selected cell of
+   the focused item gets the full strong color. */
+.grid-marker.mk-owned{background:var(--vb-lo-b);}
+.grid-marker.mk-active{background:var(--vb-hi);}
+
+#grid-tip{display:none;position:fixed;background:var(--ink);color:#fff;font-size:12px;padding:4px 8px;border-radius:2px;white-space:nowrap;pointer-events:none;z-index:500;font-family:'DM Mono',monospace;}
+
+/* List mode */
+.box-list{display:flex;flex-direction:column;gap:3px;margin-bottom:8px;}
+.box-list-hdr{font-size:11px;font-weight:700;color:var(--mut);margin:6px 0 2px;text-transform:uppercase;letter-spacing:.04em;}
+.bli{display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid var(--bord);border-radius:2px;background:var(--paper);font-size:14px;cursor:pointer;}
+.bli:hover{background:#f0ede8;}
+.bli.bli-active{background:#e8f4fd;border-color:var(--vb-lo-b);}
+.bli.bli-unplaced{border-style:dashed;color:var(--mut);}
+.bli-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bli-status{font-size:12px;color:var(--mut);white-space:nowrap;}
+
+#footer{padding:8px 18px;border-top:1px solid var(--bord);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;font-size:14px;color:var(--mut);background:var(--paper);}
+#footer a{color:var(--mut);text-decoration:none;border-bottom:1px solid var(--bord);}
+#footer a:hover{color:var(--ink);border-bottom-color:var(--ink);}
+
+.empty{padding:40px;text-align:center;color:var(--mut);}
+
+/* Setup modal */
+#setup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;}
+#setup-overlay.open{display:flex;}
+.setup-box{background:#fff;border:1px solid var(--bord);border-radius:3px;padding:28px;width:480px;max-width:90vw;}
+.setup-box h2{font-size:14px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:16px;}
+.setup-actions{display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--bord);}
+</style>
+</head>
+<body>
+<div id="app">
+
+<div id="topnav">
+  <div class="logo" id="app-title">Inventory <span>Explorer</span></div>
+  <div class="nav-spacer"></div>
+  <button class="nbtn" onclick="exportCSV()">Download CSV</button>
+  <button class="nbtn" onclick="openSetup()">Setup</button>
+</div>
+
+<div id="subnav">
+  <div class="filter-group"><label>Vendor</label>
+    <select class="filter-select" id="filter-vendor" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="filter-group"><label>Type</label>
+    <select class="filter-select" id="filter-type" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="filter-group"><label>Location</label>
+    <select class="filter-select" id="filter-loc" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="filter-group"><label>Box</label>
+    <select class="filter-select" id="filter-box" onchange="applyFilters()"><option value="">All</option></select></div>
+  <button class="btn" style="font-size:14px;padding:3px 8px;" onclick="clearFilters()">Clear</button>
+  <div class="filter-sep"></div>
+  <button class="btn btn-ok" style="font-size:14px;padding:3px 10px;" onclick="openAddModal()">New</button>
+  <input id="search-box" type="text" placeholder="Searching…" oninput="applyFilters()">
+  <button id="scope-toggle" class="btn scope-local" style="font-size:14px;padding:3px 10px;white-space:nowrap;" onclick="toggleSearchScope()">Search Lab</button>
+</div>
+
+<div id="content">
+  <table class="inv-table" id="inv-table">
+    <thead><tr>
+      <th class="no-sort" style="width:120px;">Status</th>
+      <th onclick="sortBy('Stock')" data-col="Stock" style="width:90px;">Stock</th>
+      <th onclick="sortBy('Name')"  data-col="Name">Name</th>
+      <th onclick="sortBy('Type')"  data-col="Type">Type</th>
+      <th onclick="sortBy('Location1')" data-col="Location1">Location</th>
+    </tr></thead>
+    <tbody id="inv-body"></tbody>
+  </table>
+</div>
+
+<div id="footer">
+  <span id="section-counts"></span>
+  <span>Made by <a href="https://stevanspringer.github.io" target="_blank">Springer Lab</a> · UPEI Biology</span>
+</div>
+</div>
+
+<div id="grid-tip"></div>
+
+<!-- Setup Modal -->
+<div id="setup-overlay">
+  <div class="setup-box">
+    <h2>Setup — Data Source</h2>
+    <div class="form-field" style="margin-bottom:16px;">
+      <label>Google Apps Script URL</label>
+      <input id="setup-url" type="text" value="https://script.google.com/macros/s/AKfycbyOoLJvGwQuqVRLz1x9lOPV4mwwFCqDfjjf2wo-QYvaLBIG6MpNyJQA5pfsXCYHgVPY/exec" placeholder="https://script.google.com/macros/s/…/exec">
+    </div>
+    <div class="form-field" style="margin-bottom:16px;">
+      <label>Default Lab</label>
+      <select id="setup-lab" style="width:100%;padding:6px 8px;font-family:'DM Mono',monospace;font-size:14px;border:1px solid var(--bord);border-radius:2px;background:var(--paper);"></select>
+      <input id="setup-new-lab" type="text" placeholder="Name for the new lab" style="display:none;margin-top:6px;">
+    </div>
+    <div class="form-field" style="margin-bottom:16px;">
+      <label>PI password</label>
+      <input id="setup-pw" type="password" placeholder="Required to set or change lab" autocomplete="off">
+    </div>
+    <div class="setup-actions">
+      <button class="btn" onclick="closeSetup()">Cancel</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-danger" onclick="clearSetup()">Disconnect</button>
+        <button class="btn btn-primary" onclick="saveSetup()">Save &amp; Reload</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Edit/Add Modal -->
+<div class="modal-overlay" id="edit-modal-overlay" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal-box">
+
+    <!-- LEFT col: Information, Sharing, Status -->
+    <div class="modal-col-left">
+
+      <!-- Information (Status fields appended below Notes) -->
+      <div class="sec-card" id="sec-info">
+        <h3 class="sec-title">Information<span id="status-title-suffix"></span></h3>
+        <div class="form-grid">
+          <div class="form-field form-full"><label>Name *</label><input id="f-name" type="text" onblur="autoSaveNameField()"></div>
+          <div class="form-field"><label>Vendor</label><div class="combo-wrap"><select id="f-vendor-sel" class="combo-sel" onchange="comboSelChange('f-vendor');autoSaveField()"><option value="">—</option></select><input id="f-vendor" type="text" class="combo-inp" style="display:none;" placeholder="New vendor…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-vendor');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
+          <div class="form-field"><label>Catalog #</label><input id="f-catalog" type="text" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>Quantity</label><input id="f-quantity" type="text" placeholder="e.g. 500 g" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>Type</label><div class="combo-wrap"><select id="f-type-sel" class="combo-sel" onchange="comboSelChange('f-type');autoSaveField()"><option value="">—</option></select><input id="f-type" type="text" class="combo-inp" style="display:none;" placeholder="New type…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-type');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
+          <div class="form-field"><label>CAS #</label><input id="f-cas" type="text" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>SDS file</label><input id="f-sds" type="text" placeholder="file.pdf" onblur="autoSaveField()"></div>
+          <div class="form-field form-full"><label>URL</label><input id="f-url" type="text" placeholder="https://…" onblur="autoSaveField()"></div>
+          <div class="form-field form-full"><label>Notes</label><textarea id="f-notes-text" onblur="autoSaveField()"></textarea></div>
+          <div class="form-field"><label>Price</label><input id="f-price" type="text" placeholder="$0.00" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>Date received</label><input id="f-date" type="date" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>Stock</label><input id="f-stock" type="number" value="1" min="0" oninput="autoSaveStockField()"></div>
+          <div class="form-field"><label>Threshold</label><input id="f-threshold" type="number" value="1" min="0" onblur="autoSaveField()"></div>
+        </div>
+      </div>
+
+      <!-- Modal action bar — lives in the left column directly under Information, so the
+           buttons are always visible regardless of how tall the Location panel grows.
+           Button visibility/labels are driven by `modalMode` + the item's Status via
+           renderBottomBar(). Buttons not relevant to the current state are hidden via
+           display:none rather than removed, so their IDs are stable for tests and code. -->
+      <div class="modal-bottom-actions" id="modal-actions">
+        <button class="btn btn-ok btn-sm"      id="new-btn" onclick="newBtnClick()">New</button>
+        <button class="btn btn-order btn-sm"   id="order-btn" style="display:none;">Order</button>
+        <button class="btn btn-danger btn-sm"  id="archive-btn" style="display:none;" onclick="archiveBtnClick()">Archive</button>
+        <button class="btn btn-primary btn-sm" id="move-btn"    onclick="moveBtnClick()">Move</button>
+        <button class="btn btn-danger btn-sm"  id="use-btn"     onclick="useBtnClick()">Use</button>
+      </div>
+
+      <h2 id="edit-modal-title" style="display:none;"></h2>
+    </div>
+
+    <!-- RIGHT col: Sharing + Location -->
+    <div class="modal-col-right">
+
+      <!-- Sharing transactions (no policy controls — those live in Status) -->
+      <div class="sec-card" id="sec-sharing">
+        <h3 class="sec-title">Sharing<span id="sharing-title-suffix"></span></h3>
+        <div id="sharing-panel-wrap"></div>
+      </div>
+
+      <!-- Location + grid -->
+      <div class="sec-card" id="sec-location">
+        <h3 class="sec-title">Location</h3>
+        <div class="form-grid">
+          <div class="form-field">
+            <label>Location 1</label>
+            <div class="field-with-view">
+              <div class="combo-wrap"><select id="f-location-sel" class="combo-sel" onchange="comboSelChange('f-location')"><option value="">—</option></select><input id="f-location" type="text" class="combo-inp" style="display:none;" placeholder="New location…" oninput="updateSublocOptions()"><span class="combo-back" onclick="comboBack('f-location')" style="display:none;">↩ pick existing</span></div>
+              <button class="btn btn-sm view-btn" id="view-loc1" title="View Location 1 contents" onclick="toggleViewLevel(1)"></button>
+            </div>
+          </div>
+          <div class="form-field">
+            <label>Location 2</label>
+            <div class="field-with-view">
+              <div class="combo-wrap"><select id="f-subloc-sel" class="combo-sel" onchange="comboSelChange('f-subloc')"><option value="">—</option></select><input id="f-subloc" type="text" class="combo-inp" style="display:none;" placeholder="New sub-location…"><span class="combo-back" onclick="comboBack('f-subloc')" style="display:none;">↩ pick existing</span></div>
+              <button class="btn btn-sm view-btn" id="view-loc2" title="View Location 2 contents" onclick="toggleViewLevel(2)"></button>
+            </div>
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-field"><label>Box 1</label><div class="combo-wrap"><select id="f-box1-sel" class="combo-sel" onchange="comboSelChange('f-box1');onBoxFieldChange()"><option value="">—</option></select><input id="f-box1" type="text" class="combo-inp" style="display:none;" placeholder="New box…" oninput="onBoxFieldChange()"><span class="combo-back" onclick="comboBack('f-box1');onBoxFieldChange()" style="display:none;">↩ pick existing</span></div></div>
+          <div class="form-field">
+            <label>Grid X · Y</label>
+            <div style="display:flex;gap:4px;align-items:center;">
+              <input id="dim-x" type="number" min="1" max="26" placeholder="c" style="width:42px;text-align:center;" oninput="applyDimensionsFromForm()">
+              <span style="color:var(--mut);font-size:14px;">·</span>
+              <input id="dim-y" type="number" min="1" max="26" placeholder="r" style="width:42px;text-align:center;" oninput="applyDimensionsFromForm()">
+            </div>
+          </div>
+          <div class="form-field"><label>Room</label><div class="combo-wrap"><select id="f-room-sel" class="combo-sel" onchange="comboSelChange('f-room')"><option value="">—</option></select><input id="f-room" type="text" class="combo-inp" style="display:none;" placeholder="New room…"><span class="combo-back" onclick="comboBack('f-room')" style="display:none;">↩ pick existing</span></div></div>
+          <input type="hidden" id="f-gridxy">
+        </div>
+
+        <!-- Box / list view, nested inside the Location section -->
+        <div id="loc-panel-wrap"></div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ── Constants ──────────────────────────────────────────────────────────
+const KEY_URL         = 'inv_api_url';
+const KEY_DEFAULT_LAB = 'inv_default_lab';
+const KEY_ACTIVE_LAB  = 'inv_active_lab';
+const KEY_CACHE_PFX   = 'inv_cache_';      // + labName → JSON { ts, items }
+
+// Read a lab's cached items from localStorage. Returns null on miss/corruption.
+function readLabCache(lab) {
+  try {
+    const raw = localStorage.getItem(KEY_CACHE_PFX + lab);
+    if (!raw) return null;
+    const obj = JSON.parse(raw);
+    return Array.isArray(obj.items) ? obj.items : null;
+  } catch(e) { return null; }
+}
+// Write a lab's items to localStorage. Quota/serialise failures are non-fatal.
+function writeLabCache(lab, rawItems) {
+  try {
+    localStorage.setItem(KEY_CACHE_PFX + lab,
+      JSON.stringify({ ts: Date.now(), items: rawItems }));
+  } catch(e) { /* quota exceeded or unavailable — silently skip caching */ }
+}
+const LOCKED_ST       = new Set(['on order','arrived','archived']);
+const COMBO_NEW       = '\u2014 New \u2014';
+
+// Lab list — each entry is both a Google Sheet tab name and the PI confirmation code
+// for that lab. The list is ordered alphabetically (matching the dropdown).
+const LAB_NAMES = ['Biology', 'Deziel', 'Gray', 'Lacroix', 'Ladouceur', 'Murphy',
+  'Quijon', 'Robicheau', 'Ross', 'Seib', 'Silva-Opps', 'Springer', 'van den Heuvel'];
+
+// PI confirmation code for sharing-policy changes and IOU acceptance.
+// Each lab's code is just the lab name itself. The active lab determines which code is valid.
+// PI confirmation code for sharing-policy changes and IOU acceptance. While a modal is open,
+// the relevant code is the OWNING lab of that item (editLab) — which may differ from the
+// lab currently being browsed when the item was opened from a cross-lab search.
+
+// Field lists used by both populate and serialise paths
+const TEXT_FIELDS  = ['Name','Catalog','Price','Quantity','CAS','SDS','URL'];
+const COMBO_FIELDS = ['f-vendor','f-type','f-location','f-subloc','f-box1','f-room'];
+
+// ── State ──────────────────────────────────────────────────────────────
+let items     = [];
+let filtered  = [];
+let sortCol   = 'Name';
+let sortDir   = 1;
+let editIdx   = null;   // _id of item in modal
+let editLab   = '';     // lab that owns the modal's item (may differ from activeLab)
+let editReadOnly = false; // true when viewing a foreign lab's item: details locked, sharing live
+let useSheets = false;
+let API_URL   = '';
+let nextId    = 0;      // monotonic — never reused after delete
+
+// Lab routing state — set on load from localStorage, mutated by the top-bar dropdown.
+let defaultLab = '';   // the user's home lab (their data + the gate for hiding Sharing UI)
+let activeLab  = '';   // the lab currently being viewed
+
+// Cross-lab search ("Searching everywhere") state.
+let searchScope   = 'local';   // 'local' | 'everywhere'
+let crossLabItems = {};        // { labName: [items] } accumulated during an everywhere search
+let crossLabSeq   = 0;         // bumped each everywhere search to discard stale fetch results
+
+// Location selection: { coord, occupied, item, _isUnplaced?, _sibId?, _search? } | null
+let locSelected = null;
+let locView     = null;  // breadcrumb drill-down: null | { loc1, loc2? }
+let locMode     = null;  // null (default) | 'add' | 'remove'
+
+// Per-section baselines: snapshot of field values at the moment the form was last
+// populated from the item. A section is dirty iff its current values != baseline.
+// Cleared when the modal opens; reset when a section's Update commits.
+let formBaseline = null;
+
+// ── DOM helpers ────────────────────────────────────────────────────────
+const $  = id => document.getElementById(id);
+const fv = id => ($(id) ? $(id).value.trim() : '');
+const fn = id => parseInt(($(id) || {}).value, 10);
+
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// Main-table location display: "Location 1 (Room)" — Room in parens, omitted when empty.
+function loc1WithRoom(item) {
+  const l1 = esc(item.Location1 || '');
+  const rm = (item.Room || '').trim();
+  return rm ? `${l1} (${esc(rm)})` : l1;
+}
+
+// ── API ────────────────────────────────────────────────────────────────
+async function apiRead() {
+  try {
+    // The Apps Script will auto-create the tab if it doesn't exist.
+    const r = await fetch(API_URL + '?action=read&lab=' + encodeURIComponent(activeLab));
+    const d = await r.json();
+    if (d.error) { console.warn('API read returned error:', d.error); return null; }
+    if (d.items) return d.items;
+  } catch(e) { console.warn('API read failed', e); }
+  return null;
+}
+// Date fields must persist as bare YYYY-MM-DD. Sheets/JSON round-trips otherwise inject
+// time components ("2024-10-01T00:00:00.000Z"), which break exact-match identity lookups
+// and clutter the sheet. Scrubbed centrally so EVERY write path is covered.
+function scrubItemDates(item) {
+  if (!item || typeof item !== 'object') return item;
+  ['Received','Borrowed'].forEach(k => {
+    if (item[k] != null) item[k] = String(item[k]).slice(0, 10);
+  });
+  return item;
+}
+
+// Today as YYYY-MM-DD in the user's LOCAL timezone. Using toISOString() returns UTC, so
+// late-evening users in negative-UTC timezones (PEI is UTC-3/-4) would see tomorrow.
+function todayLocal() {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
+}
+
+async function apiPost(payload) {
+  if (!useSheets) return null;
+  try {
+    if (payload && payload.item) {
+      // Strip runtime-only fields; the sheet only stores the HEADERS columns.
+      const it = Object.assign({}, payload.item);
+      delete it._id; delete it._row; delete it._deleted;
+      scrubItemDates(it);
+      payload = Object.assign({}, payload, { item: it });
+    }
+    // Every write is scoped to a lab. When a modal is open on a foreign item, writes
+    // (sharing transactions) must target THAT item's lab, not the lab being browsed.
+    const targetLab = (editIdx !== null && editLab) ? editLab : activeLab;
+    const body = Object.assign({ lab: targetLab }, payload);
+    const r = await fetch(API_URL, { method:'POST', body: JSON.stringify(body) });
+    return await r.json().catch(() => null);
+  } catch(e) { console.warn('API write failed', e); return null; }
+}
+
+// ── Borrowed-copy mirroring ────────────────────────────────────────────
+// When an item is shared/requested out, a lightweight COPY is written into the
+// BORROWING lab's tab so it shows in that lab's normal list. The host row remains the
+// single source of truth; the copy is display-only and read-only. On resolution the
+// copy is soft-deleted (Status='Deleted'). All copy writes are best-effort: if one
+// fails the host row is still correct and a later cross-lab refresh reconciles.
+
+// Encode "Name (BorrowingLab)" so the host row records which lab borrowed it; the copy
+// stores the same so its own resolution path can find the host. Parsed back for display.
+function encodeBorrower(name, lab) { return lab ? `${name} (${lab})` : name; }
+function parseBorrower(raw) {
+  const m = /^(.*?)\s*\(([^()]+)\)\s*$/.exec(raw || '');
+  return m ? { name: m[1].trim(), lab: m[2].trim() } : { name: (raw||'').trim(), lab: '' };
+}
+
+// A borrowed copy is identifiable by: Vendor holds a known host LAB name (a real item
+// never has another lab as its Vendor), plus Name+Catalog+Borrowed all matching. This
+// quartet is unambiguous and the Vendor∈LAB_NAMES guard prevents ever touching a real item.
+function isBorrowedCopy(row) {
+  return LAB_NAMES.includes((row.Vendor || '').trim());
+}
+
+// A borrowed copy is a dumb, read-only mirror with EXACTLY ONE state field: Status.
+//   Requested → Borrowed → Bring Back → IOU → Deleted   (driven by host actions)
+// It carries NO Sharing value at all — copy-detection is by Vendor (= host lab name ∈
+// LAB_NAMES), not Sharing, so there is genuinely only one piece of state in the borrower's
+// lab and it cannot diverge. Status='Deleted' hides it (the _deleted flag derives from
+// Status on read), so every resolution is just a Status flip.
+
+// Write a basic-info-only copy into the borrowing lab's tab. No location/stock/policy.
+// The copy's LOAN STATE lives in Sharing (Borrowed/Requested/...); Status stays a normal
+// stock value until resolution flips it to Deleted (which hides it). Three columns, each
+// a discrete value in the sheet — nothing inferred.
+async function writeBorrowedCopy(hostItem, hostLab, borrowingLab, sharingState, borrowerRaw) {
+  if (!useSheets || !borrowingLab || borrowingLab === hostLab) return;
+  const copy = {
+    Name: hostItem.Name, Vendor: hostLab,            // Vendor = originating (host) lab
+    Catalog: hostItem.Catalog, Price: hostItem.Price,
+    Type: hostItem.Type, Quantity: hostItem.Quantity,
+    Notes: hostItem.Notes, CAS: hostItem.CAS, SDS: hostItem.SDS, URL: hostItem.URL,
+    Room:'', Location1:'', Location2:'', Box1:'', Box2:'', GridXY:'',
+    Stock:'', Threshold:'',
+    Policy:'',                                        // copy has no policy of its own
+    Sharing: sharingState,                            // the loan-state channel
+    Borrower: borrowerRaw, Borrowed: hostItem.Borrowed,
+    Status: 'In Stock',                               // stock channel; → Deleted to hide
+  };
+  try {
+    scrubItemDates(copy);
+    await fetch(API_URL, { method:'POST',
+      body: JSON.stringify({ lab: borrowingLab, action:'addItem', item: copy }) });
+  } catch(e) { console.warn('borrowed-copy write failed (host row authoritative)', e); }
+}
+
+// Find the borrowed copy in the borrowing lab and apply the given column changes
+// ({Sharing} for a loan-state change, {Status:'Deleted'} to resolve/hide). Identity is
+// stable: it IS a borrowed copy (Vendor ∈ lab names) + Vendor = host lab + Name + Catalog,
+// preferring an exact Borrower/Borrowed match, else the unique such copy. Best-effort.
+async function syncCopy(borrowingLab, hostLab, match, changes) {
+  if (!useSheets || !borrowingLab || borrowingLab === hostLab) return;
+  try {
+    const r = await fetch(API_URL + '?action=read&lab=' + encodeURIComponent(borrowingLab));
+    const d = await r.json();
+    if (!d || !d.items) return;
+    const hl = (hostLab || '').trim();
+    const wantBorrower = (match.Borrower || '').trim();
+    const wantBorrowed = (match.Borrowed || '').trim();
+    const candidates = d.items.filter(it =>
+      it && it._row &&
+      isBorrowedCopy(it) &&
+      (it.Vendor||'').trim() === hl &&
+      (it.Name||'').trim() === (match.Name||'').trim() &&
+      (it.Catalog||'').trim() === (match.Catalog||'').trim() &&
+      (it.Status||'').toLowerCase().trim() !== 'deleted');
+    if (candidates.length === 0) return;
+    const row =
+      candidates.find(it => (it.Borrower||'').trim() === wantBorrower &&
+                            (it.Borrowed||'').trim() === wantBorrowed) ||
+      candidates.find(it => (it.Borrower||'').trim() === wantBorrower) ||
+      (candidates.length === 1 ? candidates[0] : null);
+    if (!row) return;
+    const clean = Object.assign({}, row);
+    delete clean._row; delete clean._deleted; delete clean._id;
+    Object.assign(clean, changes);                    // discrete column writes only
+    scrubItemDates(clean);
+    await fetch(API_URL, { method:'POST',
+      body: JSON.stringify({ lab: borrowingLab, action:'updateItem', row: row._row, item: clean }) });
+  } catch(e) { console.warn('borrowed-copy sync failed (host row authoritative)', e); }
+}
+
+// Symmetric counterpart: drive the HOST row in the host lab when an action is invoked
+// from the borrower's copy (Return / IOU clicked on the copy row). The host row is
+// the source of truth, so its Sharing / Borrower / Borrowed fields must be updated for
+// the host to see the change. Identity is Name + Catalog + Borrower + Borrowed (the
+// confirmed unique key), with Borrower as the primary discriminator if Borrowed format
+// has drifted via Sheets round-trip.
+async function syncHost(borrowingLab, hostLab, match, changes) {
+  if (!useSheets || !hostLab || borrowingLab === hostLab) return;
+  try {
+    const r = await fetch(API_URL + '?action=read&lab=' + encodeURIComponent(hostLab));
+    const d = await r.json();
+    if (!d || !d.items) return;
+    const wantBorrower = (match.Borrower || '').trim();
+    const wantBorrowed = (match.Borrowed || '').trim();
+    // The host row is NOT a borrowed copy — its Vendor is a real vendor, not a lab. We
+    // identify it strictly by Name + Catalog + Borrower (+ Borrowed as tiebreaker) and
+    // exclude already-resolved rows.
+    const candidates = d.items.filter(it =>
+      it && it._row &&
+      !isBorrowedCopy(it) &&
+      (it.Name||'').trim() === (match.Name||'').trim() &&
+      (it.Catalog||'').trim() === (match.Catalog||'').trim() &&
+      (it.Status||'').toLowerCase().trim() !== 'deleted' &&
+      (it.Borrower||'').trim() === wantBorrower);
+    if (candidates.length === 0) return;
+    const row =
+      candidates.find(it => (it.Borrowed||'').trim() === wantBorrowed) ||
+      (candidates.length === 1 ? candidates[0] : null);
+    if (!row) return;
+    const clean = Object.assign({}, row);
+    delete clean._row; delete clean._deleted; delete clean._id;
+    Object.assign(clean, changes);
+    scrubItemDates(clean);
+    await fetch(API_URL, { method:'POST',
+      body: JSON.stringify({ lab: hostLab, action:'updateItem', row: row._row, item: clean }) });
+  } catch(e) { console.warn('host-row sync failed', e); }
+}
+
+// Single point of persistence — used by every mutator
+async function persistItem(item) {
+  if (!useSheets) return;
+  if (item._row) {
+    apiPost({ action:'updateItem', row:item._row, item });
+  } else {
+    // New item — wait for response so subsequent edits can find _row
+    const r = await apiPost({ action:'addItem', item });
+    if (r && r.row) item._row = r.row;
+  }
+}
+
+// ── Load ───────────────────────────────────────────────────────────────
+async function loadData() {
+  items = []; filtered = [];
+
+  // Both URL and active lab are required. Without either, prompt the user toward Setup.
+  if (!API_URL || !activeLab) {
+    $('inv-body').innerHTML = '<tr><td colspan="5" class="empty">' +
+      'Click <strong>Setup</strong> in the top right to enter your data source URL and choose your lab.' +
+      '</td></tr>';
+    nextId = 0;
+    buildFilterOptions();
+    applyFilters();
+    return;
+  }
+
+  // 1. Instant paint from the localStorage cache, if present. The app is usable
+  //    immediately while the live fetch runs in the background.
+  const cached = readLabCache(activeLab);
+  let paintedFromCache = false;
+  if (cached) {
+    useSheets = true;
+    items = cached.map((row, i) => normaliseRow(row, i));
+    nextId = items.length;
+    buildFilterOptions();
+    applyFilters();
+    setRefreshingHint(true);
+    paintedFromCache = true;
+  } else {
+    $('inv-body').innerHTML = `<tr><td colspan="5" class="empty">Loading <strong>${esc(activeLab)}</strong>…</td></tr>`;
+  }
+
+  // 2. Always revalidate against the server.
+  const si = await apiRead();
+  if (si === null) {
+    setRefreshingHint(false);
+    if (!paintedFromCache) {
+      $('inv-body').innerHTML = '<tr><td colspan="5" style="padding:20px;color:var(--danger);">Could not load data.</td></tr>';
+    }
+    // If we painted from cache, keep showing it — the network call failed but stale data
+    // is better than an error wipe.
+    return;
+  }
+
+  useSheets = true;
+  writeLabCache(activeLab, si);                 // refresh the cache for next open
+  items = si.map((row, i) => normaliseRow(row, i));
+  nextId = items.length;
+  buildFilterOptions();
+  applyFilters();
+  setRefreshingHint(false);
+}
+
+// Small "refreshing…" hint shown while a background revalidation runs after a cache paint.
+function setRefreshingHint(on) {
+  const el = $('section-counts');
+  if (!el) return;
+  if (on) {
+    el.dataset.refreshing = '1';
+    if (!/refreshing…$/.test(el.textContent)) {
+      el.textContent = (el.textContent ? el.textContent + '   ·   ' : '') + 'refreshing…';
+    }
+  } else {
+    delete el.dataset.refreshing;
+    // updateSectionCounts (called via applyFilters) will overwrite the text cleanly.
+  }
+}
+
+function normaliseRow(row, i) {
+  const obj = Object.assign({}, row);
+  obj._id = i;
+  obj._row = row._row;
+  obj._deleted = ['archived','deleted'].includes((obj.Status||'').toLowerCase());
+
+  // Strip ISO datetime artifacts from text fields
+  ['CAS','SDS','URL','Notes','Catalog','Price','Quantity',
+   'Room','Location1','Location2','Box1','GridXY','Box2'].forEach(k => {
+    const v = String(obj[k]||'');
+    obj[k] = /T\d{2}:\d{2}:\d{2}/.test(v) ? '' : v;
+  });
+  // Date fields: keep only YYYY-MM-DD
+  ['Received','Borrowed'].forEach(k => { obj[k] = String(obj[k]||'').slice(0,10); });
+
+  // Reconcile Box2 to sheet Stock for boxed items
+  if (obj.Box1) {
+    const sheetStock = parseInt(obj.Stock, 10);
+    if (!isNaN(sheetStock) && sheetStock > 0) {
+      const placed = box2Coords(obj.Box2 || '').length;
+      if (sheetStock < placed) {
+        console.warn(`Stock drift on load: "${obj.Name}" sheet says ${sheetStock} but ${placed} placed coords. Keeping placed coords.`);
+      }
+      obj.Box2 = reconcileBox2(obj.Box2 || '', sheetStock);
+    }
+  }
+  return obj;
+}
+
+// ── Box helpers ────────────────────────────────────────────────────────
+function parseGridXY(b2) {
+  if (!b2) return null;
+  const mx = b2.match(/X(\d+)/i), my = b2.match(/Y(\d+)/i);
+  if (!mx || !my) return null;
+  const cols = Math.min(parseInt(mx[1],10), 26);
+  const rows = Math.min(parseInt(my[1],10), 26);
+  return (cols >= 1 && rows >= 1) ? {cols, rows} : null;
+}
+
+function parseBox2(b3) {
+  if (!b3 || !b3.trim()) return [];
+  return b3.trim().split(/\s+/)
+    .filter(s => s === '0' || /^[A-Z]\d+$/i.test(s))
+    .map(s => s === '0' ? '0' : s.toUpperCase());
+}
+function box2Coords(b3)    { return parseBox2(b3).filter(s => s !== '0'); }
+function box2ListCount(b3) { return parseBox2(b3).filter(s => s === '0').length; }
+function encodeBox2(arr)   { return arr.join(' '); }
+
+// Reconcile Box2 to a stock count: keep placed coords, pad/trim '0' tokens.
+// Caller must check whether newStock < placedCount (would silently drop nothing — we just keep them).
+function reconcileBox2(b3, newStock) {
+  const coords = box2Coords(b3);
+  const total  = Math.max(0, newStock|0);
+  if (total < coords.length) return encodeBox2(coords);
+  return encodeBox2([...coords, ...Array(total - coords.length).fill('0')]);
+}
+
+// Two items are box-siblings only if they share the FULL location path: Location1, Location2, AND Box1.
+// A box named "Drawers" in "04 Prep > Cabinet" is a different physical box from "Drawers" in "05 PCR > Cabinet".
+function sameBoxKey(a, b) {
+  return (a.Location1||'') === (b.Location1||'')
+      && (a.Location2||'') === (b.Location2||'')
+      && (a.Box1||'')      === (b.Box1||'');
+}
+
+// The array backing the currently-open modal. For a local item that's the active lab's
+// `items`. For a foreign (read-only) item it's that lab's cross-lab result set, so box
+// contents and item-to-item navigation work identically without copying anything into
+// `items`. Outside a foreign view this is just `items`.
+function modalItems() {
+  return (editReadOnly && editLab && crossLabItems[editLab]) ? crossLabItems[editLab] : items;
+}
+function modalFind(id) {
+  return modalItems().find(i => i._id === id);
+}
+// Strictly the active-lab item currently open in the modal — used by save/update paths
+// that must never operate on a foreign read-only item.
+function currentOwnItem() {
+  return items.find(i => i._id === editIdx) || null;
+}
+
+function boxSiblings(item) {
+  if (!item.Box1) return [];
+  return modalItems().filter(i => !i._deleted && sameBoxKey(i, item));
+}
+
+// Like boxSiblings, but if `preview` is a shallow-cloned item with the SAME _id as something
+// in the array, the clone replaces the real one. Used during live form previews so unplaced
+// rows update as the Stock field changes, without mutating the canonical state.
+function boxSiblingsWithPreview(item, preview) {
+  const sibs = boxSiblings(item);
+  if (!preview || preview._id == null) return sibs;
+  return sibs.map(s => s._id === preview._id ? preview : s);
+}
+
+// Apply a stock change correctly for both boxed and unboxed items.
+// Returns the effective stock after reconciliation.
+function applyStockChange(item, newStock) {
+  newStock = Math.max(0, newStock|0);
+  if (item.Box1) {
+    item.Box2  = reconcileBox2(item.Box2 || '', newStock);
+    item.Stock = parseBox2(item.Box2).length;
+  } else {
+    item.Stock = newStock;
+    if (!useSheets) localStorage.setItem(stockKey(item), newStock);
+  }
+  return item.Stock;
+}
+
+// ── Status / Sharing ───────────────────────────────────────────────────
+function stockDerivedStatus(item) {
+  const s = getStock(item), t = getThreshold(item);
+  if (s <= 0) return 'Out of Stock';
+  if (s <= t) return 'Low Stock';
+  return 'In Stock';
+}
+
+// Status holds ONLY stock/order/lifecycle states — never sharing. Discrete value in the
+// sheet, no inference.
+function getEffectiveStatus(item) {
+  const st = (item.Status||'').toLowerCase().trim();
+  if (st === 'deleted')  return 'Deleted';
+  if (st === 'archived') return 'Archived';
+  if (item._deleted)     return 'Archived';   // _deleted derives from Status on read
+  if (st === 'on order') return 'On Order';
+  if (st === 'arrived')  return 'Arrived';
+  return stockDerivedStatus(item);
+}
+
+// Sharing holds ONLY the transactional loan state (or empty when idle). No policy values,
+// no suffixes — the exact string in the sheet is the state.
+function getSharingState(item) {
+  const sh = (item.Sharing||'').trim();
+  return ['Shared','Borrowed','Requested','IOU','Bring Back','Denied'].includes(sh) ? sh : '';
+}
+
+// Policy is its own column: Yes / Ask / No. Read it directly — no parsing, no suffix.
+function getSharingPolicy(item) {
+  const p = (item.Policy||'').trim();
+  return ['Yes','Ask','No'].includes(p) ? p : 'No';
+}
+
+const STATUS_CSS = {
+  'In Stock':'in-stock','Low Stock':'order-now','On Order':'on-order',
+  'Arrived':'arrived','Out of Stock':'out-of-stock',
+  'Shared':'shared','Borrowed':'shared','Requested':'requested','IOU':'bring-back','Bring Back':'bring-back','Denied':'bring-back','Archived':'archived',
+};
+function statusBtnClass(s) { return STATUS_CSS[s] || 'in-stock'; }
+
+// Row button label: an active Sharing (loan) state takes precedence over the stock
+// Status, so a borrowed/recalled item reads its loan state rather than "In Stock".
+function displayStatus(item) {
+  const sh = getSharingState(item);
+  if (sh) return sh;                 // any non-empty loan state wins
+  return getEffectiveStatus(item);
+}
+
+function updateStatus(item, status) {
+  item.Status   = status;
+  item._deleted = status === 'Archived' || status === 'Deleted';
+  persistItem(item);
+}
+function updateSharing(item, val) {
+  item.Sharing = val;
+  persistItem(item);
+}
+
+// ── Stock ──────────────────────────────────────────────────────────────
+function stockKey(item) {
+  return ('s_'+item.Vendor+'_'+item.Catalog+'_'+item.Name).replace(/\s+/g,'_').slice(0,100);
+}
+function getStock(item) {
+  if (item.Box1) {
+    const tokens = parseBox2(item.Box2).length;
+    if (tokens > 0) return tokens;
+    const sheetStock = parseInt(item.Stock, 10);
+    return isNaN(sheetStock) ? 0 : sheetStock;
+  }
+  if (useSheets) { const v = parseInt(item.Stock,10); return isNaN(v)?0:v; }
+  const s = localStorage.getItem(stockKey(item));
+  return s !== null ? parseInt(s,10) : (parseInt(item.Stock,10) || 0);
+}
+function getThreshold(item) {
+  const v = parseInt(item.Threshold,10);
+  return isNaN(v) ? 1 : v;
+}
+
+// ── Combo fields ───────────────────────────────────────────────────────
+function comboSelChange(baseId) {
+  const sel = $(baseId + '-sel');
+  const inp = $(baseId);
+  if (!sel || !inp) return;
+  if (sel.value === COMBO_NEW) {
+    sel.style.display = 'none';
+    inp.style.display = '';
+    inp.value = '';
+    const back = sel.parentElement.querySelector('.combo-back');
+    if (back) back.style.display = '';
+    inp.focus();
+  } else {
+    inp.value = sel.value;
+  }
+  if (baseId === 'f-box1') onBoxFieldChange();
+  if (baseId === 'f-location') updateSublocOptions();
+}
+
+function comboBack(baseId) {
+  const sel = $(baseId + '-sel');
+  const inp = $(baseId);
+  if (!sel || !inp) return;
+  inp.style.display = 'none';
+  inp.value = sel.value === COMBO_NEW ? '' : sel.value;
+  sel.value = inp.value || '';
+  sel.style.display = '';
+  const back = sel.parentElement.querySelector('.combo-back');
+  if (back) back.style.display = 'none';
+}
+
+function comboSet(baseId, value) {
+  const sel = $(baseId + '-sel');
+  const inp = $(baseId);
+  if (!sel || !inp) return;
+  // Reset to select mode
+  inp.style.display = 'none';
+  sel.style.display = '';
+  const back = sel.parentElement ? sel.parentElement.querySelector('.combo-back') : null;
+  if (back) back.style.display = 'none';
+
+  const exists = [...sel.options].some(o => o.value === value);
+  if (exists || !value) {
+    sel.value = value || '';
+    inp.value = value || '';
+  } else if (editReadOnly) {
+    // Foreign/read-only item: its value won't be in the active lab's option list.
+    // Inject it as a one-off option and stay in (disabled) select mode — never show
+    // the "pick existing" back-link or the free-text input for a read-only item.
+    const opt = document.createElement('option');
+    opt.value = value; opt.textContent = value;
+    sel.appendChild(opt);
+    sel.value = value;
+    inp.value = value;
+  } else {
+    sel.style.display = 'none';
+    inp.style.display = '';
+    inp.value = value;
+    if (back) back.style.display = '';
+  }
+  if (baseId === 'f-location') updateSublocOptions();
+}
+
+function updateSublocOptions() {
+  const loc1 = fv('f-location');
+  const sel = $('f-subloc-sel');
+  if (!sel) return;
+  const cur = fv('f-subloc');
+  const vals = [...new Set(
+    items.filter(i => !i._deleted && (!loc1 || i.Location1 === loc1) && i.Location2)
+         .map(i => i.Location2)
+  )].sort();
+  fillSelect(sel, vals, cur, true);
+  const inp = $('f-subloc');
+  if (inp && inp.style.display === 'none') inp.value = sel.value;
+}
+
+// Populate a <select> with values; preserve current selection if possible.
+// `withNew` adds the "— New —" sentinel for combo fields.
+// If `current` is set but not in `vals` and not `withNew`, it's preserved as a sticky option
+// so the user's filter choice doesn't silently vanish when other filters narrow the data.
+function fillSelect(sel, vals, current, withNew) {
+  sel.innerHTML = '<option value="">—</option>';
+  vals.forEach(v => {
+    const o = document.createElement('option');
+    o.value = o.textContent = v;
+    sel.appendChild(o);
+  });
+  if (withNew) {
+    const o = document.createElement('option');
+    o.value = o.textContent = COMBO_NEW;
+    sel.appendChild(o);
+  } else if (current && !vals.includes(current)) {
+    // Sticky filter selection — kept even when no items currently match
+    const o = document.createElement('option');
+    o.value = current;
+    o.textContent = current + ' (no matches)';
+    sel.appendChild(o);
+  }
+  if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
+}
+
+// ── Filters ────────────────────────────────────────────────────────────
+// Active filter values from the subnav.
+function getActiveFilters() {
+  return {
+    vendor: $('filter-vendor').value,
+    type:   $('filter-type').value,
+    loc:    $('filter-loc').value,
+    box:    $('filter-box').value,
+  };
+}
+
+// Apply selected filters, optionally excluding one — used by buildFilterOptions
+// to compute each dropdown's choices from items matching the OTHER active filters.
+function itemsMatchingFilters(active, except) {
+  return items.filter(item => {
+    if (except !== 'vendor' && active.vendor &&
+        (item.Vendor||'').split('(')[0].trim() !== active.vendor) return false;
+    if (except !== 'type' && active.type && item.Type !== active.type) return false;
+    if (except !== 'loc'  && active.loc  && item.Location1 !== active.loc) return false;
+    if (except !== 'box'  && active.box  && item.Box1 !== active.box) return false;
+    return true;
+  });
+}
+
+// Rebuild the four cascading subnav filter dropdowns. Each dropdown's options come from
+// items matching the OTHER active filters — so picking a Location restricts the Box list, etc.
+// Selections that no longer match any data are kept as sticky "(no matches)" options.
+function buildSubnavFilters() {
+  const active = getActiveFilters();
+  const specs = [
+    { id:'filter-vendor', key:'vendor', extract: i => (i.Vendor||'').split('(')[0].trim() },
+    { id:'filter-type',   key:'type',   extract: i => i.Type },
+    { id:'filter-loc',    key:'loc',    extract: i => i.Location1 },
+    { id:'filter-box',    key:'box',    extract: i => i.Box1 },
+  ];
+  specs.forEach(({id, key, extract}) => {
+    const sel = $(id);
+    const pool = itemsMatchingFilters(active, key);
+    const vals = [...new Set(pool.map(extract).filter(Boolean))].sort();
+    fillSelect(sel, vals, sel.value, false);
+  });
+}
+
+// Rebuild the form's combo selects. These show ALL existing values regardless of any
+// active subnav filter — typing in the form is "what this item is", not "narrow my view".
+function buildFormCombos() {
+  const uniq = getter => [...new Set(items.map(getter).filter(Boolean))].sort();
+  const specs = [
+    ['f-vendor-sel',   uniq(i => (i.Vendor||'').trim())],
+    ['f-type-sel',     uniq(i => i.Type)],
+    ['f-location-sel', uniq(i => i.Location1)],
+    ['f-subloc-sel',   uniq(i => i.Location2)],
+    ['f-box1-sel',     uniq(i => i.Box1)],
+    ['f-room-sel',     uniq(i => i.Room)],
+  ];
+  specs.forEach(([id, vals]) => {
+    const sel = $(id);
+    if (sel) fillSelect(sel, vals, sel.value, true);
+  });
+}
+
+// Backwards-compat name used by mutators that need both rebuilt.
+function buildFilterOptions() {
+  buildSubnavFilters();
+  buildFormCombos();
+}
+
+function clearFilters() {
+  $('search-box').value = '';
+  ['filter-vendor','filter-type','filter-loc','filter-box'].forEach(id => $(id).value = '');
+  buildSubnavFilters();
+  applyFilters();
+}
+
+function applyFilters() {
+  if (searchScope === 'everywhere') { applyEverywhere(); return; }
+
+  // Rebuild dropdown choices first — each dropdown's options narrow based on the OTHER active filters.
+  // Selections that no longer match any data are kept as sticky "(no matches)" options.
+  buildSubnavFilters();
+
+  const q      = $('search-box').value.toLowerCase();
+  const active = getActiveFilters();
+
+  filtered = itemsMatchingFilters(active, null).filter(item => {
+    // Status='Deleted' hides the row from every view (soft delete). Archived items still
+    // appear in the Archived section — only true deletions are removed from rendering.
+    if ((item.Status||'').toLowerCase().trim() === 'deleted') return false;
+    if (!q) return true;
+    const hay = [item.Name,item.Vendor,item.Notes,item.Location1,item.Location2,
+                 item.Box1,item.Room,item.GridXY,item.Catalog,item.CAS,item.Borrower].join(' ').toLowerCase();
+    return hay.includes(q);
+  }).sort((a,b) => {
+    // Primary: status bucket order (grouping persists even though headers are gone).
+    const ra = statusRank(a), rb = statusRank(b);
+    if (ra !== rb) return ra - rb;
+    // Secondary: the active column sort, applied within each bucket.
+    const av = sortCol === 'Stock' ? getStock(a) : (a[sortCol]||'');
+    const bv = sortCol === 'Stock' ? getStock(b) : (b[sortCol]||'');
+    return av.toString().localeCompare(bv.toString(), undefined, {numeric:true}) * sortDir;
+  });
+
+  updateSectionCounts();
+  renderInventory();
+}
+
+// Status bucket ordering for the flat list. Lower rank sorts first.
+//   0 Ordering: Arrived, then On Order
+//   1 Sharing:  Requested, then Shared
+//   2 Low Stock
+//   3 In Stock
+//   4 Out of Stock
+//   5 Archived (and Deleted, though Deleted is filtered out upstream)
+function statusRank(item) {
+  const sh = getSharingState(item);
+  if (sh === 'Denied')     return 0.8;   // borrower must acknowledge — very top
+  if (sh === 'Bring Back') return 0.9;   // top of the Sharing cluster — needs attention
+  if (sh === 'Requested')  return 1.0;
+  if (sh === 'Shared')     return 1.1;
+  if (sh === 'IOU')        return 1.2;
+  const st = getEffectiveStatus(item);
+  switch (st) {
+    case 'Denied':       return 0.8;   // borrowed copy: must acknowledge — very top
+    case 'Bring Back':   return 0.9;   // borrowed copy: recall — needs attention
+    case 'Requested':    return 1.0;   // borrowed copy: pending request
+    case 'Borrowed':     return 1.1;   // borrowed copy: active loan
+    case 'IOU':          return 1.2;   // borrowed copy: owed back
+    case 'Arrived':      return 0.0;
+    case 'On Order':     return 0.1;
+    case 'Low Stock':    return 2;
+    case 'In Stock':     return 3;
+    case 'Out of Stock': return 4;
+    case 'Archived':     return 5;
+    case 'Deleted':      return 6;
+    default:             return 3;   // unknown → treat as In Stock
+  }
+}
+
+// Toggle between searching the active lab only and searching every lab.
+function toggleSearchScope() {
+  searchScope = (searchScope === 'local') ? 'everywhere' : 'local';
+  const btn = $('scope-toggle');
+  const box = $('search-box');
+  if (searchScope === 'everywhere') {
+    btn.textContent = 'Search All';
+    btn.className = 'btn scope-everywhere';
+    btn.style.cssText = 'font-size:14px;padding:3px 10px;white-space:nowrap;';
+    box.placeholder = 'Search all labs…';
+    // Begin fetching the other labs NOW (the home-lab load already warmed Apps Script,
+    // so these don't each pay the cold-start). Reuse the session cache if already
+    // populated — the user only just looked.
+    prefetchOtherLabs();
+  } else {
+    btn.textContent = 'Search Lab';
+    btn.className = 'btn scope-local';
+    btn.style.cssText = 'font-size:14px;padding:3px 10px;white-space:nowrap;';
+    box.placeholder = defaultLab ? `Search ${defaultLab} Lab` : 'Search…';
+  }
+  applyFilters();
+}
+
+// Kick off the cross-lab fetches. Home lab is seeded from the in-memory items.
+// Each other lab is fetched once per session; results merge into crossLabItems and
+// trigger a re-render if an everywhere search is active.
+function prefetchOtherLabs() {
+  // Seed/refresh the home lab from current memory.
+  crossLabItems[activeLab] = items.slice();
+
+  const seq = ++crossLabSeq;
+  const others = LAB_NAMES.filter(l => l !== activeLab);
+  others.forEach(lab => {
+    // Reuse within the session: skip refetch if we already have this lab's data.
+    if (Array.isArray(crossLabItems[lab])) return;
+    fetchLabItems(lab).then(rows => {
+      if (seq !== crossLabSeq && searchScope !== 'everywhere') return;
+      crossLabItems[lab] = rows || [];
+      if (searchScope === 'everywhere') {
+        const q = $('search-box').value.toLowerCase().trim();
+        if (q) renderEverywhere(q);
+      }
+    });
+  });
+}
+
+// Everywhere search: filters whatever is currently in crossLabItems. Fetching is
+// handled by prefetchOtherLabs (triggered on toggle), not here.
+function applyEverywhere() {
+  const q = $('search-box').value.toLowerCase().trim();
+  const tbody = $('inv-body');
+
+  // Keep the home lab slice fresh (it may have changed since toggle).
+  crossLabItems[activeLab] = items.slice();
+
+  if (!q) {
+    const pending = LAB_NAMES.filter(l => !Array.isArray(crossLabItems[l])).length;
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Enter a search term to look across all labs.'
+      + (pending ? ` <span style="color:var(--mut);">(${pending} lab${pending===1?'':'s'} still loading)</span>` : '')
+      + '</td></tr>';
+    $('section-counts').textContent = '';
+    return;
+  }
+  renderEverywhere(q);
+}
+
+// Fetch one lab's rows without disturbing the active in-memory `items`.
+async function fetchLabItems(lab) {
+  if (!API_URL) return [];
+  try {
+    const r = await fetch(API_URL + '?action=read&lab=' + encodeURIComponent(lab));
+    const d = await r.json();
+    if (d.error || !d.items) return [];
+    return d.items.map((row, i) => normaliseRow(row, i));
+  } catch(e) { console.warn('cross-lab fetch failed for', lab, e); return []; }
+}
+
+// Render cross-lab results grouped by lab. Flat within each lab (no status sub-sections).
+function renderEverywhere(q) {
+  const tbody = $('inv-body');
+  tbody.innerHTML = '';
+  let total = 0;
+
+  // Stable lab order: active lab first, then the rest alphabetically.
+  const labs = Object.keys(crossLabItems).sort((a,b) => {
+    if (a === activeLab) return -1;
+    if (b === activeLab) return 1;
+    return a.localeCompare(b);
+  });
+
+  labs.forEach(lab => {
+    const matches = (crossLabItems[lab] || []).filter(item => {
+      if (item._deleted) return false;
+      const hay = [item.Name,item.Vendor,item.Notes,item.Location1,item.Location2,
+                   item.Box1,item.Room,item.GridXY,item.Catalog,item.CAS,item.Borrower]
+                   .join(' ').toLowerCase();
+      return hay.includes(q);
+    }).sort((a,b) => (a.Name||'').localeCompare(b.Name||''));
+    if (!matches.length) return;
+
+    const isForeign = lab !== activeLab;
+    const hdr = document.createElement('tr');
+    hdr.className = 'lab-group-row' + (isForeign ? ' foreign' : '');
+    hdr.innerHTML = `<td colspan="5">${esc(lab)}${isForeign ? ' — read-only' : ''} · ${matches.length}</td>`;
+    tbody.appendChild(hdr);
+    matches.forEach(item => { tbody.appendChild(makeCrossLabRow(item, lab)); total++; });
+  });
+
+  if (!total) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">No items match “${esc(q)}” in any loaded lab.</td></tr>`;
+  }
+  $('section-counts').textContent = `${total} match${total===1?'':'es'} across ${labs.length} lab${labs.length===1?'':'s'} searched`;
+}
+
+// A row in everywhere mode. Active-lab rows are editable (open modal); foreign rows are
+// read-only — clicking does nothing destructive, the status button is non-interactive.
+function makeCrossLabRow(item, lab) {
+  const isForeign = lab !== activeLab;
+  const stock    = getStock(item);
+  const thresh   = getThreshold(item);
+  const stockCls = stock<=0 ? 'stock-danger' : stock<=thresh ? 'stock-warn' : 'stock-ok';
+  const btnSt    = displayStatus(item);
+  const nameHtml = item.URL && item.URL!=='N/A'
+    ? `<a href="${esc(item.URL)}" target="_blank">${esc(item.Name)}</a>` : esc(item.Name);
+  const nameSub  = [(item.Vendor||'').split('(')[0].trim(), item.Catalog, item.Quantity, item.Price].filter(Boolean).join(' · ');
+  const locSub   = [item.Location2, item.Box1].filter(Boolean).join(', ');
+  const sdsLink  = item.SDS && item.SDS!=='N/A'
+    ? `<a href="sds/${esc(item.SDS)}" target="_blank" style="color:var(--warn);text-decoration:none;border-bottom:1px dotted var(--warn);">SDS</a>` : '';
+  const casStr   = item.CAS && item.CAS!=='N/A' ? `CAS ${esc(item.CAS)}` : '';
+  const typeSub  = [sdsLink, casStr].filter(Boolean).join(' · ');
+
+  const statusBtn = isForeign
+    ? `<button class="status-btn ${statusBtnClass(btnSt)}" onclick="editForeignItem(${item._id},${LAB_NAMES.indexOf(lab)})">${btnSt}</button>`
+    : `<button class="status-btn ${statusBtnClass(btnSt)}" onclick="editItem(${item._id},false)">${btnSt}</button>`;
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td style="white-space:nowrap;">${statusBtn}</td>
+    <td><div class="stock-cell"><span class="stock-num ${stockCls} readonly">${stock}</span></div></td>
+    <td>
+      <div class="item-name">${nameHtml}</div>
+      ${nameSub ? `<div class="item-sub">${esc(nameSub)}</div>` : ''}
+    </td>
+    <td>
+      <div>${esc(item.Type||'—')}</div>
+      ${typeSub ? `<div class="item-sub">${typeSub}</div>` : ''}
+    </td>
+    <td>
+      <div>${loc1WithRoom(item)}</div>
+      ${locSub ? `<div class="loc-sub">${esc(locSub)}</div>` : ''}
+    </td>`;
+  return tr;
+}
+
+// Section ordering and predicates — single source of truth. The "Shared" section also
+// holds borrowed copies, whose state lives entirely in Status (surfaced via displayStatus):
+// Borrowed / Requested / Bring Back / IOU / Denied.
+const SHARED_DISPLAY = new Set(['Shared','Requested','Bring Back','IOU','Denied','Borrowed']);
+const SECTIONS = [
+  ['Shared',       i => SHARED_DISPLAY.has(displayStatus(i))],
+  ['Arrived',      i => getEffectiveStatus(i) === 'Arrived'],
+  ['Ordered',      i => getEffectiveStatus(i) === 'On Order'],
+  ['Out of Stock', i => getEffectiveStatus(i) === 'Out of Stock'],
+  ['Low Stock',    i => getEffectiveStatus(i) === 'Low Stock'],
+  ['In Stock',     i => getEffectiveStatus(i) === 'In Stock'],
+  ['Archived',     i => getEffectiveStatus(i) === 'Archived'],
+];
+
+function updateSectionCounts() {
+  const active = items.filter(i => !i._deleted);
+  const parts = SECTIONS
+    .map(([label, pred]) => { const n = active.filter(pred).length; return n ? `${n} ${label}` : null; })
+    .filter(Boolean);
+  parts.push(`${active.length} Total`);
+  $('section-counts').textContent = parts.join('  ·  ');
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
+  document.querySelectorAll('.inv-table th[data-col]').forEach(th => {
+    th.classList.remove('sort-asc','sort-desc');
+    if (th.dataset.col === col) th.classList.add(sortDir === 1 ? 'sort-asc' : 'sort-desc');
+  });
+  applyFilters();
+}
+
+// ── Render table ───────────────────────────────────────────────────────
+// Flat list — the status button on each row conveys status; no section header rows.
+function renderInventory() {
+  const tbody = $('inv-body');
+  tbody.innerHTML = '';
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">No items match your filters.</td></tr>';
+    return;
+  }
+  filtered.forEach(item => tbody.appendChild(makeItemRow(item)));
+}
+
+function makeItemRow(item) {
+  const stock    = getStock(item);
+  const thresh   = getThreshold(item);
+  const stockCls = stock<=0 ? 'stock-danger' : stock<=thresh ? 'stock-warn' : 'stock-ok';
+  const sharing  = getSharingState(item);
+  // Transactional sharing state takes precedence over stock status on the row button.
+  const isShared = (sharing==='Shared'||sharing==='Requested'||sharing==='Bring Back'||sharing==='IOU'||sharing==='Denied');
+  const btnSt    = displayStatus(item);
+  // Host rows show borrower when in a transactional state; a borrowed COPY is itself a
+  // loan record (state in Status, no Sharing), so it always shows its borrower line.
+  const showBorr = (isShared || isBorrowedCopy(item)) && item.Borrower;
+  const sdsLink  = item.SDS && item.SDS!=='N/A'
+    ? `<a href="sds/${esc(item.SDS)}" target="_blank" style="color:var(--warn);text-decoration:none;border-bottom:1px dotted var(--warn);">SDS</a>` : '';
+  const casStr   = item.CAS && item.CAS!=='N/A' ? `CAS ${esc(item.CAS)}` : '';
+  const typeSub  = [sdsLink, casStr].filter(Boolean).join(' · ');
+  const nameHtml = item.URL && item.URL!=='N/A'
+    ? `<a href="${esc(item.URL)}" target="_blank">${esc(item.Name)}</a>` : esc(item.Name);
+  const nameSub  = [(item.Vendor||'').split('(')[0].trim(), item.Catalog, item.Quantity, item.Price].filter(Boolean).join(' · ');
+  const locSub   = [item.Location2, item.Box1].filter(Boolean).join(', ');
+
+  const stockEditable = !item.Box1;
+  const stockCell = stockEditable
+    ? `<span class="stock-num ${stockCls}" contenteditable="true"
+         onblur="setStockDirect(${item._id},this.textContent)"
+         onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">${stock}</span>`
+    : `<span class="stock-num ${stockCls} readonly" title="Boxed item — edit via grid">${stock}</span>`;
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td style="white-space:nowrap;">
+      <button class="status-btn ${statusBtnClass(btnSt)}" onclick="editItem(${item._id},${isShared})">${btnSt}</button>
+      ${showBorr ? `<div class="borrower-sub">${esc(item.Borrower)}${item.Borrowed?' · '+esc(item.Borrowed.slice(0,10)):''}</div>` : ''}
+    </td>
+    <td><div class="stock-cell">${stockCell}</div></td>
+    <td>
+      <div class="item-name">${nameHtml}</div>
+      ${nameSub ? `<div class="item-sub">${esc(nameSub)}</div>` : ''}
+    </td>
+    <td>
+      <div>${esc(item.Type||'—')}</div>
+      ${typeSub ? `<div class="item-sub">${typeSub}</div>` : ''}
+    </td>
+    <td>
+      <div>${loc1WithRoom(item)}</div>
+      ${locSub ? `<div class="loc-sub">${esc(locSub)}</div>` : ''}
+    </td>`;
+  return tr;
+}
+
+function setStockDirect(id, val) {
+  const item = items.find(i => i._id === id);
+  if (!item || item.Box1) { applyFilters(); return; }
+  const n = parseInt(String(val).replace(/\D/g,''), 10);
+  if (isNaN(n)) { applyFilters(); return; }
+  applyStockChange(item, n);
+  if (!LOCKED_ST.has((item.Status||'').toLowerCase())) {
+    updateStatus(item, stockDerivedStatus(item));
+  } else {
+    persistItem(item);
+  }
+  applyFilters();
+}
+
+// ── Modal: open Add ────────────────────────────────────────────────────
+// Toolbar "+ New" entry: opens the modal with a blank form in new-from-toolbar mode.
+function openAddModal() {
+  editIdx = null; resetLocState(); locView = null;
+  editReadOnly = false;
+  modalMode = 'new-from-toolbar';
+  _hostBeforeNew = null;
+  _moveSnapshot = null;
+  $('loc-panel-wrap').innerHTML = '';
+  resetFormBlank();
+  // Sharing card stays visible — its policy can be set up front. Synthetic blank item.
+  renderSharingPanel({ Policy:'No', Sharing:'', Borrower:'', Borrowed:'' });
+  applyReadOnlyState();
+  setLocFieldsDisabled(false);     // new-mode allows location entry
+  renderBottomBar();               // shows [Create] ... [Cancel]
+  $('edit-modal-overlay').classList.add('open');
+  setTimeout(() => $('f-name').focus(), 0);
+}
+
+// Reset every form field to its empty default. No item context required.
+function resetFormBlank() {
+  TEXT_FIELDS.forEach(k => { const id = 'f-' + k.toLowerCase(); if ($(id)) $(id).value = ''; });
+  COMBO_FIELDS.forEach(id => comboSet(id, ''));
+  $('f-gridxy').value = '';
+  $('dim-x').value = '';
+  $('dim-y').value = '';
+  $('f-notes-text').value = '';
+  $('f-stock').value     = 1;
+  $('f-threshold').value = 1;
+  $('f-date').value      = '';
+}
+
+// ── Modal: open Edit ───────────────────────────────────────────────────
+function editItem(id, fromShared) {
+  const item = items.find(i => i._id === id);
+  if (!item) return;
+  editIdx = id;
+  editLab = activeLab;
+  // A borrowed copy lives in your tab but isn't yours to edit — lock its details. The
+  // Sharing panel stays live so Return / IOU / Acknowledge still work.
+  editReadOnly = isBorrowedCopy(item);
+  resetLocState(); locView = null;
+  modalMode = 'default';
+  _moveSnapshot = null;
+  _hostBeforeNew = null;
+
+  populateForm(item);
+  configureActionForStatus(item, fromShared);
+  renderLocPanel(item);
+  applyReadOnlyState();
+  setLocFieldsDisabled(true);
+  renderBottomBar();
+  $('edit-modal-overlay').classList.add('open');
+}
+
+// Open a foreign-lab item (from an everywhere search). Identical to editItem except the
+// detail sections are read-only and the modal is backed by crossLabItems[lab] (via
+// modalItems()) instead of the active lab's `items`. No copying into `items` needed.
+function editForeignItem(id, labIdx) {
+  const lab = LAB_NAMES[labIdx];
+  if (!lab) return;
+  const item = (crossLabItems[lab] || []).find(i => i._id === id);
+  if (!item) return;
+  editIdx = item._id;
+  editLab = lab;
+  editReadOnly = (lab !== defaultLab);
+  resetLocState(); locView = null;
+  modalMode = 'default';
+  _moveSnapshot = null;
+  _hostBeforeNew = null;
+
+  populateForm(item);
+  configureActionForStatus(item, false);
+  renderLocPanel(item);
+  applyReadOnlyState();
+  setLocFieldsDisabled(true);
+  renderBottomBar();
+  $('edit-modal-overlay').classList.add('open');
+}
+
+// Enable/disable the Information, Status, and Location sections based on editReadOnly.
+// The Sharing section is never disabled — cross-lab borrowing happens there.
+// View/Return location-drill buttons stay active (navigation only, no mutation).
+function applyReadOnlyState() {
+  const ro = editReadOnly;
+  const lockIds = [
+    // Information fields
+    'f-name','f-vendor-sel','f-vendor','f-catalog','f-quantity','f-type-sel','f-type',
+    'f-cas','f-sds','f-url','f-notes-text',
+    'f-price','f-date','f-stock','f-threshold',
+    // Location fields
+    'f-location-sel','f-location','f-subloc-sel','f-subloc','f-box1-sel','f-box1',
+    'f-room-sel','f-room','dim-x','dim-y',
+    // Bottom-bar action buttons
+    'new-btn','archive-btn','order-btn','move-btn','use-btn',
+  ];
+  if (ro) {
+    lockIds.forEach(id => { const el = $(id); if (el) el.disabled = true; });
+  } else {
+    // Re-enable Information inputs (a prior read-only open may have disabled them).
+    const inputIds = [
+      'f-name','f-vendor-sel','f-vendor','f-catalog','f-quantity','f-type-sel','f-type',
+      'f-cas','f-sds','f-url','f-notes-text','f-price','f-date','f-stock','f-threshold',
+    ];
+    inputIds.forEach(id => { const el = $(id); if (el) el.disabled = false; });
+    // Action buttons always enabled when not read-only.
+    ['new-btn','archive-btn','order-btn','move-btn','use-btn'].forEach(id => {
+      const el = $(id); if (el) el.disabled = false;
+    });
+    // Location fields: stay disabled outside move-mode. setLocFieldsDisabled is called
+    // by the caller (editItem/openAddModal) after applyReadOnlyState.
+  }
+  const box = document.querySelector('.modal-box');
+  if (box) box.classList.toggle('read-only', ro);
+}
+
+// Drive the Status section's left-side action button and the Sharing transactions panel.
+// The Status section title mirrors the main-list status button label.
+// `fromShared` is accepted for call-site compatibility but no longer affects behavior:
+// the Sharing panel now always renders and carries its own state in its title.
+function configureActionForStatus(item, fromShared) {
+  const status  = getEffectiveStatus(item);
+  setStatusTitle(status);
+
+  // The order-btn slot holds the contextual workflow action. Status determines label.
+  // (In new-mode the slot is repurposed as [Create] — renderBottomBar handles that.)
+  switch (status) {
+    case 'On Order':
+      if (!$('f-date').value) $('f-date').value = todayLocal();
+      configureOrderButton({ label:'Stock',   cls:'btn-order', handler:confirmArrived });
+      break;
+    case 'Arrived':
+      configureOrderButton({ label:'Receive', cls:'btn-order', handler:receiveItem });
+      break;
+    case 'Archived':
+      configureOrderButton({ label:'Restore', cls:'btn-ok',    handler:restoreItem });
+      break;
+    default: // In Stock, Low Stock, Out of Stock
+      configureOrderButton({ label:'Order',   cls:'btn-order', handler:orderItem });
+  }
+
+  // Sharing panel — policy can be set even for archived/on-order items. Low Stock bumps a
+  // permissive 'Yes' policy down to 'Ask' so the last unit isn't given away by reflex.
+  const realPolicy = getSharingPolicy(item);
+  const effective  = (status === 'Low Stock' && realPolicy === 'Yes') ? 'Ask' : realPolicy;
+  renderSharingPanel(item, effective);
+
+  // Re-render the bottom bar so visibility/labels match the new status (e.g. archived
+  // transitions hide the action buttons and show [Delete] [Restore]).
+  renderBottomBar();
+}
+
+// True when the active lab matches the user's default lab (their home view).
+// True when the item currently in the modal belongs to the user's own (default) lab.
+// While a modal is open, the relevant lab is the item's owning lab (editLab), which
+// differs from the browsed lab when the item was opened from a cross-lab search.
+// Falls back to the browsed lab when no modal is open.
+function isOwnLab() {
+  const lab = (editIdx !== null && editLab) ? editLab : activeLab;
+  return !!(lab && defaultLab && lab === defaultLab);
+}
+
+// Configure the bottom-bar contextual workflow button. Pass null to hide it.
+function configureOrderButton(spec) {
+  const btn = $('order-btn');
+  if (!btn) return;
+  if (!spec) { btn.style.display = 'none'; return; }
+  btn.style.display = '';
+  btn.textContent   = spec.label;
+  btn.onclick       = spec.handler;
+  btn.className     = 'btn btn-sm ' + (spec.cls || 'btn-order');
+}
+
+function populateForm(item) {
+  $('f-name').value     = item.Name     || '';
+  $('f-catalog').value  = item.Catalog  || '';
+  $('f-price').value    = item.Price    || '';
+  $('f-quantity').value = item.Quantity || '';
+  $('f-cas').value      = item.CAS      || '';
+  $('f-sds').value      = item.SDS      || '';
+  $('f-url').value      = item.URL      || '';
+  $('f-date').value     = item.Received || '';
+  $('f-stock').value    = getStock(item);
+  $('f-threshold').value = getThreshold(item);
+  $('f-notes-text').value = item.Notes  || '';
+  $('f-gridxy').value   = item.GridXY   || '';
+
+  comboSet('f-vendor',   item.Vendor    || '');
+  comboSet('f-type',     item.Type      || '');
+  comboSet('f-location', item.Location1 || '');
+  comboSet('f-subloc',   item.Location2 || '');
+  comboSet('f-box1',     item.Box1      || '');
+  comboSet('f-room',     item.Room      || '');
+
+  const dims = parseGridXY(item.GridXY || '');
+  $('dim-x').value = dims ? dims.cols : '';
+  $('dim-y').value = dims ? dims.rows : '';
+
+  // Snapshot baselines for dirty tracking, then update button states.
+  captureBaselines();
+  refreshSectionDirty();
+}
+
+// ── Per-section dirty tracking ─────────────────────────────────────────
+// Each section watches a fixed set of form fields. A snapshot is taken on populate
+// and on each section's commit. Update/Cancel buttons toggle based on diff vs snapshot.
+
+// ── Modal commit model: on-blur auto-save + Move/Set for location ─────
+// There is no Save button. Information fields (Name, Vendor, Catalog, Quantity, Type,
+// CAS, SDS, URL, Notes, Price, Date, Stock, Threshold) auto-save on blur — each blurred
+// field triggers a single updateItem write for the whole item. Stock changes reconcile
+// Box2 tokens (preserving placement when shrinking, adding unplaced when growing).
+//
+// Location fields are DISABLED by default. Clicking [Move] enables them and morphs the
+// button to [Set]. Clicking [Set] persists the location change (with all the propagation
+// side-effects that commitLocation had). Clicking [Cancel] (which the Use button morphs
+// into during move-mode) reverts the location fields and exits move-mode.
+
+// ── Modal mode state ──────────────────────────────────────────────────
+// One state machine for the whole modal. Values:
+//   'default'         – viewing existing item (most common)
+//   'new-from-toolbar'– create-mode opened via toolbar + New (blank form)
+//   'new-from-host'   – create-mode opened from inside an existing-item's modal via
+//                       the modal's + New button; Location inherited from host, Info blank
+//   'move'            – Move clicked; Location fields editable until Set or Cancel
+// The archived view ([Delete] [Restore] only) is just the default mode rendered for an
+// item whose Status==='Archived' — no separate mode.
+
+let modalMode = 'default';
+let _moveSnapshot = null;   // pre-edit snapshot of location field values (for Cancel in move)
+let _hostBeforeNew = null;  // host item id we'll return to when Cancel in new-from-host
+
+// Read all form fields into a partial item object — used by createItem and action handlers.
+function readForm() {
+  return {
+    Name:      fv('f-name'),
+    Vendor:    fv('f-vendor'),
+    Catalog:   fv('f-catalog'),
+    Price:     fv('f-price'),
+    Type:      fv('f-type'),
+    Quantity:  fv('f-quantity'),
+    Received:  fv('f-date'),
+    Threshold: isNaN(fn('f-threshold')) ? 1 : fn('f-threshold'),
+    Location1: fv('f-location'),
+    Location2: fv('f-subloc'),
+    Box1:      fv('f-box1'),
+    Room:      fv('f-room'),
+    GridXY:    fv('f-gridxy'),
+    CAS:       fv('f-cas'),
+    SDS:       fv('f-sds'),
+    URL:       fv('f-url'),
+    Notes:     fv('f-notes-text'),
+    _stock:    isNaN(fn('f-stock')) ? 0 : fn('f-stock'),
+  };
+}
+
+// Generic on-blur auto-save for Info fields (everything except Name and Stock, which
+// have their own variants). Read all Info fields back to the item, then persist.
+function autoSaveField() {
+  if (editReadOnly) return;
+  if (editIdx === null) return;       // create-mode: no item yet, wait for [Create]
+  const item = currentOwnItem(); if (!item) return;
+  item.Vendor    = fv('f-vendor');
+  item.Catalog   = fv('f-catalog');
+  item.Quantity  = fv('f-quantity');
+  item.Type      = fv('f-type');
+  item.CAS       = fv('f-cas');
+  item.SDS       = fv('f-sds');
+  item.URL       = fv('f-url');
+  item.Notes     = fv('f-notes-text');
+  item.Price     = fv('f-price');
+  item.Received  = fv('f-date');
+  item.Threshold = isNaN(fn('f-threshold')) ? 1 : fn('f-threshold');
+  persistItem(item);
+  buildFilterOptions();
+  applyFilters();
+}
+
+// Name is required. On blur, reject an empty value by reverting to the stored value.
+// Otherwise behave like autoSaveField.
+function autoSaveNameField() {
+  if (editReadOnly) return;
+  if (editIdx === null) return;
+  const item = currentOwnItem(); if (!item) return;
+  const v = fv('f-name');
+  if (!v) {                                    // reject blank — revert
+    $('f-name').value = item.Name || '';
+    return;
+  }
+  item.Name = v;
+  // Also flush other Info fields (one write covers everything dirty).
+  autoSaveField();
+}
+
+// Stock change has side-effects:
+//   - Boxed items: reconcile Box2 tokens (preserve placed, drop/add unplaced).
+//   - Auto-derive Status from new stock (unless locked into On Order / Arrived).
+function autoSaveStockField() {
+  if (editReadOnly) return;
+  if (editIdx === null) return;
+  const item = currentOwnItem(); if (!item) return;
+  const newStock = isNaN(fn('f-stock')) ? 0 : fn('f-stock');
+  applyStockChange(item, newStock);
+  if (!LOCKED_ST.has((item.Status||'').toLowerCase())) {
+    updateStatus(item, stockDerivedStatus(item));
+  } else {
+    persistItem(item);
+  }
+  configureActionForStatus(item, false);
+  renderLocPanel(item);
+  applyFilters();
+}
+
+// Toolbar/+ Add Item flow: [Create] button validates Name and creates the item.
+// On success, modal flips to edit-mode of the new item (Create slot reverts to Order).
+function createItem() {
+  const name = fv('f-name');
+  if (!name) { alert('Name is required.'); return; }
+  const f = readForm();
+  const stock = isNaN(fn('f-stock')) ? 1 : fn('f-stock');
+  const newItem = makeNewItem(f, stock);
+  items.push(newItem);
+  persistItem(newItem);
+  editIdx = newItem._id;
+  modalMode = 'default';
+  _hostBeforeNew = null;
+  populateForm(newItem);
+  configureActionForStatus(newItem, false);
+  renderLocPanel(newItem);
+  setLocFieldsDisabled(true);
+  renderBottomBar();
+  buildFilterOptions();
+  applyFilters();
+}
+
+// ── Bottom-bar state machine ──────────────────────────────────────────
+// renderBottomBar() owns ALL button visibility/labels. Every state change calls it.
+
+// Enable/disable the location form fields (Location1, Location2, Box1, GridXY, Room, dims).
+function setLocFieldsDisabled(disabled) {
+  ['f-location-sel','f-location','f-subloc-sel','f-subloc',
+   'f-box1-sel','f-box1','f-room-sel','f-room','dim-x','dim-y'].forEach(id => {
+    const el = $(id); if (el) el.disabled = disabled;
+  });
+}
+
+// Render the bottom-bar button row according to modalMode and the current item's status.
+// Each button is shown or hidden via display style; labels and handlers reassigned in place.
+function renderBottomBar() {
+  const newBtn  = $('new-btn');
+  const orderBtn= $('order-btn');
+  const archBtn = $('archive-btn');
+  const moveBtn = $('move-btn');
+  const useBtn  = $('use-btn');
+  if (!newBtn || !orderBtn || !archBtn || !moveBtn || !useBtn) return;
+  // Hide everything; the active branch reveals what it needs.
+  [newBtn, orderBtn, archBtn, moveBtn, useBtn].forEach(b => b.style.display = 'none');
+
+  if (modalMode === 'new-from-toolbar' || modalMode === 'new-from-host') {
+    // [Create] (in order-btn slot) and [Cancel] (in use-btn slot)
+    orderBtn.style.display = '';
+    orderBtn.textContent   = 'Create';
+    orderBtn.className     = 'btn btn-primary btn-sm';
+    orderBtn.onclick       = createItem;
+    useBtn.style.display   = '';
+    useBtn.textContent     = 'Cancel';
+    useBtn.className       = 'btn btn-sm';
+    useBtn.onclick         = newCancelClick;
+    return;
+  }
+
+  if (modalMode === 'move') {
+    archBtn.style.display = '';
+    archBtn.textContent   = 'Archive';
+    archBtn.className     = 'btn btn-danger btn-sm';
+    archBtn.onclick       = archiveBtnClick;
+    moveBtn.style.display = '';
+    moveBtn.textContent   = 'Set';
+    moveBtn.className     = 'btn btn-primary btn-sm';
+    moveBtn.onclick       = moveBtnClick;             // re-armed (Set is a Move click in move-mode)
+    useBtn.style.display  = '';
+    useBtn.textContent    = 'Cancel';
+    useBtn.className      = 'btn btn-sm';
+    useBtn.onclick        = cancelMove;               // explicit so JS reassignment from new-mode is overridden
+    return;
+  }
+
+  // 'default' — depends on whether the item is archived.
+  const item = currentOwnItem();
+  if (!item) return;
+  const isArchived = getEffectiveStatus(item) === 'Archived';
+  if (isArchived) {
+    // [Delete] on left, [Restore] on right (Restore is the order-btn, configured by
+    // configureActionForStatus when Status==='Archived').
+    archBtn.style.display = '';
+    archBtn.textContent   = 'Delete';
+    archBtn.className     = 'btn btn-danger btn-sm';
+    archBtn.onclick       = archiveBtnClick;
+    orderBtn.style.display = '';     // [Restore], configured by configureActionForStatus
+    return;
+  }
+  // Active item: [New]  [Order/Stock/Receive]  [Move]  [Use]
+  newBtn.style.display   = '';
+  newBtn.textContent     = 'New';
+  newBtn.className       = 'btn btn-ok btn-sm';
+  newBtn.onclick         = newBtnClick;
+  orderBtn.style.display = '';     // [Order/Stock/Receive] configured by configureActionForStatus
+  moveBtn.style.display  = '';
+  moveBtn.textContent    = 'Move';
+  moveBtn.className      = 'btn btn-primary btn-sm';
+  moveBtn.onclick        = moveBtnClick;
+  useBtn.style.display   = '';
+  useBtn.textContent     = 'Use';
+  useBtn.className       = 'btn btn-danger btn-sm';
+  useBtn.onclick         = useBtnClick;
+}
+
+// Compatibility shim — old call sites call refreshMoveButtons; redirect to renderBottomBar.
+function refreshMoveButtons() { renderBottomBar(); }
+
+// [+ New] clicked from inside an existing-item modal: open new-mode and inherit Location
+// from the host item; Information fields go blank. Cancel returns to the host.
+function newBtnClick() {
+  if (editIdx === null) return;       // would have been Create, not New
+  const host = currentOwnItem();
+  if (!host) return;
+  _hostBeforeNew = host._id;
+  // Snapshot Location values for inheritance.
+  const inherited = {
+    Location1: host.Location1 || '',
+    Location2: host.Location2 || '',
+    Box1:      host.Box1 || '',
+    GridXY:    host.GridXY || '',
+    Room:      host.Room || '',
+  };
+  editIdx = null;
+  modalMode = 'new-from-host';
+  resetFormBlank();
+  // Re-populate Location only.
+  comboSet('f-location', inherited.Location1);
+  comboSet('f-subloc',   inherited.Location2);
+  comboSet('f-box1',     inherited.Box1);
+  comboSet('f-room',     inherited.Room);
+  $('f-gridxy').value = inherited.GridXY;
+  const dims = parseGridXY(inherited.GridXY);
+  $('dim-x').value = dims ? dims.cols : '';
+  $('dim-y').value = dims ? dims.rows : '';
+  $('f-stock').value     = 1;
+  $('f-threshold').value = 1;
+  // Sharing card shows the new-item policy editor.
+  renderSharingPanel({ Policy:'No', Sharing:'', Borrower:'', Borrowed:'' });
+  // Clear the location-panel preview area.
+  $('loc-panel-wrap').innerHTML = '';
+  setLocFieldsDisabled(false);        // new-mode allows the user to edit location
+  renderBottomBar();
+  setTimeout(() => $('f-name').focus(), 0);
+}
+
+// [Cancel] clicked in new-mode (this is the use-btn slot relabeled).
+// - From toolbar:  close the modal entirely.
+// - From host:     return to the host item in default state.
+function newCancelClick() {
+  if (modalMode === 'new-from-toolbar') {
+    closeEditModal(true);
+    return;
+  }
+  if (modalMode === 'new-from-host') {
+    const hostId = _hostBeforeNew;
+    _hostBeforeNew = null;
+    modalMode = 'default';
+    if (hostId !== null) {
+      const host = items.find(i => i._id === hostId);
+      if (host) {
+        editIdx = hostId;
+        populateForm(host);
+        configureActionForStatus(host, false);
+        renderLocPanel(host);
+        setLocFieldsDisabled(true);
+        renderBottomBar();
+        return;
+      }
+    }
+    closeEditModal(true);
+  }
+}
+
+// [Move] click: enter move-mode (snapshot location, enable fields, redraw bar).
+// [Set] click (move-mode): commit the location change.
+function moveBtnClick() {
+  if (editReadOnly) return;
+  if (editIdx === null) return;
+  if (modalMode !== 'move') {
+    _moveSnapshot = {
+      Location1: fv('f-location'),
+      Location2: fv('f-subloc'),
+      Box1:      fv('f-box1'),
+      GridXY:    fv('f-gridxy'),
+      Room:      fv('f-room'),
+      dimX:      $('dim-x').value,
+      dimY:      $('dim-y').value,
+    };
+    modalMode = 'move';
+    setLocFieldsDisabled(false);
+    renderBottomBar();
+    return;
+  }
+  // [Set] click — commit.
+  commitMove();
+}
+
+// Commit pending move: write location fields, propagate side-effects, exit move-mode.
+function commitMove() {
+  const item = currentOwnItem(); if (!item) return;
+  const newBox1   = fv('f-box1');
+  const newGridXY = fv('f-gridxy');
+  const oldKey    = { Location1: item.Location1, Location2: item.Location2, Box1: item.Box1 };
+  const oldRoom   = item.Room || '';
+  const wasBoxed  = !!item.Box1;
+  const nowBoxed  = !!newBox1;
+
+  item.Location1 = fv('f-location');
+  item.Location2 = fv('f-subloc');
+  item.Box1      = newBox1;
+  item.GridXY    = newGridXY;
+  item.Room      = fv('f-room');
+
+  if (nowBoxed && (oldKey.Box1 !== newBox1 || oldKey.Location1 !== item.Location1 || oldKey.Location2 !== item.Location2)) {
+    const count = Math.max(1, getStock(item));
+    item.Box2 = encodeBox2(new Array(count).fill('0'));
+  }
+  if (wasBoxed && !nowBoxed) item.Box2 = '';
+  if (oldKey.Box1 && oldKey.Box1 !== newBox1) propagateBox1Rename(oldKey, newBox1, item._id);
+  if (newGridXY) propagateGridXY(item);
+  const pathUnchanged = oldKey.Box1 === item.Box1
+    && oldKey.Location1 === item.Location1
+    && oldKey.Location2 === item.Location2;
+  if (pathUnchanged && (item.Room || '') !== oldRoom) propagateRoom(item, oldRoom);
+  if (item.Box1) item.Stock = parseBox2(item.Box2 || '').length || getStock(item);
+
+  persistItem(item);
+  buildFilterOptions();
+  applyFilters();
+  renderLocPanel(item);
+
+  modalMode = 'default';
+  _moveSnapshot = null;
+  setLocFieldsDisabled(true);
+  renderBottomBar();
+}
+
+// [Cancel] click during move-mode: revert location fields to snapshot, exit move-mode.
+function cancelMove() {
+  if (modalMode !== 'move' || !_moveSnapshot) return;
+  comboSet('f-location', _moveSnapshot.Location1);
+  comboSet('f-subloc',   _moveSnapshot.Location2);
+  comboSet('f-box1',     _moveSnapshot.Box1);
+  comboSet('f-room',     _moveSnapshot.Room);
+  $('f-gridxy').value = _moveSnapshot.GridXY;
+  $('dim-x').value    = _moveSnapshot.dimX;
+  $('dim-y').value    = _moveSnapshot.dimY;
+  modalMode = 'default';
+  _moveSnapshot = null;
+  setLocFieldsDisabled(true);
+  renderBottomBar();
+}
+
+// [Archive] / [Delete]: delegate to deleteCurrentItem (existing archive/delete UX).
+// In Move mode, Archive still works — the move snapshot is discarded.
+// After archive, the modal STAYS OPEN on the now-archived item; the bar redraws to
+// the archived state ([Delete] [Restore]) so the user can act further or click outside.
+function archiveBtnClick() {
+  if (modalMode === 'move') { modalMode = 'default'; _moveSnapshot = null; setLocFieldsDisabled(true); }
+  // Capture id BEFORE deleteCurrentItem runs (it closes the modal which resets editIdx).
+  const targetId = editIdx;
+  const wasReadOnly = editReadOnly;
+  deleteCurrentItem();
+  // If the item still exists in the items list and just transitioned to Archived (not Deleted),
+  // re-open the modal on it so [Delete] / [Restore] are available without a list round-trip.
+  const it = items.find(i => i._id === targetId && !i._deleted && getEffectiveStatus(i) === 'Archived');
+  if (it) {
+    editIdx = targetId;
+    editReadOnly = wasReadOnly;
+    populateForm(it);
+    configureActionForStatus(it, false);
+    renderLocPanel(it);
+    setLocFieldsDisabled(true);
+    renderBottomBar();
+    $('edit-modal-overlay').classList.add('open');
+  }
+}
+
+// [Use] click: decrement stock by 1.
+// In move-mode this same button is morphed to [Cancel] and routes there instead.
+function useBtnClick() {
+  if (modalMode === 'move') { cancelMove(); return; }
+  if (editReadOnly) return;
+  if (editIdx === null) return;
+  const item = currentOwnItem(); if (!item) return;
+
+  // Unboxed items (no Box1): just decrement the numeric Stock.
+  if (!item.Box1) {
+    const newStock = Math.max(0, getStock(item) - 1);
+    item.Stock = newStock;
+    if (!LOCKED_ST.has((item.Status||'').toLowerCase())) {
+      updateStatus(item, stockDerivedStatus(item));
+    } else {
+      persistItem(item);
+    }
+    const stockEl = $('f-stock');
+    if (stockEl) stockEl.value = newStock;
+    configureActionForStatus(item, false);
+    applyFilters();
+    return;
+  }
+
+  // Boxed items: consume one token. Prefer a selected coord; otherwise an unplaced token;
+  // otherwise the first placed coord.
+  let coord = null;
+  if (locSelected && locSelected.coord) coord = locSelected.coord;
+  else {
+    const toks = parseBox2(item.Box2 || '');
+    if (toks.length === 0) return;
+    coord = toks.includes('0') ? '0' : toks[0];
+  }
+  consumeOneToken(item, coord);
+  resetLocState();
+  redrawLoc();
+}
+
+// Apply a stock-field change to the item with Box2 reconciliation when boxed.
+function applyStockChange(item, newStock) {
+  if (item.Box1) {
+    item.Box2 = reconcileBox2(item.Box2 || '', newStock);
+    item.Stock = parseBox2(item.Box2).length;
+  } else {
+    item.Stock = Math.max(0, newStock|0);
+  }
+}
+
+// Close the edit modal and reset all modal-related state.
+function closeEditModal(force) {
+  if (!force) {
+    // No dirty check (auto-save means there's nothing pending), but allow callers a hook.
+  }
+  $('edit-modal-overlay').classList.remove('open');
+  editIdx = null;
+  editLab = '';
+  editReadOnly = false;
+  resetLocState(); locView = null;
+  modalMode = 'default';
+  _moveSnapshot = null;
+  _hostBeforeNew = null;
+  const box = document.querySelector('.modal-box');
+  if (box) box.classList.remove('read-only');
+}
+
+// Stubs for compatibility — call sites elsewhere expect these to exist.
+// In the new on-blur model there's no global dirty state, so they're no-ops.
+function captureBaselines()       {}
+function refreshSectionDirty()    {}
+function isModalDirty()           { return false; }
+function anySectionDirty()        { return false; }
+function onFieldChange()          {}
+
+// Live preview when stock or box fields change (for the location panel)
+function onStockFieldChange() {
+  if (editIdx === null) return;
+  const item = items.find(i => i._id === editIdx);
+  if (!item || !item.Box1) return;
+  const newStock = parseInt($('f-stock').value, 10);
+  if (isNaN(newStock) || newStock < 0) return;
+  // Display-only preview — saveItem does the actual reconcile
+  const preview = Object.assign({}, item, { Box2: reconcileBox2(item.Box2 || '', newStock) });
+  renderLocPanel(preview);
+}
+
+function onBoxFieldChange() {
+  if (editIdx === null) return;
+  const item = items.find(i => i._id === editIdx);
+  if (!item) return;
+  const preview = Object.assign({}, item, {
+    Box1: fv('f-box1'),
+    GridXY: fv('f-gridxy'),
+  });
+  renderLocPanel(preview);
+}
+
+function applyDimensionsFromForm() {
+  const x = parseInt($('dim-x').value, 10);
+  const y = parseInt($('dim-y').value, 10);
+  const valid = x >= 1 && y >= 1;
+  const val = valid ? `X${Math.min(x,26)} Y${Math.min(y,26)}` : '';
+  $('f-gridxy').value = val;
+
+  if (editIdx === null) return;
+  const item = items.find(i => i._id === editIdx);
+  if (!item || !item.Box1) return;
+  const preview = Object.assign({}, item, { GridXY: val, Box1: fv('f-box1') });
+  renderLocPanel(preview);
+}
+
+// ── Location panel ─────────────────────────────────────────────────────
+// View/Return toggle for the View buttons next to Location 1 and Location 2.
+// Clicking View on a level scopes the panel to that level (drill up). Clicking Return on
+// the active level brings the panel back to the current box. Clicking View on a different
+// level than the currently-active drill switches scope.
+function toggleViewLevel(level) {
+  const item = modalFind(editIdx);
+  if (!item) return;
+
+  const activeLevel = locView && (locView.loc2 ? 2 : 1);
+  if (activeLevel === level) {
+    locView = null;            // Return — back to current box
+  } else if (level === 1) {
+    if (!item.Location1) return;
+    locView = { loc1: item.Location1 };
+  } else {
+    if (!item.Location1 || !item.Location2) return;
+    locView = { loc1: item.Location1, loc2: item.Location2 };
+  }
+  locSelected = null;
+  renderLocPanel(item);
+  updateViewBtns(item);
+}
+
+// Reflect the current View state on the buttons (label + active styling, disabled when the
+// corresponding location field is empty).
+function updateViewBtns(item) {
+  const btn1 = $('view-loc1');
+  const btn2 = $('view-loc2');
+  if (!btn1 || !btn2) return;
+  const activeLevel = locView && (locView.loc2 ? 2 : 1);
+  const has1 = !!(item && item.Location1);
+  const has2 = !!(item && item.Location1 && item.Location2);
+
+  // Eye = "view this location's contents". Back-arrow = "return to the item" (active state).
+  // Inline SVG keeps the icon under our control and avoids loading an icon font.
+  const EYE_SVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const BACK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>';
+
+  btn1.innerHTML = activeLevel === 1 ? BACK_SVG : EYE_SVG;
+  btn1.title     = activeLevel === 1 ? 'Return to item' : 'View Location 1 contents';
+  btn1.classList.toggle('is-active', activeLevel === 1);
+  btn1.disabled  = !has1;
+
+  btn2.innerHTML = activeLevel === 2 ? BACK_SVG : EYE_SVG;
+  btn2.title     = activeLevel === 2 ? 'Return to item' : 'View Location 2 contents';
+  btn2.classList.toggle('is-active', activeLevel === 2);
+  btn2.disabled  = !has2;
+}
+
+// Group items by Name+Vendor+Catalog and accumulate a numeric field.
+// `getValue` returns the per-item contribution; `extra` lets callers track flags.
+function groupByIdentity(arr, getValue, extra) {
+  const seen = {}, out = [];
+  arr.forEach(it => {
+    const key = (it.Name||'').trim() + '|' + (it.Vendor||'').trim() + '|' + (it.Catalog||'').trim();
+    if (seen[key] !== undefined) {
+      out[seen[key]].total += getValue(it);
+      if (extra) extra(out[seen[key]], it);
+    } else {
+      seen[key] = out.length;
+      const entry = { rep: it, total: getValue(it) };
+      if (extra) extra(entry, it);
+      out.push(entry);
+    }
+  });
+  return out;
+}
+
+function renderScopedList(item, wrap) {
+  const loc1 = locView && locView.loc1;
+  const loc2 = locView && locView.loc2;
+  const scoped = modalItems().filter(i => !i._deleted
+    && (!loc1 || i.Location1 === loc1)
+    && (!loc2 || i.Location2 === loc2));
+
+  // Group by Box1 first
+  const byBox = {};
+  scoped.forEach(i => { const k = i.Box1 || '(no box)'; (byBox[k] = byBox[k] || []).push(i); });
+
+  let html = '';
+  Object.keys(byBox).sort().forEach(box => {
+    html += `<div class="box-list-hdr">${esc(box)}</div>`;
+    const groups = groupByIdentity(byBox[box], getStock).sort((a,b) => a.rep.Name.localeCompare(b.rep.Name));
+    groups.forEach(({rep, total}) => {
+      const isSel = locSelected && locSelected.item && locSelected.item._id === rep._id;
+      const short = rep.Name.length > 26 ? rep.Name.slice(0,25)+'…' : rep.Name;
+      html += `<div class="bli${isSel?' bli-active':''}" onclick="locScopeSelect(${rep._id})">
+        <div class="bli-name" title="${esc(rep.Name)}">${esc(short)}</div>
+        <div class="bli-status">${getEffectiveStatus(rep)} · ${total}</div>
+      </div>`;
+    });
+  });
+
+  const title = loc2
+    ? `${esc(loc1)} \u203a <strong>${esc(loc2)}</strong>`
+    : `<strong>${esc(loc1)}</strong>`;
+
+  wrap.innerHTML = `<div style="font-size:13px;margin-bottom:6px;color:var(--mut);">Viewing ${title}</div>
+    <div class="box-list">${html || '<div class="muted-italic">No items.</div>'}</div>`;
+}
+
+function locScopeSelect(itemId) {
+  const sib = modalFind(itemId);
+  if (!sib) return;
+  editIdx = itemId;
+  populateForm(sib);
+  configureActionForStatus(sib, false);   // refresh sharing panel and action button
+  locView = null;
+  locSelected = null;
+  renderLocPanel(sib);
+}
+
+// Reset placement-tool state: deselect any selected cell and drop add/remove mode.
+function resetLocState() { locSelected = null; locMode = null; }
+
+// Re-render the loc panel for the currently-edited item plus refresh the main list.
+// Most placement actions end with these two calls, so consolidate.
+function redrawLoc() {
+  renderLocPanel(items.find(i => i._id === editIdx));
+  applyFilters();
+}
+
+function renderLocPanel(item) {
+  const wrap = $('loc-panel-wrap');
+  // Respect the user's View selection FIRST. The View buttons operate on Location1 /
+  // Location2 scope, which is meaningful even for items without a Box1 of their own.
+  if (locView) { renderScopedList(item, wrap); updateViewBtns(item); refreshLocActionRow(); return; }
+  if (!item || !item.Box1) {
+    wrap.innerHTML = `<div class="muted-italic" style="padding:8px 2px;">Assign Box 1 to enable location tracking.</div>`;
+    updateViewBtns(item);
+    refreshLocActionRow();
+    return;
+  }
+  const dims = parseGridXY(item.GridXY || '');
+  const useGrid = dims && !(dims.cols === 1 && dims.rows === 1);
+  if (useGrid) renderLocGrid(item, wrap, dims, item);
+  else         renderLocList(item, wrap, false, item);
+  updateViewBtns(item);
+  refreshLocActionRow();
+}
+
+function renderUnplacedRows(sibs) {
+  // Group unplaced ('0') tokens by identity, render one row per token
+  const groups = groupByIdentity(sibs, () => 0, (entry, it) => {
+    entry.surplus = (entry.surplus || 0) + box2ListCount(it.Box2);
+  });
+  let html = '';
+  groups.forEach(({rep, surplus}) => {
+    if (!surplus) return;
+    const isSel = locSelected && locSelected._isUnplaced && locSelected._sibId === rep._id;
+    const short = rep.Name.length > 20 ? rep.Name.slice(0,19)+'…' : rep.Name;
+    for (let k = 0; k < surplus; k++) {
+      html += `<div class="bli bli-unplaced${isSel?' bli-active':''}" onclick="locSelectUnplaced(${rep._id})">
+        <div class="bli-name" title="Click to place in a grid cell">□ ${esc(short)}</div>
+        <div class="bli-status">unplaced</div>
+      </div>`;
+    }
+  });
+  return html;
+}
+
+// Wrap the inner panel content with the standard chrome:
+//   header (breadcrumb) → mode guidance → add-mode search → body → toolbar (bottom-left).
+// Used by both renderLocList and renderLocGrid.
+function locPanelHTML(item, body) {
+  // The box/list view lives directly inside the Location section card — no inner panel wrapper.
+  // A mode class on a thin wrapper still gives the CSS hooks for "remove mode" cursor styles.
+  return `<div class="loc-inner${locMode?' loc-mode-'+locMode:''}">
+    ${locModeLabel()}
+    ${body}
+  </div>`;
+}
+
+function renderLocList(item, wrap, hasGrid, preview) {
+  const sibs = boxSiblingsWithPreview(item, preview);
+  const groups = groupByIdentity(sibs, getStock, (entry, it) => {
+    entry.hasPlaced = entry.hasPlaced || box2Coords(it.Box2).length > 0;
+  });
+  const visible = groups
+    .filter(g => !hasGrid || g.hasPlaced)
+    .sort((a,b) => a.rep.Name.localeCompare(b.rep.Name));
+
+  const rows = visible.map(({rep, total}) => {
+    const isCur = rep._id === editIdx;
+    const short = rep.Name.length > 24 ? rep.Name.slice(0,23)+'\u2026' : rep.Name;
+    // Clicking another item navigates the modal to it; clicking the current item is a no-op.
+    const handler = isCur ? '' : `onclick="locNavigateTo(${rep._id})"`;
+    return `<div class="bli${isCur?' bli-active':''}" ${handler}>
+      <div class="bli-name" title="${esc(rep.Name)}">${esc(short)}</div>
+      <div class="bli-status">${total} in stock</div>
+    </div>`;
+  }).join('');
+
+  const unplacedHtml = hasGrid ? renderUnplacedRows(sibs) : '';
+  const inner = (rows + unplacedHtml) || '<div class="muted-italic">No items.</div>';
+
+  wrap.innerHTML = locPanelHTML(item, `<div class="box-list">${inner}</div>`);
+}
+
+function renderLocGrid(item, wrap, dims, preview) {
+  const {cols, rows} = dims;
+  const sibs = boxSiblingsWithPreview(item, preview);
+  const occ = {};
+  sibs.forEach(sib => box2Coords(sib.Box2).forEach(c => { occ[c] = sib; }));
+
+  let colLbls = '<div class="grid-col-labels">';
+  for (let c=1; c<=cols; c++) colLbls += `<div class="grid-col-lbl">${c}</div>`;
+  colLbls += '</div>';
+
+  // In add mode (with no coord chosen yet) or when an occupied/unplaced item is selected,
+  // empty cells are click-targets and show a placing cursor.
+  const willPlace = (locMode === 'add' && locSelected && !locSelected.coord) ||
+                    (locSelected && (locSelected.occupied || locSelected._isUnplaced));
+
+  let gridRows = '';
+  for (let r=0; r<rows; r++) {
+    const rowLetter = String.fromCharCode(65+r);
+    let cells = '';
+    for (let c=1; c<=cols; c++) {
+      const coord    = `${rowLetter}${c}`;
+      const occupant = occ[coord];
+      const isSel    = locSelected && locSelected.coord === coord;
+      const isOwn    = occupant && occupant._id === editIdx;
+      let cellCls = 'grid-cell';
+      let inner = '', handler = '';
+      if (occupant) {
+        // mk-active (strong) > mk-owned (soft) — both can hint the cell, but the cell
+        // selected by click gets the full color regardless of ownership.
+        const mCls = isSel ? 'mk-active' : (isOwn ? 'mk-owned' : '');
+        cellCls += ` c-occupied${isSel?' c-staged':''}`;
+        inner   = `<div class="grid-marker ${mCls}">${esc(occupant.Name.slice(0,3))}</div>`;
+        handler = `onclick="locSelectOccupied('${coord}',${occupant._id})" data-tip="${esc(occupant.Name)} \u00b7 ${getEffectiveStatus(occupant)}"`;
+      } else {
+        cellCls += willPlace ? ' c-placing' : '';
+        handler = `onclick="locSelectEmpty('${coord}')" data-tip="${coord}"`;
+      }
+      cells += `<div class="${cellCls}" ${handler}>${inner}</div>`;
+    }
+    gridRows += `<div class="grid-row"><div class="grid-row-lbl">${rowLetter}</div>${cells}</div>`;
+  }
+
+  const unplaced = renderUnplacedRows(sibs);
+  const body = `<div class="grid-outer">${colLbls}${gridRows}</div>` +
+               (unplaced ? `<div class="box-list" style="margin-top:6px;">${unplaced}</div>` : '');
+
+  wrap.innerHTML = locPanelHTML(item, body);
+}
+
+// ── Location placement: current-item-only ──────────────────────────────
+// The modal operates on a single item identity. Box placement and removal apply only to
+// the item currently being edited. Clicking another item's cell in the grid switches
+// the modal to that item (navigation) — clean read-side affordance, no cross-item edits.
+//
+// locMode: null (default) | 'remove'  (no more 'add' — adding items is only via toolbar)
+// locSelected: { coord } | null       (current item's selected coord for Remove)
+
+function locModeLabel() {
+  if (locMode === 'remove') {
+    return `<div class="loc-mode-line">Click a cell or unplaced unit to remove from this item</div>`;
+  }
+  return '';
+}
+
+// In the new model, the bottom-bar [Use] button replaces the old Location-section Remove
+// button. There's no longer a "remove mode" toggle — Use just acts on the selected coord
+// (or the first unplaced/placed token). This helper is kept as a no-op for compatibility
+// with call sites that haven't been updated.
+function refreshLocActionRow() {}
+
+function locCancelSelect() {
+  resetLocState();
+  const cur = items.find(i => i._id === editIdx);
+  if (cur) renderLocPanel(cur);
+}
+
+// Click an empty cell on the current item's grid.
+//   - If a coord on the current item is selected → MOVE that token here (the within-box-
+//     move feature). This is the bug-fix case: previously only unplaced-token placement
+//     was supported, not placed-to-placed move.
+//   - If '0' (unplaced) is selected → place one unplaced token here.
+//   - Otherwise: pick an unplaced token (if any) and place it.
+function locSelectEmpty(coord) {
+  if (editReadOnly) return;
+  const cur = items.find(i => i._id === editIdx);
+  if (!cur || !coord) return;
+  const tokens = parseBox2(cur.Box2 || '');
+
+  // (1) If a placed coord on this item is selected, move it here.
+  if (locSelected && locSelected.coord && locSelected.coord !== '0') {
+    const idx = tokens.indexOf(locSelected.coord);
+    if (idx !== -1) {
+      tokens[idx] = coord;
+      cur.Box2 = encodeBox2(tokens);
+      persistItem(cur);
+      resetLocState();
+      redrawLoc();
+      return;
+    }
+  }
+  // (2) If an unplaced token is selected, place it here.
+  if (locSelected && locSelected.coord === '0') {
+    const idx = tokens.indexOf('0');
+    if (idx === -1) { resetLocState(); redrawLoc(); return; }
+    tokens[idx] = coord;
+    cur.Box2 = encodeBox2(tokens);
+    persistItem(cur);
+    resetLocState();
+    redrawLoc();
+    return;
+  }
+  // (3) Nothing selected: if there's an unplaced token, place it here (convenience).
+  const idx = tokens.indexOf('0');
+  if (idx === -1) return;
+  tokens[idx] = coord;
+  cur.Box2 = encodeBox2(tokens);
+  persistItem(cur);
+  resetLocState();
+  redrawLoc();
+}
+
+// Click an occupied cell.
+//   - Belongs to the CURRENT item:
+//       - Remove-mode: consume that coord.
+//       - Otherwise: select it (sets locSelected.coord) so Remove or a click on an empty
+//         cell can act on it.
+//       - Same coord clicked again: deselect.
+//   - Belongs to ANOTHER item: navigate the modal to that item (read-side affordance).
+function locSelectOccupied(coord, itemId) {
+  const clicked = modalFind(itemId);
+  if (!clicked) return;
+
+  // Cell belongs to a DIFFERENT item → switch the modal to that item AND select the
+  // clicked coord. One click does both: the modal updates to show that item, and the
+  // coord is now selected so Use / Move-to-empty-cell can act on it immediately.
+  if (itemId !== editIdx) {
+    editIdx = itemId;
+    populateForm(clicked);
+    configureActionForStatus(clicked, false);
+    locSelected = { coord };
+    renderLocPanel(clicked);
+    return;
+  }
+
+  // Cell belongs to the CURRENT item.
+  // Same coord clicked again → deselect.
+  if (locSelected && locSelected.coord === coord) {
+    locCancelSelect();
+    return;
+  }
+  // Otherwise select this coord.
+  locSelected = { coord };
+  renderLocPanel(clicked);
+}
+
+// Click an unplaced row (this item's own unplaced units).
+//   - Select it (sentinel coord '0') so a click on an empty cell will place it there.
+//   - Clicking again deselects.
+function locSelectUnplaced() {
+  if (editReadOnly) return;
+  const cur = items.find(i => i._id === editIdx);
+  if (!cur) return;
+  if (locSelected && locSelected.coord === '0') {
+    locCancelSelect();
+    return;
+  }
+  locSelected = { coord: '0' };
+  renderLocPanel(cur);
+}
+
+// Build a brand-new item record from form data. Called by createItem (toolbar Add flow).
+function makeNewItem(f, stock) {
+  const item = {
+    _id: nextId++, _row: null, _deleted: false,
+    Name: f.Name, Vendor: f.Vendor, Catalog: f.Catalog, Price: f.Price,
+    Type: f.Type, Quantity: f.Quantity, Received: f.Received,
+    Threshold: f.Threshold,
+    Location1: f.Location1, Location2: f.Location2,
+    Box1: f.Box1, Room: f.Room, GridXY: f.GridXY,
+    CAS: f.CAS, SDS: f.SDS, URL: f.URL, Notes: f.Notes,
+    Policy: '',
+    Sharing: '', Borrower: '', Borrowed: '',
+    Stock: 0, Box2: '',
+    Status: '',
+  };
+  const policySel = $('sp-policy');
+  if (policySel && ['No','Ask','Yes'].includes(policySel.value)) item.Policy = policySel.value;
+  if (item.Box1) {
+    item.Box2 = encodeBox2(new Array(Math.max(1, stock|0)).fill('0'));
+    item.Stock = parseBox2(item.Box2).length;
+  } else {
+    item.Stock = Math.max(0, stock|0);
+  }
+  item.Status = stockDerivedStatus(item);
+  return item;
+}
+
+// Navigate the modal to another item in the same box.
+function locNavigateTo(itemId) {
+  const target = items.find(i => i._id === itemId);
+  if (!target) return;
+  editIdx = itemId;
+  resetLocState();
+  populateForm(target);
+  configureActionForStatus(target, false);
+  renderLocPanel(target);
+}
+
+// Remove one token (placed coord or '0') from item.Box2 and update derived stock + status.
+function consumeOneToken(item, token) {
+  const tokens = parseBox2(item.Box2);
+  const idx = tokens.indexOf(token);
+  if (idx !== -1) tokens.splice(idx, 1);
+  item.Box2  = encodeBox2(tokens);
+  item.Stock = parseBox2(item.Box2).length;
+  if (!LOCKED_ST.has((item.Status||'').toLowerCase())) {
+    updateStatus(item, stockDerivedStatus(item));
+  } else {
+    persistItem(item);
+  }
+  // If the consumed item is the one currently displayed in the modal form, mirror the
+  // stock change into the Stock input so it's visible without re-clicking another item.
+  if (item._id === editIdx) {
+    const stockEl = $('f-stock');
+    if (stockEl) stockEl.value = getStock(item);
+  }
+}
+
+// ── Order state machine ────────────────────────────────────────────────
+// Apply a mutation to the current item and stay in the modal. Used by every status-section
+// transition button (Order / Add Stock / Receive / Restore). After mutation, re-populate
+// the form, reconfigure the status button for the new state, and refresh the location panel.
+function commitAndStayOpen(mutator) {
+  const item = items.find(i => i._id === editIdx);
+  if (!item) return;
+  mutator(item);
+  populateForm(item);                       // re-baseline all sections
+  configureActionForStatus(item, false);    // pick the next button label for the new status
+  renderLocPanel(item);
+  applyFilters();
+}
+
+// With on-blur auto-save, the form's field values are already committed to the item.
+// These workflow handlers only need to update the lifecycle Status.
+function orderItem()      { commitAndStayOpen(item => updateStatus(item, 'On Order')); }
+function confirmArrived() { commitAndStayOpen(item => updateStatus(item, 'Arrived')); }
+function receiveItem()    { commitAndStayOpen(item => updateStatus(item, stockDerivedStatus(item))); }
+function restoreItem()    { commitAndStayOpen(item => updateStatus(item, stockDerivedStatus(item))); }
+
+// Variant that closes the modal after mutation — for transactional sharing actions
+// (Borrow, Request, Accept, Deny, Return), which are complete user gestures.
+function commitAndClose(mutator) {
+  const item = modalFind(editIdx);
+  if (!item) return;
+  mutator(item);
+  applyFilters();
+  closeEditModal(true);   // force-close — we handled the save
+}
+
+// ── Archive / Delete ───────────────────────────────────────────────────
+// Clear all placement coords on an item, leaving stock count intact as unplaced tokens.
+// Used on archive: on restore, the user re-places each unit manually.
+function clearPlacements(item) {
+  if (!item.Box1 || !item.Box2) return;
+  const count = parseBox2(item.Box2).length;
+  item.Box2 = encodeBox2(new Array(count).fill('0'));
+}
+
+function deleteCurrentItem() {
+  if (editReadOnly) return;
+  const item = currentOwnItem(); if (!item) return;
+  const isArchived = getEffectiveStatus(item) === 'Archived';
+  const stock = getStock(item);
+
+  // Archive/Delete is always a row-level operation. When a boxed row represents multiple
+  // physical units (Stock > 1), archiving means archiving ALL of them at once — there's no
+  // per-unit archive state on a single row. Confirm the count so it isn't accidental.
+  if (item.Box1 && stock > 1 && !isArchived) {
+    if (!confirm(`Archive all ${stock} items?`)) return;
+  }
+
+  if (isArchived) {
+    // Soft delete — mark the row as Deleted in the sheet, hide it from the UI,
+    // but never remove the underlying row.
+    if (!confirm('Mark this archived item as Deleted? It will be hidden from the inventory but kept in the sheet.')) return;
+    updateStatus(item, 'Deleted');
+  } else {
+    // Archive: clear placements (stock count preserved as unplaced tokens), mark archived.
+    // On Restore the user re-places each unit manually.
+    clearPlacements(item);
+    updateStatus(item, 'Archived');
+  }
+
+  closeEditModal(true); buildFilterOptions(); applyFilters();
+}
+
+// ── Sharing panel ──────────────────────────────────────────────────────
+function setSharingTitle(label) {
+  const el = $('sharing-title-suffix');
+  if (el) el.textContent = label ? ` \u2014 ${label}` : '';
+}
+
+function renderSharingPanel(item, overridePolicy) {
+  const card    = $('sec-sharing');
+  const wrap    = $('sharing-panel-wrap');
+  if (!card || !wrap) return;
+  const isCopy   = isBorrowedCopy(item);
+  // Loan state lives in the Sharing column for BOTH host rows and borrowed copies (the
+  // copy uses 'Borrowed' where the host shows 'Shared'). Map Borrowed→Shared so the
+  // shared panel branches are reused; the borrower-vs-host control split is via `own`.
+  const sharing  = (s => s === 'Borrowed' ? 'Shared' : s)(getSharingState(item));
+  const policy   = overridePolicy || getSharingPolicy(item);
+  const borrower = item.Borrower || '';
+  const borrowed = (item.Borrowed || '').slice(0, 10);
+  // "own" = the host (owning-lab) view, which gets host controls (Bring Back / Resolved /
+  // policy editor). A borrowed COPY lives in the viewer's own tab but they are the
+  // BORROWER, not the host — so it must use the borrower controls regardless of isOwnLab().
+  const own      = isOwnLab() && !isCopy;
+
+  // Card accent colour. IOU and Bring Back are danger states regardless of source policy.
+  card.classList.remove('policy-yes', 'policy-ask', 'policy-no', 'policy-iou');
+  if (sharing === 'IOU' || sharing === 'Bring Back' || sharing === 'Denied') card.classList.add('policy-iou');
+  else if (policy === 'Yes')   card.classList.add('policy-yes');
+  else if (policy === 'Ask')   card.classList.add('policy-ask');
+  else                         card.classList.add('policy-no');
+
+  // Title carries the sharing STATE (plus borrower · date for active transactions);
+  // idle items show the policy word.
+  const nd = borrower ? `${borrower}${borrowed ? ' \u00b7 ' + borrowed : ''}` : '';
+  let titleLabel;
+  if (sharing === 'IOU' && borrower)             titleLabel = `IOU \u00b7 ${nd}`;
+  else if (sharing === 'Denied' && borrower)     titleLabel = `Denied \u00b7 ${nd}`;
+  else if (sharing === 'Bring Back' && borrower) titleLabel = `Bring Back \u00b7 ${nd}`;
+  else if (sharing === 'Requested' && borrower)  titleLabel = `Requested \u00b7 ${nd}`;
+  else if (sharing === 'Shared' && borrower)     titleLabel = `Shared \u00b7 ${nd}`;
+  else                                           titleLabel = policy; // Yes / Ask / No
+  setSharingTitle(titleLabel);
+
+  // Body — a single horizontal row. Active transactions show their action buttons only
+  // (name/date now live in the title). Idle items: policy editor in your own lab, or the
+  // borrow/request control when viewing another lab's item.
+  let body;
+  if (sharing === 'Denied' && borrower) {
+    // Borrower's copy after the host denied the request. Acknowledge soft-deletes it.
+    body = `<div class="sharing-row">
+        <span class="muted-italic" style="flex:1;">Request was denied.</span>
+        <button class="btn btn-ok btn-sm" onclick="acknowledgeDenied()">OK</button>
+      </div>`;
+  } else if (sharing === 'IOU' && borrower) {
+    // IOU: the borrower consumed the unit. Only the host resolves it (single click,
+    // no PI gate). The borrower has nothing left to do — show state via the title only.
+    body = own
+      ? `<div class="sharing-row">
+          <button class="btn btn-ok btn-sm" onclick="resolveSharing()">Resolved</button>
+        </div>`
+      : `<div class="sharing-row muted-italic">Item owed back to the owning lab.</div>`;
+  } else if (sharing === 'Bring Back' && borrower) {
+    // Host recalled the item. Host can force-resolve back to In Stock; the borrower
+    // still has Return / IOU (the normal ways the loan ends).
+    body = own
+      ? `<div class="sharing-row">
+          <button class="btn btn-ok btn-sm" onclick="resolveSharing()">Resolved</button>
+        </div>`
+      : `<div class="sharing-row">
+          <button class="btn btn-ok btn-sm" onclick="returnItem()">Return</button>
+          <button class="btn btn-danger btn-sm" onclick="iouItem()">IOU</button>
+        </div>`;
+  } else if (sharing === 'Requested' && borrower && isCopy) {
+    // Borrower's own copy of a still-pending request — passive, waiting on the host.
+    body = `<div class="sharing-row muted-italic">Request pending host approval.</div>`;
+  } else if (sharing === 'Requested' && borrower) {
+    body = `<div class="sharing-row">
+        <button class="btn btn-borrow btn-sm" onclick="acceptRequest()">Accept</button>
+        <button class="btn btn-danger btn-sm" onclick="denyRequest()">Deny</button>
+      </div>`;
+  } else if (sharing === 'Shared' && borrower) {
+    // Host can recall (Bring Back). Borrower can Return or flag IOU.
+    body = own
+      ? `<div class="sharing-row">
+          <button class="btn btn-danger btn-sm" onclick="bringBackItem()">Bring Back</button>
+        </div>`
+      : `<div class="sharing-row">
+          <button class="btn btn-ok btn-sm" onclick="returnItem()">Return</button>
+          <button class="btn btn-danger btn-sm" onclick="iouItem()">IOU</button>
+        </div>`;
+  } else if (own) {
+    // Idle, your own lab: set the sharing policy. Set commits immediately, modal stays open.
+    const opt = p => `<option value="${p}"${policy===p?' selected':''}>${p}</option>`;
+    body = `<div class="sharing-row">
+        <select id="sp-policy" class="sp-inp sp-inp-name">${opt('No')}${opt('Ask')}${opt('Yes')}</select>
+        <button class="btn btn-borrow btn-sm" onclick="setPolicy()">Set</button>
+      </div>`;
+  } else if (policy === 'No') {
+    body = `<div class="sharing-row muted-italic">Item is not shared.</div>`;
+  } else {
+    // Idle, foreign lab: borrow or request the item.
+    const actionBtn = policy === 'Yes'
+      ? `<button class="btn btn-borrow btn-sm" onclick="borrowItem()">Borrow</button>`
+      : `<button class="btn btn-ask btn-sm"    onclick="requestItem()">Request</button>`;
+    body = `<div class="sharing-row">
+        <input id="sp-borrower" class="sp-inp sp-inp-name" type="text" placeholder="Name">
+        <input id="sp-date"     class="sp-inp sp-inp-date" type="date" value="${todayLocal()}">
+        ${actionBtn}
+      </div>`;
+  }
+
+  wrap.innerHTML = body;
+  card.style.display = '';
+}
+
+// Apply the chosen policy. Persists, keeps the modal open, re-renders the panel so the
+// new accent/title show immediately. No code-check — the user is in their own lab.
+function setPolicy() {
+  const item = modalFind(editIdx);
+  if (!item) return;
+  const newPolicy = $('sp-policy').value;
+  if (newPolicy !== getSharingPolicy(item)) {
+    item.Policy = newPolicy;             // policy lives in its own column, never Sharing
+    persistItem(item);
+    applyFilters();
+  }
+  configureActionForStatus(item, false); // re-render panel (title + accent + body)
+}
+
+// Render a single status-message notice into the right-column status messages area.
+function setStatusTitle(label) {
+  const el = $('status-title-suffix');
+  if (!el) return;
+  el.textContent = label ? ` \u2014 ${label}` : '';
+}
+
+// Common starter for borrow/request: validate name, capture borrower + date, persist
+// the host row to the loan state, and write the borrowed copy to the borrowing lab.
+// `hostState` is what the host row records ('Shared' for Borrow, 'Requested' for Request);
+// `copyState` is what the borrower's copy carries ('Borrowed' or 'Requested').
+function _startLoan(hostState, copyState) {
+  const name = fv('sp-borrower');
+  if (!name) { alert('Please enter a name.'); return; }
+  const hostLab = editLab || activeLab;        // the item's owning lab
+  const borrowingLab = activeLab;              // the lab the borrower is logged into
+  const borrowerRaw = encodeBorrower(name, borrowingLab);
+  const host = modalFind(editIdx);
+  const borrowed = $('sp-date').value || '';
+  commitAndClose(item => {
+    item.Borrower = borrowerRaw;
+    item.Borrowed = borrowed;
+    updateSharing(item, hostState);
+  });
+  if (host && borrowingLab !== hostLab) {
+    host.Borrowed = borrowed;
+    writeBorrowedCopy(host, hostLab, borrowingLab, copyState, borrowerRaw);
+  }
+}
+function borrowItem()  { _startLoan('Shared',    'Borrowed'); }
+function requestItem() { _startLoan('Requested', 'Requested'); }
+// Accept/Deny share the same head: a host-side action on a Requested item, where the
+// borrower's copy is identified via parseBorrower(host.Borrower). `hostMutator` updates
+// the host row; `copyChanges` is what gets applied to the borrower's copy.
+function _resolveRequest(hostMutator, copyChanges) {
+  const host = modalFind(editIdx);
+  const hostLab = editLab || activeLab;
+  const bi = host ? parseBorrower(host.Borrower) : { lab:'' };
+  const match = host ? _loanMatch(host) : null;
+  commitAndClose(hostMutator);
+  if (match && bi.lab) syncCopy(bi.lab, hostLab, match, copyChanges);
+}
+// Accept → host Sharing='Shared', copy Sharing='Borrowed'. Policy untouched (its own column).
+function acceptRequest() {
+  _resolveRequest(item => updateSharing(item, 'Shared'), { Sharing:'Borrowed' });
+}
+// Deny → host Sharing cleared (idle), copy Sharing='Denied' (awaiting Acknowledge).
+function denyRequest() {
+  _resolveRequest(item => { item.Borrower = ''; item.Borrowed = ''; updateSharing(item, ''); },
+                  { Sharing:'Denied' });
+}
+
+// Borrower acknowledges a denial → soft-delete their copy (Status='Deleted' hides it).
+function acknowledgeDenied() {
+  const item = modalFind(editIdx);
+  if (!item) return;
+  item.Status = 'Deleted';
+  item._deleted = true;
+  persistItem(item);
+  closeEditModal(true); buildFilterOptions(); applyFilters();
+}
+
+// Resolve the (borrowingLab, hostLab) pair for the open item, working from EITHER side:
+//  - Host row: lives in the host lab (editLab/activeLab); borrowing lab parsed from the
+//    encoded Borrower "Name (Lab)".
+//  - Borrowed copy: Vendor holds the host lab name; the borrowing lab is the current lab.
+function sharingPeers(item) {
+  if (!item) return { borrowingLab:'', hostLab:'' };
+  if (isBorrowedCopy(item)) {
+    return { borrowingLab: activeLab, hostLab: (item.Vendor || '').trim() };
+  }
+  return { borrowingLab: parseBorrower(item.Borrower).lab, hostLab: (editLab || activeLab) };
+}
+
+// ── Sharing transition primitives ─────────────────────────────────────
+// Both ends of an active loan transition together. The two patterns:
+//   loanStateChange — the loan stays active; both host Sharing and copy Sharing get the
+//                     same new value (IOU, Bring Back).
+//   endLoan         — the loan ends; host goes idle (Sharing/Borrower/Borrowed cleared),
+//                     copy is soft-deleted (Status='Deleted').
+// Each primitive works from EITHER side: when invoked from a borrowed copy it drives the
+// host row via syncHost; when from the host row it writes locally and syncs the copy.
+
+function _loanMatch(item) {
+  return { Name:item.Name, Catalog:item.Catalog, Borrowed:item.Borrowed, Borrower:item.Borrower };
+}
+
+function loanStateChange(item, newSharing) {
+  const { borrowingLab, hostLab } = sharingPeers(item);
+  const match = _loanMatch(item);
+  if (isBorrowedCopy(item)) {
+    syncHost(borrowingLab, hostLab, match, { Sharing: newSharing });
+    item.Sharing = newSharing;
+    persistItem(item);
+  } else {
+    item.Sharing = newSharing;
+    persistItem(item);
+    if (borrowingLab) syncCopy(borrowingLab, hostLab, match, { Sharing: newSharing });
+  }
+}
+
+function endLoan(item) {
+  const { borrowingLab, hostLab } = sharingPeers(item);
+  const match = _loanMatch(item);
+  if (isBorrowedCopy(item)) {
+    syncHost(borrowingLab, hostLab, match, { Sharing:'', Borrower:'', Borrowed:'' });
+    item.Status = 'Deleted'; item._deleted = true;
+    persistItem(item);
+    closeEditModal(true); buildFilterOptions(); applyFilters();
+  } else {
+    commitAndClose(it => {
+      it.Borrower = ''; it.Borrowed = '';
+      updateSharing(it, '');
+    });
+    if (borrowingLab) syncCopy(borrowingLab, hostLab, match, { Status:'Deleted' });
+  }
+}
+
+// Return: borrower ends an active loan (Shared or Bring Back). Host → idle, copy → Deleted.
+function returnItem()    { const it = modalFind(editIdx); if (it) endLoan(it); }
+// Resolve: host force-ends IOU / Bring Back. Same end-state as Return.
+function resolveSharing(){ const it = modalFind(editIdx); if (it) endLoan(it); }
+// IOU: borrower flags they consumed/owe the item. Both sides → Sharing='IOU'.
+function iouItem() {
+  const it = modalFind(editIdx); if (!it) return;
+  loanStateChange(it, 'IOU');
+  populateForm(it); configureActionForStatus(it, false); renderLocPanel(it); applyFilters();
+}
+// Bring Back: host recalls a Shared item. Both sides → Sharing='Bring Back'.
+function bringBackItem() {
+  const it = modalFind(editIdx); if (!it) return;
+  loanStateChange(it, 'Bring Back');
+  populateForm(it); configureActionForStatus(it, false); renderLocPanel(it); applyFilters();
+}
+
+function propagateBox1Rename(oldKey, newBox1, sourceId) {
+  // Only rename siblings that shared the FULL old location path — not just the box label.
+  const affected = items.filter(i => i._id !== sourceId && sameBoxKey(i, oldKey));
+  if (!affected.length) return;
+  if (!confirm(`Rename box "${oldKey.Box1}" to "${newBox1}" for all ${affected.length} other item(s) in this box?`)) return;
+  affected.forEach(sib => { sib.Box1 = newBox1; persistItem(sib); });
+}
+
+// Offer to move the item's physical group to the new Room. The group shares the same
+// location path: for a boxed item that's Location1+Location2+Box1; for a loose item it's
+// Location1+Location2 (sameBoxKey handles both since it compares all three, and a loose
+// item has an empty Box1 that matches other loose items in the same sub-location).
+function propagateRoom(source, oldRoom) {
+  const affected = items.filter(i => i._id !== source._id && sameBoxKey(i, source));
+  if (!affected.length) return;
+  const from  = oldRoom || '(none)';
+  const to    = source.Room || '(none)';
+  const where = source.Box1 ? 'box' : 'location';
+  if (!confirm(`Move all ${affected.length} other item(s) in this ${where} to Room "${to}" (from "${from}")?`)) return;
+  affected.forEach(sib => { sib.Room = source.Room; persistItem(sib); });
+}
+
+function propagateGridXY(source) {
+  const dims = parseGridXY(source.GridXY);
+  items.forEach(sib => {
+    if (sib._id === source._id || !sameBoxKey(sib, source)) return;
+    sib.GridXY = source.GridXY;
+    if (dims) {
+      const valid = box2Coords(sib.Box2).filter(coord => {
+        const col = parseInt(coord.slice(1), 10);
+        const row = coord.charCodeAt(0) - 65;
+        return col >= 1 && col <= dims.cols && row >= 0 && row < dims.rows;
+      });
+      const lists = box2ListCount(sib.Box2);
+      sib.Box2 = encodeBox2([...valid, ...Array(lists).fill('0')]);
+    }
+    persistItem(sib);
+  });
+}
+
+// ── Setup ──────────────────────────────────────────────────────────────
+function openSetup() {
+  // Default-deploy URL — hard-coded for this distribution. Stored value still wins if
+  // someone has pointed at a different sheet.
+  const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbyOoLJvGwQuqVRLz1x9lOPV4mwwFCqDfjjf2wo-QYvaLBIG6MpNyJQA5pfsXCYHgVPY/exec';
+  $('setup-url').value = API_URL || DEFAULT_URL;
+  $('setup-pw').value = '';
+  $('setup-new-lab').value = '';
+  $('setup-new-lab').style.display = 'none';
+  const sel = $('setup-lab');
+  sel.innerHTML = '';
+  if (!defaultLab) {
+    const opt = document.createElement('option');
+    opt.value = ''; opt.textContent = '— Select a lab —';
+    sel.appendChild(opt);
+  }
+  LAB_NAMES.forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name; opt.textContent = name;
+    if (name === defaultLab) opt.selected = true;
+    sel.appendChild(opt);
+  });
+  const newOpt = document.createElement('option');
+  newOpt.value = '__new__'; newOpt.textContent = '— New —';
+  sel.appendChild(newOpt);
+  sel.onchange = onSetupLabChange;
+  $('setup-overlay').classList.add('open');
+}
+
+// When "— New —" is picked in Setup, reveal an inline input for the new lab name.
+function onSetupLabChange() {
+  const sel = $('setup-lab');
+  const inp = $('setup-new-lab');
+  if (sel.value === '__new__') {
+    inp.style.display = '';
+    inp.value = '';
+    setTimeout(() => inp.focus(), 0);
+  } else {
+    inp.style.display = 'none';
+  }
+}
+
+function closeSetup() { $('setup-overlay').classList.remove('open'); }
+function saveSetup() {
+  const url = fv('setup-url');
+  let lab   = $('setup-lab').value;
+  if (!url) { alert('Please enter a URL.'); return; }
+  if (lab === '__new__') {
+    lab = (fv('setup-new-lab') || '').trim();
+    if (!lab) { alert('Please enter a name for the new lab.'); return; }
+  }
+  if (!lab) { alert('Please choose your default lab.'); return; }
+
+  // Setting or changing the default lab requires the PI password (the lab's name,
+  // case-insensitive). The user enters it inline rather than via a popup.
+  const labChanging = (lab !== defaultLab);
+  if (labChanging) {
+    const pw = (fv('setup-pw') || '').trim();
+    if (!pw) { alert(`Enter the ${lab} lab PI password to set this as your lab.`); return; }
+    if (pw.toLowerCase() !== lab.toLowerCase()) {
+      alert('Incorrect password. Lab not changed.');
+      return;
+    }
+    if (defaultLab && !confirm(`Switch default lab from ${defaultLab} to ${lab}? The page will reload.`)) {
+      return;
+    }
+  }
+
+  localStorage.setItem(KEY_URL, url);
+  localStorage.setItem(KEY_DEFAULT_LAB, lab);
+  localStorage.setItem(KEY_ACTIVE_LAB, lab);
+  location.reload();
+}
+function clearSetup() {
+  if (!confirm('Disconnect from the data source? The page will reload empty.')) return;
+  localStorage.removeItem(KEY_URL);
+  localStorage.removeItem(KEY_DEFAULT_LAB);
+  localStorage.removeItem(KEY_ACTIVE_LAB);
+  location.reload();
+}
+
+// ── Export ─────────────────────────────────────────────────────────────
+function exportCSV() {
+  const headers = ['Vendor','Catalog','Price','Name','Type','Quantity','Received',
+    'Stock','Threshold','Room','Location1','Location2','Box1','GridXY','Box2',
+    'Sharing','Borrower','Borrowed','Notes','CAS','SDS','URL','Status'];
+  const rows = items.map(item =>
+    headers.map(h => {
+      const v = String(h === 'Stock' ? getStock(item) : (item[h] || ''));
+      return /[,"\n\r]/.test(v) ? `"${v.replace(/"/g,'""')}"` : v;
+    }).join(',')
+  );
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent([headers.join(','), ...rows].join('\n'));
+  a.download = 'inventory.csv'; a.click();
+}
+
+// ── Grid cell tooltip ──────────────────────────────────────────────────
+(function() {
+  const tip = $('grid-tip');
+  if (!tip) return;
+  document.addEventListener('mousemove', e => {
+    if (tip.style.display === 'none') return;
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY -  6) + 'px';
+  });
+  document.addEventListener('mouseover', e => {
+    const cell = e.target.closest('[data-tip]');
+    if (!cell) { tip.style.display = 'none'; return; }
+    tip.textContent = cell.dataset.tip;
+    tip.style.display = 'block';
+    tip.style.left = (e.clientX + 14) + 'px';
+    tip.style.top  = (e.clientY -  6) + 'px';
+  });
+  document.addEventListener('mouseout', e => {
+    if (e.target.closest('[data-tip]')) tip.style.display = 'none';
+  });
+})();
+
+// ── Boot ───────────────────────────────────────────────────────────────
+(async () => {
+  API_URL    = localStorage.getItem(KEY_URL)         || '';
+  defaultLab = localStorage.getItem(KEY_DEFAULT_LAB) || '';
+  // Lab is set from Setup only. The active lab always equals the home lab.
+  activeLab  = defaultLab;
+  applyLabBranding();
+  await loadData();
+})();
+
+// Reflect the home lab in the page title and the search-box placeholder.
+function applyLabBranding() {
+  const title = $('app-title');
+  if (title) {
+    title.innerHTML = defaultLab
+      ? `Inventory <span>Explorer</span> — ${esc(defaultLab)} Lab`
+      : `Inventory <span>Explorer</span>`;
+  }
+  const box = $('search-box');
+  if (box && searchScope === 'local') {
+    box.placeholder = defaultLab ? `Search ${defaultLab} Lab` : 'Search…';
+  }
+  // Keep the scope toggle label correct on load (it only updated on toggle before,
+  // so a fresh page showed the stale static text).
+  const btn = $('scope-toggle');
+  if (btn) btn.textContent = (searchScope === 'everywhere') ? 'Search All' : 'Search Lab';
+}
+</script>
+</body>
+</html>
