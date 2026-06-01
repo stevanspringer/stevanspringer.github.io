@@ -25,7 +25,14 @@ html,body{height:100%;font-family:'DM Mono',monospace;font-size:14px;color:var(-
   .form-field input,.form-field select,.form-field textarea,
   .btn,.nbtn,.filter-select,#search-box{background-color:#fff !important;color:var(--ink) !important;}
 }
-#app{display:flex;flex-direction:column;height:100vh;}
+/* Lock the viewport so the top bar and footer cannot be scrolled out of view on iPad
+   or other mobile browsers. Two pieces:
+     - html, body: position:fixed + overflow:hidden prevents any rubber-band scrolling
+       of the page itself; scrolling only happens inside #content.
+     - #app: 100dvh (dynamic viewport height) sizes the app to the *visible* area on
+       browsers whose chrome can collapse/expand (fallback 100vh for older browsers). */
+html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;}
 
 #topnav{display:flex;align-items:center;padding:6px 18px;gap:7px;background:var(--paper);border-bottom:1px solid var(--bord);flex-shrink:0;}
 .logo{font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-right:10px;white-space:nowrap;}
@@ -140,12 +147,6 @@ html,body{height:100%;font-family:'DM Mono',monospace;font-size:14px;color:var(-
 .sec-card{border:1px solid var(--bord);border-radius:3px;padding:10px 12px;margin-bottom:10px;background:#fafaf8;}
 .sec-card:last-child{margin-bottom:0;}
 .sec-title{font-size:14px;font-weight:400;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin-bottom:8px;}
-.sec-actions{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:10px;padding-top:8px;border-top:1px solid var(--bord);}
-.sec-actions-right{display:flex;gap:6px;}
-.sec-card.dirty{background:#fffdf3;border-color:var(--yellow-lo);}
-.sec-card.dirty .sec-title{color:var(--yellow-b);}
-.sec-update:not(:disabled){background:var(--vb-hi)!important;color:#fff!important;border-color:var(--vb-hi-b)!important;}
-.sec-update:not(:disabled):hover{background:var(--vb-hi-b)!important;}
 /* Modal action bar — 4 equal-width slots. Each visible button takes equal share of the
    row width via flex:1, with a small gap providing breathing room. Buttons hidden by
    display:none also drop out of the flex layout, so when fewer buttons are visible
@@ -198,13 +199,6 @@ html,body{height:100%;font-family:'DM Mono',monospace;font-size:14px;color:var(-
 
 /* Box/list view lives directly inside the Location section card — no inner panel wrapper. */
 .loc-inner{display:flex;flex-direction:column;}
-.loc-mode-line{font-size:12px;color:var(--mut);font-style:italic;margin-bottom:8px;}
-.loc-inner.loc-mode-add .loc-mode-line{color:var(--vb-hi);font-style:normal;}
-.loc-inner.loc-mode-remove .loc-mode-line{color:var(--danger);font-style:normal;}
-.loc-inner.loc-mode-remove .grid-cell.c-occupied,
-.loc-inner.loc-mode-remove .bli{cursor:not-allowed;}
-.loc-inner.loc-mode-remove .grid-cell.c-occupied:hover{background:var(--danger-lo);border-color:var(--danger);}
-.loc-inner.loc-mode-remove .bli:hover{background:var(--danger-lo);}
 
 /* Grid */
 .grid-outer{overflow:auto;margin-bottom:8px;}
@@ -293,7 +287,7 @@ html,body{height:100%;font-family:'DM Mono',monospace;font-size:14px;color:var(-
 
 <div id="footer">
   <span id="section-counts"></span>
-  <span>Made by <a href="https://stevanspringer.github.io" target="_blank">Springer Lab</a> · UPEI Biology</span>
+  <span>Made by <a href="https://stevanspringer.github.io" target="_blank" rel="noopener">Springer Lab</a> · UPEI Biology · Copyright <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a></span>
 </div>
 </div>
 
@@ -340,7 +334,7 @@ html,body{height:100%;font-family:'DM Mono',monospace;font-size:14px;color:var(-
           <div class="form-field form-full"><label>Name *</label><input id="f-name" type="text" onblur="autoSaveNameField()"></div>
           <div class="form-field"><label>Vendor</label><div class="combo-wrap"><select id="f-vendor-sel" class="combo-sel" onchange="comboSelChange('f-vendor');autoSaveField()"><option value="">—</option></select><input id="f-vendor" type="text" class="combo-inp" style="display:none;" placeholder="New vendor…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-vendor');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
           <div class="form-field"><label>Catalog #</label><input id="f-catalog" type="text" onblur="autoSaveField()"></div>
-          <div class="form-field"><label>Quantity</label><input id="f-quantity" type="text" placeholder="e.g. 500 g" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>Size</label><input id="f-quantity" type="text" placeholder="e.g. 500 g" onblur="autoSaveField()"></div>
           <div class="form-field"><label>Type</label><div class="combo-wrap"><select id="f-type-sel" class="combo-sel" onchange="comboSelChange('f-type');autoSaveField()"><option value="">—</option></select><input id="f-type" type="text" class="combo-inp" style="display:none;" placeholder="New type…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-type');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
           <div class="form-field"><label>CAS #</label><input id="f-cas" type="text" onblur="autoSaveField()"></div>
           <div class="form-field"><label>SDS file</label><input id="f-sds" type="text" placeholder="file.pdf" onblur="autoSaveField()"></div>
@@ -484,15 +478,10 @@ let searchScope   = 'local';   // 'local' | 'everywhere'
 let crossLabItems = {};        // { labName: [items] } accumulated during an everywhere search
 let crossLabSeq   = 0;         // bumped each everywhere search to discard stale fetch results
 
-// Location selection: { coord, occupied, item, _isUnplaced?, _sibId?, _search? } | null
+// Location selection: { coord } | null  — the current item's selected box cell.
+// coord is a grid coordinate like 'A1', or the sentinel '0' for an unplaced unit.
 let locSelected = null;
 let locView     = null;  // breadcrumb drill-down: null | { loc1, loc2? }
-let locMode     = null;  // null (default) | 'add' | 'remove'
-
-// Per-section baselines: snapshot of field values at the moment the form was last
-// populated from the item. A section is dirty iff its current values != baseline.
-// Cleared when the modal opens; reset when a section's Update commits.
-let formBaseline = null;
 
 // ── DOM helpers ────────────────────────────────────────────────────────
 const $  = id => document.getElementById(id);
@@ -583,12 +572,12 @@ function isBorrowedCopy(row) {
   return LAB_NAMES.includes((row.Vendor || '').trim());
 }
 
-// A borrowed copy is a dumb, read-only mirror with EXACTLY ONE state field: Status.
-//   Requested → Borrowed → Bring Back → IOU → Deleted   (driven by host actions)
-// It carries NO Sharing value at all — copy-detection is by Vendor (= host lab name ∈
-// LAB_NAMES), not Sharing, so there is genuinely only one piece of state in the borrower's
-// lab and it cannot diverge. Status='Deleted' hides it (the _deleted flag derives from
-// Status on read), so every resolution is just a Status flip.
+// A borrowed copy is a read-only mirror living in the borrowing lab's tab. Its loan
+// state lives in the Sharing column (Requested → Borrowed → Bring Back → IOU), driven by
+// host actions via syncCopy. Its Status column starts as a normal stock value and is
+// flipped to 'Deleted' on resolution (which hides it; the _deleted flag derives from
+// Status on read). Copy-detection is by Vendor (= host lab name ∈ LAB_NAMES), never by
+// Sharing, so the copy can always be told apart from a real item.
 
 // Write a basic-info-only copy into the borrowing lab's tab. No location/stock/policy.
 // The copy's LOAN STATE lives in Sharing (Borrowed/Requested/...); Status stays a normal
@@ -817,13 +806,15 @@ function box2Coords(b3)    { return parseBox2(b3).filter(s => s !== '0'); }
 function box2ListCount(b3) { return parseBox2(b3).filter(s => s === '0').length; }
 function encodeBox2(arr)   { return arr.join(' '); }
 
-// Reconcile Box2 to a stock count: keep placed coords, pad/trim '0' tokens.
-// Caller must check whether newStock < placedCount (would silently drop nothing — we just keep them).
+// Reconcile Box2 to a stock count.
+//   - Grow: append '0' (unplaced) tokens to reach the new count.
+//   - Shrink: truncate from the END of the token list. The last-added units (whether
+//     placed or unplaced) are removed first; earlier placements are preserved.
 function reconcileBox2(b3, newStock) {
-  const coords = box2Coords(b3);
+  const tokens = parseBox2(b3);
   const total  = Math.max(0, newStock|0);
-  if (total < coords.length) return encodeBox2(coords);
-  return encodeBox2([...coords, ...Array(total - coords.length).fill('0')]);
+  if (total < tokens.length) return encodeBox2(tokens.slice(0, total));
+  return encodeBox2([...tokens, ...Array(total - tokens.length).fill('0')]);
 }
 
 // Two items are box-siblings only if they share the FULL location path: Location1, Location2, AND Box1.
@@ -1462,6 +1453,7 @@ function setStockDirect(id, val) {
 function openAddModal() {
   editIdx = null; resetLocState(); locView = null;
   editReadOnly = false;
+  editLab = activeLab;             // new items belong to the lab currently being viewed
   modalMode = 'new-from-toolbar';
   _hostBeforeNew = null;
   _moveSnapshot = null;
@@ -1654,15 +1646,7 @@ function populateForm(item) {
   const dims = parseGridXY(item.GridXY || '');
   $('dim-x').value = dims ? dims.cols : '';
   $('dim-y').value = dims ? dims.rows : '';
-
-  // Snapshot baselines for dirty tracking, then update button states.
-  captureBaselines();
-  refreshSectionDirty();
 }
-
-// ── Per-section dirty tracking ─────────────────────────────────────────
-// Each section watches a fixed set of form fields. A snapshot is taken on populate
-// and on each section's commit. Update/Cancel buttons toggle based on diff vs snapshot.
 
 // ── Modal commit model: on-blur auto-save + Move/Set for location ─────
 // There is no Save button. Information fields (Name, Vendor, Catalog, Quantity, Type,
@@ -1747,7 +1731,7 @@ function autoSaveNameField() {
     return;
   }
   item.Name = v;
-  // Also flush other Info fields (one write covers everything dirty).
+  // Also flush the other Info fields (a single write persists the whole item).
   autoSaveField();
 }
 
@@ -1893,6 +1877,7 @@ function newBtnClick() {
     Room:      host.Room || '',
   };
   editIdx = null;
+  editLab = activeLab;                // the inherited-from-host new item belongs here
   modalMode = 'new-from-host';
   resetFormBlank();
   // Re-populate Location only.
@@ -2086,15 +2071,7 @@ function useBtnClick() {
   redrawLoc();
 }
 
-// Apply a stock-field change to the item with Box2 reconciliation when boxed.
-function applyStockChange(item, newStock) {
-  if (item.Box1) {
-    item.Box2 = reconcileBox2(item.Box2 || '', newStock);
-    item.Stock = parseBox2(item.Box2).length;
-  } else {
-    item.Stock = Math.max(0, newStock|0);
-  }
-}
+// (applyStockChange defined earlier — see line ~870 for the canonical implementation.)
 
 // Close the edit modal and reset all modal-related state.
 function closeEditModal(force) {
@@ -2113,26 +2090,7 @@ function closeEditModal(force) {
   if (box) box.classList.remove('read-only');
 }
 
-// Stubs for compatibility — call sites elsewhere expect these to exist.
-// In the new on-blur model there's no global dirty state, so they're no-ops.
-function captureBaselines()       {}
-function refreshSectionDirty()    {}
-function isModalDirty()           { return false; }
-function anySectionDirty()        { return false; }
-function onFieldChange()          {}
-
 // Live preview when stock or box fields change (for the location panel)
-function onStockFieldChange() {
-  if (editIdx === null) return;
-  const item = items.find(i => i._id === editIdx);
-  if (!item || !item.Box1) return;
-  const newStock = parseInt($('f-stock').value, 10);
-  if (isNaN(newStock) || newStock < 0) return;
-  // Display-only preview — saveItem does the actual reconcile
-  const preview = Object.assign({}, item, { Box2: reconcileBox2(item.Box2 || '', newStock) });
-  renderLocPanel(preview);
-}
-
 function onBoxFieldChange() {
   if (editIdx === null) return;
   const item = items.find(i => i._id === editIdx);
@@ -2243,9 +2201,8 @@ function renderScopedList(item, wrap) {
     html += `<div class="box-list-hdr">${esc(box)}</div>`;
     const groups = groupByIdentity(byBox[box], getStock).sort((a,b) => a.rep.Name.localeCompare(b.rep.Name));
     groups.forEach(({rep, total}) => {
-      const isSel = locSelected && locSelected.item && locSelected.item._id === rep._id;
       const short = rep.Name.length > 26 ? rep.Name.slice(0,25)+'…' : rep.Name;
-      html += `<div class="bli${isSel?' bli-active':''}" onclick="locScopeSelect(${rep._id})">
+      html += `<div class="bli" onclick="locScopeSelect(${rep._id})">
         <div class="bli-name" title="${esc(rep.Name)}">${esc(short)}</div>
         <div class="bli-status">${getEffectiveStatus(rep)} · ${total}</div>
       </div>`;
@@ -2271,8 +2228,8 @@ function locScopeSelect(itemId) {
   renderLocPanel(sib);
 }
 
-// Reset placement-tool state: deselect any selected cell and drop add/remove mode.
-function resetLocState() { locSelected = null; locMode = null; }
+// Reset placement state: deselect any selected cell.
+function resetLocState() { locSelected = null; }
 
 // Re-render the loc panel for the currently-edited item plus refresh the main list.
 // Most placement actions end with these two calls, so consolidate.
@@ -2308,10 +2265,11 @@ function renderUnplacedRows(sibs) {
   let html = '';
   groups.forEach(({rep, surplus}) => {
     if (!surplus) return;
-    const isSel = locSelected && locSelected._isUnplaced && locSelected._sibId === rep._id;
+    // An unplaced token is "selected" when locSelected is the '0' sentinel.
+    const isSel = !!(locSelected && locSelected.coord === '0');
     const short = rep.Name.length > 20 ? rep.Name.slice(0,19)+'…' : rep.Name;
     for (let k = 0; k < surplus; k++) {
-      html += `<div class="bli bli-unplaced${isSel?' bli-active':''}" onclick="locSelectUnplaced(${rep._id})">
+      html += `<div class="bli bli-unplaced${isSel?' bli-active':''}" onclick="locSelectUnplaced()">
         <div class="bli-name" title="Click to place in a grid cell">□ ${esc(short)}</div>
         <div class="bli-status">unplaced</div>
       </div>`;
@@ -2320,14 +2278,10 @@ function renderUnplacedRows(sibs) {
   return html;
 }
 
-// Wrap the inner panel content with the standard chrome:
-//   header (breadcrumb) → mode guidance → add-mode search → body → toolbar (bottom-left).
-// Used by both renderLocList and renderLocGrid.
+// Wrap the inner panel content with the standard chrome (header breadcrumb is rendered
+// by the caller; this just provides the consistent inner container).
 function locPanelHTML(item, body) {
-  // The box/list view lives directly inside the Location section card — no inner panel wrapper.
-  // A mode class on a thin wrapper still gives the CSS hooks for "remove mode" cursor styles.
-  return `<div class="loc-inner${locMode?' loc-mode-'+locMode:''}">
-    ${locModeLabel()}
+  return `<div class="loc-inner">
     ${body}
   </div>`;
 }
@@ -2368,10 +2322,9 @@ function renderLocGrid(item, wrap, dims, preview) {
   for (let c=1; c<=cols; c++) colLbls += `<div class="grid-col-lbl">${c}</div>`;
   colLbls += '</div>';
 
-  // In add mode (with no coord chosen yet) or when an occupied/unplaced item is selected,
-  // empty cells are click-targets and show a placing cursor.
-  const willPlace = (locMode === 'add' && locSelected && !locSelected.coord) ||
-                    (locSelected && (locSelected.occupied || locSelected._isUnplaced));
+  // When any token is selected (a placed coord or the '0' unplaced sentinel), empty cells
+  // become click-targets to move/place that token, so show the placing cursor on them.
+  const willPlace = !!(locSelected && locSelected.coord);
 
   let gridRows = '';
   for (let r=0; r<rows; r++) {
@@ -2412,20 +2365,11 @@ function renderLocGrid(item, wrap, dims, preview) {
 // the item currently being edited. Clicking another item's cell in the grid switches
 // the modal to that item (navigation) — clean read-side affordance, no cross-item edits.
 //
-// locMode: null (default) | 'remove'  (no more 'add' — adding items is only via toolbar)
-// locSelected: { coord } | null       (current item's selected coord for Remove)
+// locSelected: { coord } | null — the current item's selected box cell ('0' = unplaced).
 
-function locModeLabel() {
-  if (locMode === 'remove') {
-    return `<div class="loc-mode-line">Click a cell or unplaced unit to remove from this item</div>`;
-  }
-  return '';
-}
-
-// In the new model, the bottom-bar [Use] button replaces the old Location-section Remove
-// button. There's no longer a "remove mode" toggle — Use just acts on the selected coord
-// (or the first unplaced/placed token). This helper is kept as a no-op for compatibility
-// with call sites that haven't been updated.
+// The bottom-bar [Use] button replaced the old Location-section Remove button, and the
+// old add/remove "modes" are gone (adding is toolbar-only, removing is the Use button).
+// This helper is retained as a no-op for the call sites that still invoke it.
 function refreshLocActionRow() {}
 
 function locCancelSelect() {
@@ -2480,12 +2424,10 @@ function locSelectEmpty(coord) {
 }
 
 // Click an occupied cell.
-//   - Belongs to the CURRENT item:
-//       - Remove-mode: consume that coord.
-//       - Otherwise: select it (sets locSelected.coord) so Remove or a click on an empty
-//         cell can act on it.
-//       - Same coord clicked again: deselect.
-//   - Belongs to ANOTHER item: navigate the modal to that item (read-side affordance).
+//   - Belongs to the CURRENT item: select that coord (so Use or a click on an empty cell
+//     can act on it). Clicking the same coord again deselects.
+//   - Belongs to ANOTHER item: navigate the modal to that item and select the clicked
+//     coord in one action.
 function locSelectOccupied(coord, itemId) {
   const clicked = modalFind(itemId);
   if (!clicked) return;
@@ -2594,7 +2536,7 @@ function commitAndStayOpen(mutator) {
   const item = items.find(i => i._id === editIdx);
   if (!item) return;
   mutator(item);
-  populateForm(item);                       // re-baseline all sections
+  populateForm(item);                       // refresh the form from the item
   configureActionForStatus(item, false);    // pick the next button label for the new status
   renderLocPanel(item);
   applyFilters();
