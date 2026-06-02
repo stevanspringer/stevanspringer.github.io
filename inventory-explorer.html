@@ -114,7 +114,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;}
 .modal-overlay.open{display:flex;}
 .modal-box{background:var(--paper);border:1px solid var(--bord);border-radius:3px;display:flex;flex-direction:row;max-height:90vh;width:920px;overflow:visible;}
-.modal-col-left{width:310px;flex-shrink:0;padding:22px;border-right:1px solid var(--bord);display:flex;flex-direction:column;overflow-y:auto;max-height:90vh;}
+.modal-col-left{width:310px;flex-shrink:0;padding:22px;display:flex;flex-direction:column;overflow-y:auto;max-height:90vh;}
 .modal-col-right{flex:1;padding:22px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;min-width:0;max-height:90vh;}
 .modal-box h2{font-size:14px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:16px;}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
@@ -126,10 +126,15 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .form-field input[type="date"]{width:auto;max-width:150px;}
 .field-with-view{display:flex;gap:4px;align-items:center;}
 .field-with-view .combo-wrap{flex:1;min-width:0;}
-.view-btn{flex:0 0 auto;width:28px;height:28px;padding:0;display:inline-flex;align-items:center;justify-content:center;}
+.field-with-view > input{flex:1;min-width:0;}
+/* Link buttons (SDS / URL) carry a subtle blue tint to read as an "open" affordance,
+   distinct from the neutral eye/view buttons. */
+.link-btn{color:var(--vb-hi);border-color:var(--vb-hi-b);}
+.link-btn:not(:disabled):hover{background:var(--vb-hi);color:#fff;}
+.view-btn{flex:0 0 auto;width:28px;height:28px;padding:0!important;display:inline-flex;align-items:center;justify-content:center;}
 .view-btn.is-active{background:var(--vb-hi)!important;color:#fff!important;border-color:var(--vb-hi-b)!important;}
 .view-btn:disabled{opacity:.35;cursor:not-allowed;}
-.view-btn svg{width:22px;height:22px;display:block;}
+.view-btn svg{width:18px;height:18px;display:block;}
 
 /* Location section: blue background + divider between form fields and the box/list view. */
 #sec-location{background:var(--vb-lo) !important;border-color:var(--vb-lo-b);}
@@ -144,8 +149,14 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .form-field textarea{resize:vertical;min-height:80px;}
 
 /* ── Three-section left column ───────────────────────────────────────── */
-.sec-card{border:1px solid var(--bord);border-radius:3px;padding:10px 12px;margin-bottom:10px;background:#fafaf8;}
+.sec-card{border:1px solid var(--bord);border-left:3px solid var(--mut);border-radius:3px;padding:10px 12px;margin-bottom:10px;background:#fafaf8;}
 .sec-card:last-child{margin-bottom:0;}
+/* Safety section: red accent to draw the eye to safety info. Same thick left border as
+   every panel, but red + a faint red wash + red title. */
+.sec-safety{border-color:var(--danger);border-left:3px solid var(--danger);background:#f7e9e9;}
+.sec-safety .sec-title{color:var(--danger);}
+/* Safety row: three equal columns — CAS, SDS, Description. */
+.safety-grid{grid-template-columns:1fr 1fr 1fr !important;}
 .sec-title{font-size:14px;font-weight:400;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin-bottom:8px;}
 /* Modal action bar — 4 equal-width slots. Each visible button takes equal share of the
    row width via flex:1, with a small gap providing breathing room. Buttons hidden by
@@ -164,15 +175,14 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
    row, which is 1fr (absorbs leftover vertical space). Current row order:
      1: Name (full)
      2: Vendor / Catalog
-     3: Quantity / Type
-     4: CAS / SDS
-     5: URL (full)
-     6: Notes (full)            ← this is the 1fr row
-     7: Price / Date
-     8: Stock / Threshold
+     3: Size / Type
+     4: Container / URL
+     5: Notes (full)            ← this is the 1fr row
+     6: Price / Date
+     7: Stock / Threshold
    If a row is added or removed from the Information form, update the template. */
 .modal-col-left #sec-info .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;
-  grid-template-rows: auto auto auto auto auto 1fr auto auto;}
+  grid-template-rows: auto auto auto auto 1fr auto auto;}
 /* The Notes form-field cell expands to fill its grid row; the textarea inside fills the cell. */
 .modal-col-left .form-full:has(#f-notes-text){display:flex;flex-direction:column;min-height:0;}
 #f-notes-text{flex:1;min-height:60px;resize:none;}
@@ -180,10 +190,10 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 /* ── Sharing & Location panels ── */
 /* Sharing card carries the policy accent on the card itself, not a nested panel. */
 .sec-card.policy-yes{background:var(--ok-lo) !important;border-color:var(--ok);}
-.sec-card.policy-ask{background:var(--warn-lo) !important;border-color:var(--warn);}
+.sec-card.policy-ask{background:var(--yellow-lo) !important;border-color:var(--yellow);}
 .sec-card.policy-iou{background:var(--danger-lo) !important;border-color:var(--danger);}
 .sec-card.policy-yes .sec-title{color:var(--ok);}
-.sec-card.policy-ask .sec-title{color:var(--warn);}
+.sec-card.policy-ask .sec-title{color:var(--yellow-b);}
 .sec-card.policy-iou .sec-title{color:var(--danger);}
 /* Sharing panel: every state fits on a single horizontal row. Inputs use placeholders
    (no labels) so the row stays one line tall. */
@@ -334,11 +344,10 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
           <div class="form-field form-full"><label>Name *</label><input id="f-name" type="text" onblur="autoSaveNameField()"></div>
           <div class="form-field"><label>Vendor</label><div class="combo-wrap"><select id="f-vendor-sel" class="combo-sel" onchange="comboSelChange('f-vendor');autoSaveField()"><option value="">—</option></select><input id="f-vendor" type="text" class="combo-inp" style="display:none;" placeholder="New vendor…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-vendor');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
           <div class="form-field"><label>Catalog #</label><input id="f-catalog" type="text" onblur="autoSaveField()"></div>
-          <div class="form-field"><label>Size</label><input id="f-quantity" type="text" placeholder="e.g. 500 g" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>Size</label><input id="f-size" type="text" placeholder="e.g. 500 g" onblur="autoSaveField()"></div>
           <div class="form-field"><label>Type</label><div class="combo-wrap"><select id="f-type-sel" class="combo-sel" onchange="comboSelChange('f-type');autoSaveField()"><option value="">—</option></select><input id="f-type" type="text" class="combo-inp" style="display:none;" placeholder="New type…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-type');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
-          <div class="form-field"><label>CAS #</label><input id="f-cas" type="text" onblur="autoSaveField()"></div>
-          <div class="form-field"><label>SDS file</label><input id="f-sds" type="text" placeholder="file.pdf" onblur="autoSaveField()"></div>
-          <div class="form-field form-full"><label>URL</label><input id="f-url" type="text" placeholder="https://…" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>Container</label><div class="combo-wrap"><select id="f-container-sel" class="combo-sel" onchange="comboSelChange('f-container');autoSaveField()"><option value="">—</option></select><input id="f-container" type="text" class="combo-inp" style="display:none;" placeholder="New container…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-container');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
+          <div class="form-field"><label>URL</label><div class="field-with-view"><input id="f-url" type="text" placeholder="https://…" oninput="refreshLinkBtns()" onblur="autoSaveField()"><button class="btn btn-sm view-btn link-btn" id="open-url" title="Open URL in a new tab" onclick="openFieldLink('f-url')"></button></div></div>
           <div class="form-field form-full"><label>Notes</label><textarea id="f-notes-text" onblur="autoSaveField()"></textarea></div>
           <div class="form-field"><label>Price</label><input id="f-price" type="text" placeholder="$0.00" onblur="autoSaveField()"></div>
           <div class="form-field"><label>Date received</label><input id="f-date" type="date" onblur="autoSaveField()"></div>
@@ -363,8 +372,18 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
       <h2 id="edit-modal-title" style="display:none;"></h2>
     </div>
 
-    <!-- RIGHT col: Sharing + Location -->
+    <!-- RIGHT col: Safety + Sharing + Location -->
     <div class="modal-col-right">
+
+      <!-- Safety: one row — CAS, SDS link, Description. Carries a red accent. -->
+      <div class="sec-card sec-safety" id="sec-safety">
+        <h3 class="sec-title">Safety</h3>
+        <div class="form-grid safety-grid">
+          <div class="form-field"><label>CAS #</label><input id="f-cas" type="text" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>SDS</label><div class="field-with-view"><input id="f-sds" type="text" placeholder="URL or file link" oninput="refreshLinkBtns()" onblur="autoSaveField()"><button class="btn btn-sm view-btn link-btn" id="open-sds" title="Open SDS link in a new tab" onclick="openFieldLink('f-sds')"></button></div></div>
+          <div class="form-field"><label>Description</label><input id="f-safety" type="text" placeholder="e.g. corrosive, flammable" onblur="autoSaveField()"></div>
+        </div>
+      </div>
 
       <!-- Sharing transactions (no policy controls — those live in Status) -->
       <div class="sec-card" id="sec-sharing">
@@ -454,8 +473,8 @@ const LAB_NAMES = ['Biology', 'Deziel', 'Gray', 'Lacroix', 'Ladouceur', 'Murphy'
 // lab currently being browsed when the item was opened from a cross-lab search.
 
 // Field lists used by both populate and serialise paths
-const TEXT_FIELDS  = ['Name','Catalog','Price','Quantity','CAS','SDS','URL'];
-const COMBO_FIELDS = ['f-vendor','f-type','f-location','f-subloc','f-box1','f-room'];
+const TEXT_FIELDS  = ['Name','Catalog','Price','Size','CAS','Safety','SDS','URL'];
+const COMBO_FIELDS = ['f-vendor','f-container','f-type','f-location','f-subloc','f-box1','f-room'];
 
 // ── State ──────────────────────────────────────────────────────────────
 let items     = [];
@@ -588,8 +607,9 @@ async function writeBorrowedCopy(hostItem, hostLab, borrowingLab, sharingState, 
   const copy = {
     Name: hostItem.Name, Vendor: hostLab,            // Vendor = originating (host) lab
     Catalog: hostItem.Catalog, Price: hostItem.Price,
-    Type: hostItem.Type, Quantity: hostItem.Quantity,
+    Type: hostItem.Type, Size: hostItem.Size,
     Notes: hostItem.Notes, CAS: hostItem.CAS, SDS: hostItem.SDS, URL: hostItem.URL,
+    Container: hostItem.Container, Safety: hostItem.Safety,
     Room:'', Location1:'', Location2:'', Box1:'', Box2:'', GridXY:'',
     Stock:'', Threshold:'',
     Policy:'',                                        // copy has no policy of its own
@@ -764,7 +784,7 @@ function normaliseRow(row, i) {
   obj._deleted = ['archived','deleted'].includes((obj.Status||'').toLowerCase());
 
   // Strip ISO datetime artifacts from text fields
-  ['CAS','SDS','URL','Notes','Catalog','Price','Quantity',
+  ['CAS','SDS','URL','Notes','Catalog','Price','Size',
    'Room','Location1','Location2','Box1','GridXY','Box2'].forEach(k => {
     const v = String(obj[k]||'');
     obj[k] = /T\d{2}:\d{2}:\d{2}/.test(v) ? '' : v;
@@ -1098,6 +1118,7 @@ function buildFormCombos() {
   const uniq = getter => [...new Set(items.map(getter).filter(Boolean))].sort();
   const specs = [
     ['f-vendor-sel',   uniq(i => (i.Vendor||'').trim())],
+    ['f-container-sel',uniq(i => i.Container)],
     ['f-type-sel',     uniq(i => i.Type)],
     ['f-location-sel', uniq(i => i.Location1)],
     ['f-subloc-sel',   uniq(i => i.Location2)],
@@ -1139,7 +1160,7 @@ function applyFilters() {
     if ((item.Status||'').toLowerCase().trim() === 'deleted') return false;
     if (!q) return true;
     const hay = [item.Name,item.Vendor,item.Notes,item.Location1,item.Location2,
-                 item.Box1,item.Room,item.GridXY,item.Catalog,item.CAS,item.Borrower].join(' ').toLowerCase();
+                 item.Box1,item.Room,item.GridXY,item.Catalog,item.CAS,item.Container,item.Safety,item.Borrower].join(' ').toLowerCase();
     return hay.includes(q);
   }).sort((a,b) => {
     // Primary: status bucket order (grouping persists even though headers are gone).
@@ -1281,7 +1302,7 @@ function renderEverywhere(q) {
     const matches = (crossLabItems[lab] || []).filter(item => {
       if (item._deleted) return false;
       const hay = [item.Name,item.Vendor,item.Notes,item.Location1,item.Location2,
-                   item.Box1,item.Room,item.GridXY,item.Catalog,item.CAS,item.Borrower]
+                   item.Box1,item.Room,item.GridXY,item.Catalog,item.CAS,item.Container,item.Safety,item.Borrower]
                    .join(' ').toLowerCase();
       return hay.includes(q);
     }).sort((a,b) => (a.Name||'').localeCompare(b.Name||''));
@@ -1311,7 +1332,7 @@ function makeCrossLabRow(item, lab) {
   const btnSt    = displayStatus(item);
   const nameHtml = item.URL && item.URL!=='N/A'
     ? `<a href="${esc(item.URL)}" target="_blank">${esc(item.Name)}</a>` : esc(item.Name);
-  const nameSub  = [(item.Vendor||'').split('(')[0].trim(), item.Catalog, item.Quantity, item.Price].filter(Boolean).join(' · ');
+  const nameSub  = [(item.Vendor||'').split('(')[0].trim(), item.Catalog, item.Size, item.Price].filter(Boolean).join(' · ');
   const locSub   = [item.Location2, item.Box1].filter(Boolean).join(', ');
   const sdsLink  = item.SDS && item.SDS!=='N/A'
     ? `<a href="sds/${esc(item.SDS)}" target="_blank" style="color:var(--warn);text-decoration:none;border-bottom:1px dotted var(--warn);">SDS</a>` : '';
@@ -1402,7 +1423,7 @@ function makeItemRow(item) {
   const typeSub  = [sdsLink, casStr].filter(Boolean).join(' · ');
   const nameHtml = item.URL && item.URL!=='N/A'
     ? `<a href="${esc(item.URL)}" target="_blank">${esc(item.Name)}</a>` : esc(item.Name);
-  const nameSub  = [(item.Vendor||'').split('(')[0].trim(), item.Catalog, item.Quantity, item.Price].filter(Boolean).join(' · ');
+  const nameSub  = [(item.Vendor||'').split('(')[0].trim(), item.Catalog, item.Size, item.Price].filter(Boolean).join(' · ');
   const locSub   = [item.Location2, item.Box1].filter(Boolean).join(', ');
 
   const stockEditable = !item.Box1;
@@ -1536,8 +1557,8 @@ function applyReadOnlyState() {
   const ro = editReadOnly;
   const lockIds = [
     // Information fields
-    'f-name','f-vendor-sel','f-vendor','f-catalog','f-quantity','f-type-sel','f-type',
-    'f-cas','f-sds','f-url','f-notes-text',
+    'f-name','f-vendor-sel','f-vendor','f-catalog','f-size','f-type-sel','f-type',
+    'f-cas','f-container-sel','f-container','f-safety','f-sds','f-url','f-notes-text',
     'f-price','f-date','f-stock','f-threshold',
     // Location fields
     'f-location-sel','f-location','f-subloc-sel','f-subloc','f-box1-sel','f-box1',
@@ -1550,8 +1571,9 @@ function applyReadOnlyState() {
   } else {
     // Re-enable Information inputs (a prior read-only open may have disabled them).
     const inputIds = [
-      'f-name','f-vendor-sel','f-vendor','f-catalog','f-quantity','f-type-sel','f-type',
-      'f-cas','f-sds','f-url','f-notes-text','f-price','f-date','f-stock','f-threshold',
+      'f-name','f-vendor-sel','f-vendor','f-catalog','f-size','f-type-sel','f-type',
+      'f-cas','f-container-sel','f-container','f-safety','f-sds','f-url','f-notes-text',
+      'f-price','f-date','f-stock','f-threshold',
     ];
     inputIds.forEach(id => { const el = $(id); if (el) el.disabled = false; });
     // Action buttons always enabled when not read-only.
@@ -1590,11 +1612,14 @@ function configureActionForStatus(item, fromShared) {
       configureOrderButton({ label:'Order',   cls:'btn-order', handler:orderItem });
   }
 
-  // Sharing panel — policy can be set even for archived/on-order items. Low Stock bumps a
-  // permissive 'Yes' policy down to 'Ask' so the last unit isn't given away by reflex.
+  // Sharing panel — policy can be set even for archived/on-order items.
+  // Safety bump: a Low-Stock item with a permissive 'Yes' policy is shown as 'Ask' to
+  // FOREIGN-lab viewers, so another lab doesn't grab the last unit by reflex. Within the
+  // home lab the true 'Yes' is always shown and editable — the bump is purely a cross-lab
+  // display courtesy, never a change to the stored policy.
   const realPolicy = getSharingPolicy(item);
-  const effective  = (status === 'Low Stock' && realPolicy === 'Yes') ? 'Ask' : realPolicy;
-  renderSharingPanel(item, effective);
+  const bump       = (!isOwnLab() && status === 'Low Stock' && realPolicy === 'Yes');
+  renderSharingPanel(item, bump ? 'Ask' : realPolicy);
 
   // Re-render the bottom bar so visibility/labels match the new status (e.g. archived
   // transitions hide the action buttons and show [Delete] [Restore]).
@@ -1626,8 +1651,9 @@ function populateForm(item) {
   $('f-name').value     = item.Name     || '';
   $('f-catalog').value  = item.Catalog  || '';
   $('f-price').value    = item.Price    || '';
-  $('f-quantity').value = item.Quantity || '';
+  $('f-size').value     = item.Size     || '';
   $('f-cas').value      = item.CAS      || '';
+  $('f-safety').value   = item.Safety   || '';
   $('f-sds').value      = item.SDS      || '';
   $('f-url').value      = item.URL      || '';
   $('f-date').value     = item.Received || '';
@@ -1636,6 +1662,7 @@ function populateForm(item) {
   $('f-notes-text').value = item.Notes  || '';
   $('f-gridxy').value   = item.GridXY   || '';
 
+  comboSet('f-container',item.Container || '');
   comboSet('f-vendor',   item.Vendor    || '');
   comboSet('f-type',     item.Type      || '');
   comboSet('f-location', item.Location1 || '');
@@ -1646,10 +1673,40 @@ function populateForm(item) {
   const dims = parseGridXY(item.GridXY || '');
   $('dim-x').value = dims ? dims.cols : '';
   $('dim-y').value = dims ? dims.rows : '';
+
+  refreshLinkBtns();
+}
+
+// Treat a field value as an openable link only when it parses as an http(s) URL.
+function fieldLinkUrl(id) {
+  const v = (fv(id) || '').trim();
+  if (!v) return null;
+  // Accept full http(s) URLs only — bare filenames / Drive paths aren't directly openable.
+  if (/^https?:\/\/\S+$/i.test(v)) return v;
+  return null;
+}
+
+// Render the link icon into the SDS / URL square buttons and enable/disable them based
+// on whether the current value is an openable URL.
+function refreshLinkBtns() {
+  const LINK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>';
+  [['open-url','f-url'],['open-sds','f-sds']].forEach(([btnId, fieldId]) => {
+    const btn = $(btnId);
+    if (!btn) return;
+    btn.innerHTML = LINK_SVG;
+    btn.disabled  = !fieldLinkUrl(fieldId);
+  });
+}
+
+// Open a field's URL value in a new tab (guarded — does nothing for non-URL values).
+function openFieldLink(id) {
+  const url = fieldLinkUrl(id);
+  if (!url) return;
+  window.open(url, '_blank', 'noopener');
 }
 
 // ── Modal commit model: on-blur auto-save + Move/Set for location ─────
-// There is no Save button. Information fields (Name, Vendor, Catalog, Quantity, Type,
+// There is no Save button. Information fields (Name, Vendor, Catalog, Size, Type,
 // CAS, SDS, URL, Notes, Price, Date, Stock, Threshold) auto-save on blur — each blurred
 // field triggers a single updateItem write for the whole item. Stock changes reconcile
 // Box2 tokens (preserving placement when shrinking, adding unplaced when growing).
@@ -1681,7 +1738,7 @@ function readForm() {
     Catalog:   fv('f-catalog'),
     Price:     fv('f-price'),
     Type:      fv('f-type'),
-    Quantity:  fv('f-quantity'),
+    Size:      fv('f-size'),
     Received:  fv('f-date'),
     Threshold: isNaN(fn('f-threshold')) ? 1 : fn('f-threshold'),
     Location1: fv('f-location'),
@@ -1690,6 +1747,8 @@ function readForm() {
     Room:      fv('f-room'),
     GridXY:    fv('f-gridxy'),
     CAS:       fv('f-cas'),
+    Container: fv('f-container'),
+    Safety:    fv('f-safety'),
     SDS:       fv('f-sds'),
     URL:       fv('f-url'),
     Notes:     fv('f-notes-text'),
@@ -1705,9 +1764,11 @@ function autoSaveField() {
   const item = currentOwnItem(); if (!item) return;
   item.Vendor    = fv('f-vendor');
   item.Catalog   = fv('f-catalog');
-  item.Quantity  = fv('f-quantity');
+  item.Size      = fv('f-size');
   item.Type      = fv('f-type');
   item.CAS       = fv('f-cas');
+  item.Container = fv('f-container');
+  item.Safety    = fv('f-safety');
   item.SDS       = fv('f-sds');
   item.URL       = fv('f-url');
   item.Notes     = fv('f-notes-text');
@@ -2152,8 +2213,8 @@ function updateViewBtns(item) {
 
   // Eye = "view this location's contents". Back-arrow = "return to the item" (active state).
   // Inline SVG keeps the icon under our control and avoids loading an icon font.
-  const EYE_SVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
-  const BACK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>';
+  const EYE_SVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+  const BACK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>';
 
   btn1.innerHTML = activeLevel === 1 ? BACK_SVG : EYE_SVG;
   btn1.title     = activeLevel === 1 ? 'Return to item' : 'View Location 1 contents';
@@ -2475,11 +2536,11 @@ function makeNewItem(f, stock) {
   const item = {
     _id: nextId++, _row: null, _deleted: false,
     Name: f.Name, Vendor: f.Vendor, Catalog: f.Catalog, Price: f.Price,
-    Type: f.Type, Quantity: f.Quantity, Received: f.Received,
+    Type: f.Type, Size: f.Size, Received: f.Received,
     Threshold: f.Threshold,
     Location1: f.Location1, Location2: f.Location2,
     Box1: f.Box1, Room: f.Room, GridXY: f.GridXY,
-    CAS: f.CAS, SDS: f.SDS, URL: f.URL, Notes: f.Notes,
+    CAS: f.CAS, Container: f.Container, Safety: f.Safety, SDS: f.SDS, URL: f.URL, Notes: f.Notes,
     Policy: '',
     Sharing: '', Borrower: '', Borrowed: '',
     Stock: 0, Box2: '',
@@ -2611,7 +2672,12 @@ function renderSharingPanel(item, overridePolicy) {
   // copy uses 'Borrowed' where the host shows 'Shared'). Map Borrowed→Shared so the
   // shared panel branches are reused; the borrower-vs-host control split is via `own`.
   const sharing  = (s => s === 'Borrowed' ? 'Shared' : s)(getSharingState(item));
-  const policy   = overridePolicy || getSharingPolicy(item);
+  // `policy` is the EFFECTIVE policy used for the card accent + title (may be bumped down
+  // from Yes→Ask for Low Stock items as a safety cue). `storedPolicy` is the item's TRUE
+  // saved policy, used for the editable dropdown so the user always sees/sets the real
+  // value — otherwise setting Yes on a low-stock item would silently snap back to Ask.
+  const policy       = overridePolicy || getSharingPolicy(item);
+  const storedPolicy = getSharingPolicy(item);
   const borrower = item.Borrower || '';
   const borrowed = (item.Borrowed || '').slice(0, 10);
   // "own" = the host (owning-lab) view, which gets host controls (Bring Back / Resolved /
@@ -2687,7 +2753,7 @@ function renderSharingPanel(item, overridePolicy) {
         </div>`;
   } else if (own) {
     // Idle, your own lab: set the sharing policy. Set commits immediately, modal stays open.
-    const opt = p => `<option value="${p}"${policy===p?' selected':''}>${p}</option>`;
+    const opt = p => `<option value="${p}"${storedPolicy===p?' selected':''}>${p}</option>`;
     body = `<div class="sharing-row">
         <select id="sp-policy" class="sp-inp sp-inp-name">${opt('No')}${opt('Ask')}${opt('Yes')}</select>
         <button class="btn btn-borrow btn-sm" onclick="setPolicy()">Set</button>
@@ -2982,7 +3048,7 @@ function clearSetup() {
 
 // ── Export ─────────────────────────────────────────────────────────────
 function exportCSV() {
-  const headers = ['Vendor','Catalog','Price','Name','Type','Quantity','Received',
+  const headers = ['Vendor','Catalog','Price','Name','Type','Size','Received',
     'Stock','Threshold','Room','Location1','Location2','Box1','GridXY','Box2',
     'Sharing','Borrower','Borrowed','Notes','CAS','SDS','URL','Status'];
   const rows = items.map(item =>
