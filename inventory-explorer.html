@@ -104,7 +104,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .stock-cell{display:flex;align-items:center;gap:4px;white-space:nowrap;}
 .stock-num{min-width:28px;text-align:center;font-size:14px;border:1px solid transparent;border-radius:2px;padding:0 2px;}
 .stock-num:focus{border-color:var(--bord);outline:none;}
-.stock-num.readonly{cursor:not-allowed;color:var(--mut);}
+.stock-num.readonly{cursor:not-allowed;}
 .stock-ok    {color:var(--ok);}
 .stock-warn  {color:var(--warn);}
 .stock-danger{color:var(--danger);}
@@ -286,8 +286,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 #setup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;}
 #setup-overlay.open{display:flex;}
 .setup-box{background:#fff;border:1px solid var(--bord);border-radius:3px;padding:28px;width:480px;max-width:90vw;}
-.setup-box h2{font-size:14px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:16px;}
-.setup-actions{display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--bord);}
 
 /* ── Phones: full-screen modal, tighter spacing, responsive box grid ── */
 @media (max-width: 640px){
@@ -359,32 +357,28 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 <!-- Setup Modal -->
 <div id="setup-overlay">
   <div class="setup-box">
-    <h2>Setup — Data Source</h2>
     <div class="form-field" style="margin-bottom:16px;">
       <label>Google Apps Script URL</label>
       <input id="setup-url" type="text" value="https://script.google.com/macros/s/AKfycbyOoLJvGwQuqVRLz1x9lOPV4mwwFCqDfjjf2wo-QYvaLBIG6MpNyJQA5pfsXCYHgVPY/exec" placeholder="https://script.google.com/macros/s/…/exec">
     </div>
     <div class="form-field" style="margin-bottom:16px;">
-      <label>Default Lab</label>
+      <label>Set Home Lab</label>
       <select id="setup-lab" style="width:100%;padding:6px 8px;font-family:'DM Mono',monospace;font-size:14px;border:1px solid var(--bord);border-radius:2px;background:var(--paper);"></select>
       <input id="setup-new-lab" type="text" placeholder="Name for the new lab" style="display:none;margin-top:6px;">
     </div>
-    <div class="form-field" style="margin-bottom:16px;">
-      <label>PI password</label>
-      <input id="setup-pw" type="password" placeholder="Required to set or change lab" autocomplete="off">
-    </div>
-    <div class="setup-actions">
-      <button class="btn" onclick="closeSetup()">Cancel</button>
-      <div style="display:flex;gap:8px;">
-        <button class="btn btn-danger" onclick="clearSetup()">Disconnect</button>
-        <button class="btn btn-primary" onclick="saveSetup()">Save &amp; Reload</button>
+    <div class="form-field" style="display:flex;align-items:flex-end;gap:8px;">
+      <div style="flex:1;">
+        <label>PI password</label>
+        <input id="setup-pw" type="password" placeholder="Required to set or change lab" autocomplete="off">
       </div>
+      <button class="btn btn-primary" onclick="saveSetup()">Save</button>
+      <button class="btn" onclick="closeSetup()">Done</button>
     </div>
   </div>
 </div>
 
 <!-- Edit/Add Modal -->
-<div class="modal-overlay" id="edit-modal-overlay" onclick="if(event.target===this)closeEditModal()">
+<div class="modal-overlay" id="edit-modal-overlay" onmousedown="overlayMouseDown(event)" onmouseup="overlayMouseUp(event)">
   <div class="modal-box">
 
     <!-- Scrolling content region: three gapless colour-coded bands —
@@ -2198,6 +2192,16 @@ function closeEditModal() {
   const box = document.querySelector('.modal-box');
   if (box) box.classList.remove('read-only');
 }
+
+// Click-outside-to-close, but only when the PRESS started on the backdrop too. This avoids
+// closing when a drag that began inside the modal (e.g. selecting text) is released on the
+// backdrop — the release target is the overlay, but the press target was not.
+let _overlayPressOnBackdrop = false;
+function overlayMouseDown(e) { _overlayPressOnBackdrop = (e.target === e.currentTarget); }
+function overlayMouseUp(e)   {
+  if (_overlayPressOnBackdrop && e.target === e.currentTarget) closeEditModal();
+  _overlayPressOnBackdrop = false;
+}
 // Close the modal and rebuild the list + filter options (used after delete/archive/resolve).
 function closeAndRefresh() {
   closeEditModal();
@@ -3094,13 +3098,6 @@ function saveSetup() {
   localStorage.setItem(KEY_URL, url);
   localStorage.setItem(KEY_DEFAULT_LAB, lab);
   localStorage.setItem(KEY_ACTIVE_LAB, lab);
-  location.reload();
-}
-function clearSetup() {
-  if (!confirm('Disconnect from the data source? The page will reload empty.')) return;
-  localStorage.removeItem(KEY_URL);
-  localStorage.removeItem(KEY_DEFAULT_LAB);
-  localStorage.removeItem(KEY_ACTIVE_LAB);
   location.reload();
 }
 
