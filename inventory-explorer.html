@@ -21,7 +21,7 @@
 html,body{height:100%;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:#fff !important;}
 @media (prefers-color-scheme: dark){
   html,body,#topnav,#subnav,#content,.inv-table,.inv-table td,.inv-table th,
-  .modal-box,.modal-col-left,.modal-col-right,
+  .modal-box,.modal-scroll,
   .form-field input,.form-field select,.form-field textarea,
   .btn,.nbtn,.filter-select,#search-box{background-color:#fff !important;color:var(--ink) !important;}
 }
@@ -40,20 +40,30 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .nav-spacer{flex:1;}
 
 #subnav{display:flex;align-items:center;padding:4px 18px;gap:7px;background:var(--paper);border-bottom:1px solid var(--bord);flex-shrink:0;flex-wrap:wrap;}
-.filter-group{display:flex;align-items:center;gap:5px;}
-.filter-group label{font-size:14px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;}
-.filter-select{padding:3px 8px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);cursor:pointer;outline:none;}
-.filter-sep{width:1px;height:20px;background:var(--bord);margin:0 2px;}
-#search-box{margin-left:auto;padding:3px 10px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);width:220px;outline:none;}
+.subnav-spacer{flex:1;}
+/* Filter dropdowns: uniform fixed width (sized for "Location", the longest field name).
+   The default option shows the field name; selecting a value replaces it. Long selected
+   values are clipped by the fixed width (no ellipsis). */
+.filter-select{width:104px;flex:0 0 104px;padding:3px 8px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);cursor:pointer;outline:none;text-overflow:clip;}
+/* A dropdown with an active (non-default) selection gets a subtle blue border to show it's filtering. */
+.filter-select.filtering{border-color:var(--vb-hi-b);}
+#search-box{padding:3px 10px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);width:200px;outline:none;}
 #search-box:focus{border-color:var(--ink);}
+/* Clear button turns blue whenever a search or any dropdown is narrowing the list. */
+#clear-btn.active{background:var(--vb-hi) !important;border-color:var(--vb-hi-b) !important;color:#fff !important;}
+/* Lab ⟷ All scope toggle */
+.scope-toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-size:14px;white-space:nowrap;}
+.scope-label{color:var(--mut);letter-spacing:.03em;}
+.scope-toggle.is-all .scope-label-all{color:var(--vb-hi);font-weight:600;}
+.scope-toggle:not(.is-all) .scope-label-lab{color:var(--ink);font-weight:600;}
+.scope-switch{position:relative;width:34px;height:18px;border-radius:9px;background:var(--bord);transition:background .15s;flex:0 0 auto;}
+.scope-toggle.is-all .scope-switch{background:var(--vb-hi);}
+.scope-knob{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .15s;}
+.scope-toggle.is-all .scope-knob{left:18px;}
 .lab-group-row td{padding:10px 8px 4px;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);border-top:2px solid var(--bord);border-bottom:1px solid var(--bord);}
 .lab-group-row.foreign td{color:var(--mut);}
 .modal-box.read-only :disabled{opacity:.55;cursor:not-allowed;}
-.modal-box.read-only #sec-sharing :disabled{opacity:1;cursor:auto;}
-/* Search-All mode: only the toggle button is highlighted blue — the toolbar and search
-   box stay neutral so the indicator is a clear, contained signal. */
-.scope-local{border-color:var(--vb-lo-b);}
-.scope-everywhere{background:var(--vb-hi) !important;border-color:var(--vb-hi-b) !important;color:#fff !important;}
+.modal-box.read-only #sharing-inline :disabled{opacity:1;cursor:auto;}
 
 #content{flex:1;overflow-y:auto;padding:18px;background:#fff !important;}
 
@@ -113,17 +123,30 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 /* ── Modal ── */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;}
 .modal-overlay.open{display:flex;}
-.modal-box{background:var(--paper);border:1px solid var(--bord);border-radius:3px;display:flex;flex-direction:row;max-height:90vh;width:920px;overflow:visible;}
-.modal-col-left{width:310px;flex-shrink:0;padding:22px;display:flex;flex-direction:column;overflow-y:auto;max-height:90vh;}
-.modal-col-right{flex:1;padding:22px;overflow-y:auto;display:flex;flex-direction:column;gap:14px;min-width:0;max-height:90vh;}
+/* Single-column modal: a scrolling content region above a pinned action bar. Same on
+   desktop and mobile; on phones the box fills the viewport. */
+.modal-box{background:var(--paper);display:flex;flex-direction:column;max-height:90vh;width:560px;max-width:96vw;overflow:hidden;}
+.modal-scroll{overflow-y:auto;padding:0;display:flex;flex-direction:column;min-height:0;}
+/* Three gapless colour-coded bands. Each carries a 3px left stripe + a faint background
+   tint, butting directly against its neighbours (no gaps, no dividers). */
+.modal-band{padding:12px 16px;border-left:3px solid var(--mut);}
+.band-info{background:#fafaf8;border-left-color:var(--mut);}
+/* Stock & pricing band: faint orange, tying it to the order/stock workflow colour. */
+.band-stock{background:#fdf2e8;border-left-color:var(--warn);}
+/* Location: darker blue stripe, light blue background. */
+.band-location{background:#eaf3fb;border-left-color:var(--vb-hi-b);}
+/* Sharing band stripe + tint reflect the sharing STATE. Tints are kept very faint so the
+   form stays readable; the stripe carries the strong colour. No = grey. */
+.band-sharing{background:#fafaf8;border-left-color:var(--mut);}
+.band-sharing.share-no{background:#eeece8;border-left-color:var(--mut);}
+.band-sharing.share-ask{background:#fdf6e3;border-left-color:var(--yellow);}
+.band-sharing.share-yes{background:#eef7ea;border-left-color:var(--ok);}
+.band-sharing.share-danger{background:#fbeded;border-left-color:var(--danger);}
 .modal-box h2{font-size:14px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:16px;}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-.form-row-3{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;margin-top:8px;align-items:start;}
-.form-row-3 .form-field{min-width:0;}
-.form-full{grid-column:1/-1;}
 .form-field label{display:block;font-size:12px;color:var(--mut);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;}
 .form-field input,.form-field select,.form-field textarea{width:100%;padding:4px 7px;border:1px solid var(--bord);border-radius:2px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:var(--paper);outline:none;}
-.form-field input[type="date"]{width:auto;max-width:150px;}
+.form-field input[type="date"]{width:100%;max-width:none;}
 .field-with-view{display:flex;gap:4px;align-items:center;}
 .field-with-view .combo-wrap{flex:1;min-width:0;}
 .field-with-view > input{flex:1;min-width:0;}
@@ -131,14 +154,42 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
    distinct from the neutral eye/view buttons. */
 .link-btn{color:var(--vb-hi);border-color:var(--vb-hi-b);}
 .link-btn:not(:disabled):hover{background:var(--vb-hi);color:#fff;}
+/* SDS link: neutral grey border like the other buttons, but a faint red-tinted background
+   as a safety signal. The icon itself uses the default ink (black) lines. */
+.sds-btn{background:#f7e3e3;color:var(--ink);}
+.sds-btn:not(:disabled):hover{background:#f0d0d0;}
 .view-btn{flex:0 0 auto;width:28px;height:28px;padding:0!important;display:inline-flex;align-items:center;justify-content:center;}
 .view-btn.is-active{background:var(--vb-hi)!important;color:#fff!important;border-color:var(--vb-hi-b)!important;}
 .view-btn:disabled{opacity:.35;cursor:not-allowed;}
 .view-btn svg{width:18px;height:18px;display:block;}
 
-/* Location section: blue background + divider between form fields and the box/list view. */
-#sec-location{background:var(--vb-lo) !important;border-color:var(--vb-lo-b);}
-#sec-location > #loc-panel-wrap{margin-top:10px;padding-top:10px;border-top:1px solid var(--bord);}
+/* Information grid: positional rows.
+   1: Name (full) · 2: Vendor/Catalog/Size · 3: Type/Container/URL · 4: Notes (full) ·
+   5: Price/Date/Stock/Low */
+.info-grid{grid-template-columns:repeat(3,1fr);}
+.info-grid .info-name{grid-column:1/-1;}
+.info-grid .info-notes{grid-column:1/-1;}
+/* The Price/Date/Stock/Low row is four across; the three-col grid can't host four in one
+   row, so that row spans full width with its own 4-col sub-grid. */
+.info-tail{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+
+/* Panel-less modal: regions separated by hairline grey dividers, no card chrome. */
+.modal-divider{border-top:1px solid var(--bord);}
+#sec-location > #loc-panel-wrap{margin-top:8px;}
+.loc-grid{grid-template-columns:repeat(4,1fr);}
+/* Location 1/2 are full-width buttons when idle (click to view that location's contents),
+   and revert to the editable combo in move mode. Empty → disabled, showing the field name. */
+.loc-view-btn{width:100%;text-align:left;padding:4px 8px;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.loc-view-btn.is-active{background:var(--vb-hi)!important;color:#fff!important;border-color:var(--vb-hi-b)!important;}
+.loc-view-btn:disabled{opacity:.5;cursor:default;color:var(--mut);}
+/* Grid X·Y row (move mode): a new line under the location fields, right-justified. */
+.loc-dims-row{display:flex;justify-content:flex-end;margin-top:8px;}
+.loc-dims-row .form-field{flex:0 0 auto;text-align:right;}
+/* Sharing area: a status title line spanning the width, then a control row. */
+.share-title{font-size:12px;color:var(--mut);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;min-height:15px;}
+.share-title.danger{color:var(--danger);}
+.share-title.ok{color:var(--ok);}
+.share-title.warn{color:var(--yellow-b);}
 .form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--ink);}
 .combo-wrap{display:flex;flex-direction:column;gap:2px;}
 .combo-sel,.combo-inp{width:100%;padding:4px 7px;border:1px solid var(--bord);border-radius:2px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:var(--paper);outline:none;}
@@ -146,58 +197,22 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .combo-sel:focus,.combo-inp:focus{border-color:var(--ink);}
 .combo-back{font-size:11px;color:var(--mut);cursor:pointer;text-decoration:underline;align-self:flex-start;}
 .combo-back:hover{color:var(--ink);}
-.form-field textarea{resize:vertical;min-height:80px;}
+.form-field textarea{resize:vertical;min-height:60px;}
+#f-notes-text{min-height:60px;}
 
-/* ── Three-section left column ───────────────────────────────────────── */
-.sec-card{border:1px solid var(--bord);border-left:3px solid var(--mut);border-radius:3px;padding:10px 12px;margin-bottom:10px;background:#fafaf8;}
-.sec-card:last-child{margin-bottom:0;}
-/* Safety section: red accent to draw the eye to safety info. Same thick left border as
-   every panel, but red + a faint red wash + red title. */
-.sec-safety{border-color:var(--danger);border-left:3px solid var(--danger);background:#f7e9e9;}
-.sec-safety .sec-title{color:var(--danger);}
-/* Safety row: three equal columns — CAS, SDS, Description. */
-.safety-grid{grid-template-columns:1fr 1fr 1fr !important;}
+/* ── Section titles (used elsewhere) ───────────────────────── */
 .sec-title{font-size:14px;font-weight:400;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin-bottom:8px;}
-/* Modal action bar — 4 equal-width slots. Each visible button takes equal share of the
-   row width via flex:1, with a small gap providing breathing room. Buttons hidden by
-   display:none also drop out of the flex layout, so when fewer buttons are visible
-   (e.g. archived mode with 2) those remaining buttons take a proportionally larger share. */
-.modal-bottom-actions{display:flex;align-items:center;gap:8px;padding:10px 0 0;flex-shrink:0;}
-.modal-bottom-actions > button{flex:1;min-width:0;}
-/* The left column flexes vertically and the Notes textarea absorbs leftover space so the
-   modal stays a clean rectangle regardless of which side has more content. */
-/* Left column layout. Aim: when the modal grows taller (to match the right column),
-   the Information form's rows keep their compact natural spacing — only the Notes
-   textarea expands to soak up the extra height, so the form doesn't look stretched. */
-.modal-col-left{display:flex;flex-direction:column;}
-.modal-col-left #sec-info{display:flex;flex-direction:column;flex:1;min-height:0;}
-/* Positional row sizing: every row stays at its natural (auto) height EXCEPT the Notes
-   row, which is 1fr (absorbs leftover vertical space). Current row order:
-     1: Name (full)
-     2: Vendor / Catalog
-     3: Size / Type
-     4: Container / URL
-     5: Notes (full)            ← this is the 1fr row
-     6: Price / Date
-     7: Stock / Threshold
-   If a row is added or removed from the Information form, update the template. */
-.modal-col-left #sec-info .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;flex:1;
-  grid-template-rows: auto auto auto auto 1fr auto auto;}
-/* The Notes form-field cell expands to fill its grid row; the textarea inside fills the cell. */
-.modal-col-left .form-full:has(#f-notes-text){display:flex;flex-direction:column;min-height:0;}
-#f-notes-text{flex:1;min-height:60px;resize:none;}
-
-/* ── Sharing & Location panels ── */
-/* Sharing card carries the policy accent on the card itself, not a nested panel. */
-.sec-card.policy-yes{background:var(--ok-lo) !important;border-color:var(--ok);}
-.sec-card.policy-ask{background:var(--yellow-lo) !important;border-color:var(--yellow);}
-.sec-card.policy-iou{background:var(--danger-lo) !important;border-color:var(--danger);}
-.sec-card.policy-yes .sec-title{color:var(--ok);}
-.sec-card.policy-ask .sec-title{color:var(--yellow-b);}
-.sec-card.policy-iou .sec-title{color:var(--danger);}
+/* Pinned action bar: contextual buttons grouped left, Done pushed right. Always visible. */
+.modal-bottom-actions{display:flex;align-items:center;gap:8px;padding:10px 20px;flex-shrink:0;border-top:1px solid var(--bord);background:var(--paper);}
+.modal-bottom-actions > button{flex:0 0 auto;}
+.modal-actions-spacer{flex:1;}
+#done-btn{background:#fff;}
 /* Sharing panel: every state fits on a single horizontal row. Inputs use placeholders
    (no labels) so the row stays one line tall. */
-.sharing-row{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;}
+.sharing-row{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;justify-content:flex-end;}
+/* Text-only sharing states keep their note left-aligned, taking the slack so it doesn't
+   get pushed to the right edge. */
+.sharing-row > .muted-italic{margin-right:auto;}
 .sharing-row .sp-inp{padding:4px 7px;border:1px solid var(--bord);border-radius:2px;
   font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:var(--paper);outline:none;min-width:0;}
 .sharing-row .sp-inp:focus{border-color:var(--ink);}
@@ -212,11 +227,16 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 
 /* Grid */
 .grid-outer{overflow:auto;margin-bottom:8px;}
-.grid-col-labels{display:flex;margin-left:26px;gap:2px;margin-bottom:2px;}
+.grid-col-labels{display:flex;margin-left:26px;gap:0;margin-bottom:0;}
 .grid-col-lbl{width:28px;text-align:center;font-size:12px;color:var(--mut);}
-.grid-row{display:flex;align-items:center;gap:2px;margin-bottom:2px;}
+.grid-col-lbl + .grid-col-lbl{margin-left:-1px;}
+.grid-row{display:flex;align-items:center;gap:0;margin-bottom:0;}
+.grid-row + .grid-row{margin-top:-1px;}
+.grid-cell + .grid-cell{margin-left:-1px;}
 .grid-row-lbl{width:22px;font-size:12px;color:var(--mut);text-align:right;padding-right:4px;flex-shrink:0;}
-.grid-cell{width:28px;height:28px;background:var(--paper);border:1px solid var(--bord);border-radius:2px;display:flex;align-items:center;justify-content:center;cursor:default;position:relative;flex-shrink:0;transition:background .1s;}
+/* Base grid reads as a lattice of thin lines: empty cells have no fill and no rounding,
+   just a hairline border. Occupied / placing / staged cells layer colour on top. */
+.grid-cell{width:28px;height:28px;background:transparent;border:1px solid var(--bord);display:flex;align-items:center;justify-content:center;cursor:default;position:relative;flex-shrink:0;transition:background .1s;}
 .grid-cell.c-placing{cursor:crosshair;background:#f0f8ff;}
 .grid-cell.c-placing:hover{background:#d0ecff;border-color:var(--vb-hi);}
 .grid-cell.c-occupied{cursor:pointer;}
@@ -238,7 +258,14 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .bli{display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid var(--bord);border-radius:2px;background:var(--paper);font-size:14px;cursor:pointer;}
 .bli:hover{background:#f0ede8;}
 .bli.bli-active{background:#e8f4fd;border-color:var(--vb-lo-b);}
+/* A unit picked up to place into the grid: darker blue, matching the in-grid selected
+   marker (mk-active), so the selection reads consistently between list and grid. */
+.bli.bli-selected{background:var(--vb-hi);border-color:var(--vb-hi-b);color:#fff;}
+.bli.bli-selected .bli-status{color:#dceaf5;}
 .bli.bli-unplaced{border-style:dashed;color:var(--mut);}
+/* Out-of-stock item still shown in its box list (until archived): pale red. */
+.bli.bli-oos{border-style:dashed;color:var(--mut);background:#fbeaea;}
+.bli.bli-oos .bli-status{color:var(--danger);}
 .bli-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bli-status{font-size:12px;color:var(--mut);white-space:nowrap;}
 
@@ -254,6 +281,22 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .setup-box{background:#fff;border:1px solid var(--bord);border-radius:3px;padding:28px;width:480px;max-width:90vw;}
 .setup-box h2{font-size:14px;font-weight:400;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:16px;}
 .setup-actions{display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--bord);}
+
+/* ── Phones: full-screen modal, tighter spacing, responsive box grid ── */
+@media (max-width: 640px){
+  .modal-overlay{padding:0;}
+  .modal-box{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0;border:0;}
+  .modal-band{padding:12px;}
+  .modal-bottom-actions{padding:8px 14px;gap:6px;}
+  .modal-bottom-actions > button{padding-left:10px;padding-right:10px;}
+  /* Box grid: merged-border lattice; cells shrink to fit up to 12 wide, capped at 28px so
+     small grids still show large cells. Floor ~21px keeps a 12-wide grid within ~320px. */
+  .grid-row{gap:0;margin-bottom:0;}
+  .grid-col-labels{gap:0;margin-left:20px;}
+  .grid-cell{width:clamp(21px, calc((100vw - 20px - 26px) / 12), 28px);
+             height:clamp(21px, calc((100vw - 20px - 26px) / 12), 28px);}
+  .grid-marker{width:80%;height:80%;font-size:11px;}
+}
 </style>
 </head>
 <body>
@@ -267,19 +310,19 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 </div>
 
 <div id="subnav">
-  <div class="filter-group"><label>Vendor</label>
-    <select class="filter-select" id="filter-vendor" onchange="applyFilters()"><option value="">All</option></select></div>
-  <div class="filter-group"><label>Type</label>
-    <select class="filter-select" id="filter-type" onchange="applyFilters()"><option value="">All</option></select></div>
-  <div class="filter-group"><label>Location</label>
-    <select class="filter-select" id="filter-loc" onchange="applyFilters()"><option value="">All</option></select></div>
-  <div class="filter-group"><label>Box</label>
-    <select class="filter-select" id="filter-box" onchange="applyFilters()"><option value="">All</option></select></div>
-  <button class="btn" style="font-size:14px;padding:3px 8px;" onclick="clearFilters()">Clear</button>
-  <div class="filter-sep"></div>
   <button class="btn btn-ok" style="font-size:14px;padding:3px 10px;" onclick="openAddModal()">New</button>
-  <input id="search-box" type="text" placeholder="Searching…" oninput="applyFilters()">
-  <button id="scope-toggle" class="btn scope-local" style="font-size:14px;padding:3px 10px;white-space:nowrap;" onclick="toggleSearchScope()">Search Lab</button>
+  <div class="subnav-spacer"></div>
+  <button class="btn" id="clear-btn" style="font-size:14px;padding:3px 8px;" onclick="clearFilters()">Clear</button>
+  <select class="filter-select" id="filter-vendor" onchange="applyFilters()"><option value="">Vendor</option></select>
+  <select class="filter-select" id="filter-type" onchange="applyFilters()"><option value="">Type</option></select>
+  <select class="filter-select" id="filter-loc" onchange="applyFilters()"><option value="">Location</option></select>
+  <select class="filter-select" id="filter-box" onchange="applyFilters()"><option value="">Box</option></select>
+  <input id="search-box" type="text" placeholder="Search…" oninput="applyFilters()">
+  <span class="scope-toggle" id="scope-toggle" onclick="toggleSearchScope()" title="Toggle search scope">
+    <span class="scope-label scope-label-lab">Lab</span>
+    <span class="scope-switch"><span class="scope-knob"></span></span>
+    <span class="scope-label scope-label-all">All</span>
+  </span>
 </div>
 
 <div id="content">
@@ -288,7 +331,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
       <th class="no-sort" style="width:120px;">Status</th>
       <th onclick="sortBy('Stock')" data-col="Stock" style="width:90px;">Stock</th>
       <th onclick="sortBy('Name')"  data-col="Name">Name</th>
-      <th onclick="sortBy('Type')"  data-col="Type">Type</th>
       <th onclick="sortBy('Location1')" data-col="Location1">Location</th>
     </tr></thead>
     <tbody id="inv-body"></tbody>
@@ -334,101 +376,90 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 <div class="modal-overlay" id="edit-modal-overlay" onclick="if(event.target===this)closeEditModal()">
   <div class="modal-box">
 
-    <!-- LEFT col: Information, Sharing, Status -->
-    <div class="modal-col-left">
+    <!-- Scrolling content region: three gapless colour-coded bands —
+         Sharing (state colour) / Information (neutral) / Location (blue). -->
+    <div class="modal-scroll">
 
-      <!-- Information (Status fields appended below Notes) -->
-      <div class="sec-card" id="sec-info">
-        <h3 class="sec-title">Information<span id="status-title-suffix"></span></h3>
-        <div class="form-grid">
-          <div class="form-field form-full"><label>Name *</label><input id="f-name" type="text" onblur="autoSaveNameField()"></div>
+      <!-- Sharing band (always visible) -->
+      <div class="modal-band band-sharing" id="sharing-inline">
+        <div class="share-title" id="share-title"></div>
+        <div id="sharing-panel-wrap"></div>
+      </div>
+
+      <!-- Information -->
+      <div class="modal-band band-info" id="sec-info">
+        <div class="form-grid info-grid">
+          <div class="form-field info-name"><label>Name *</label><input id="f-name" type="text" onblur="autoSaveNameField()"></div>
           <div class="form-field"><label>Vendor</label><div class="combo-wrap"><select id="f-vendor-sel" class="combo-sel" onchange="comboSelChange('f-vendor');autoSaveField()"><option value="">—</option></select><input id="f-vendor" type="text" class="combo-inp" style="display:none;" placeholder="New vendor…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-vendor');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
           <div class="form-field"><label>Catalog #</label><input id="f-catalog" type="text" onblur="autoSaveField()"></div>
           <div class="form-field"><label>Size</label><input id="f-size" type="text" placeholder="e.g. 500 g" onblur="autoSaveField()"></div>
           <div class="form-field"><label>Type</label><div class="combo-wrap"><select id="f-type-sel" class="combo-sel" onchange="comboSelChange('f-type');autoSaveField()"><option value="">—</option></select><input id="f-type" type="text" class="combo-inp" style="display:none;" placeholder="New type…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-type');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
           <div class="form-field"><label>Container</label><div class="combo-wrap"><select id="f-container-sel" class="combo-sel" onchange="comboSelChange('f-container');autoSaveField()"><option value="">—</option></select><input id="f-container" type="text" class="combo-inp" style="display:none;" placeholder="New container…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-container');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
           <div class="form-field"><label>URL</label><div class="field-with-view"><input id="f-url" type="text" placeholder="https://…" oninput="refreshLinkBtns()" onblur="autoSaveField()"><button class="btn btn-sm view-btn link-btn" id="open-url" title="Open URL in a new tab" onclick="openFieldLink('f-url')"></button></div></div>
-          <div class="form-field form-full"><label>Notes</label><textarea id="f-notes-text" onblur="autoSaveField()"></textarea></div>
-          <div class="form-field"><label>Price</label><input id="f-price" type="text" placeholder="$0.00" onblur="autoSaveField()"></div>
-          <div class="form-field"><label>Date received</label><input id="f-date" type="date" onblur="autoSaveField()"></div>
-          <div class="form-field"><label>Stock</label><input id="f-stock" type="number" value="1" min="0" oninput="autoSaveStockField()"></div>
-          <div class="form-field"><label>Threshold</label><input id="f-threshold" type="number" value="1" min="0" onblur="autoSaveField()"></div>
-        </div>
-      </div>
-
-      <!-- Modal action bar — lives in the left column directly under Information, so the
-           buttons are always visible regardless of how tall the Location panel grows.
-           Button visibility/labels are driven by `modalMode` + the item's Status via
-           renderBottomBar(). Buttons not relevant to the current state are hidden via
-           display:none rather than removed, so their IDs are stable for tests and code. -->
-      <div class="modal-bottom-actions" id="modal-actions">
-        <button class="btn btn-ok btn-sm"      id="new-btn" onclick="newBtnClick()">New</button>
-        <button class="btn btn-order btn-sm"   id="order-btn" style="display:none;">Order</button>
-        <button class="btn btn-danger btn-sm"  id="archive-btn" style="display:none;" onclick="archiveBtnClick()">Archive</button>
-        <button class="btn btn-primary btn-sm" id="move-btn"    onclick="moveBtnClick()">Move</button>
-        <button class="btn btn-danger btn-sm"  id="use-btn"     onclick="useBtnClick()">Use</button>
-      </div>
-
-      <h2 id="edit-modal-title" style="display:none;"></h2>
-    </div>
-
-    <!-- RIGHT col: Safety + Sharing + Location -->
-    <div class="modal-col-right">
-
-      <!-- Safety: one row — CAS, SDS link, Description. Carries a red accent. -->
-      <div class="sec-card sec-safety" id="sec-safety">
-        <h3 class="sec-title">Safety</h3>
-        <div class="form-grid safety-grid">
-          <div class="form-field"><label>CAS #</label><input id="f-cas" type="text" onblur="autoSaveField()"></div>
-          <div class="form-field"><label>SDS</label><div class="field-with-view"><input id="f-sds" type="text" placeholder="URL or file link" oninput="refreshLinkBtns()" onblur="autoSaveField()"><button class="btn btn-sm view-btn link-btn" id="open-sds" title="Open SDS link in a new tab" onclick="openFieldLink('f-sds')"></button></div></div>
           <div class="form-field"><label>Description</label><input id="f-safety" type="text" placeholder="e.g. corrosive, flammable" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>CAS #</label><input id="f-cas" type="text" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>SDS</label><div class="field-with-view"><input id="f-sds" type="text" placeholder="URL or file link" oninput="refreshLinkBtns()" onblur="autoSaveField()"><button class="btn btn-sm view-btn link-btn sds-btn" id="open-sds" title="Open SDS link in a new tab" onclick="openFieldLink('f-sds')"></button></div></div>
+          <div class="form-field info-notes"><label>Notes</label><textarea id="f-notes-text" onblur="autoSaveField()"></textarea></div>
         </div>
       </div>
 
-      <!-- Sharing transactions (no policy controls — those live in Status) -->
-      <div class="sec-card" id="sec-sharing">
-        <h3 class="sec-title">Sharing<span id="sharing-title-suffix"></span></h3>
-        <div id="sharing-panel-wrap"></div>
-      </div>
-
-      <!-- Location + grid -->
-      <div class="sec-card" id="sec-location">
-        <h3 class="sec-title">Location</h3>
-        <div class="form-grid">
-          <div class="form-field">
-            <label>Location 1</label>
-            <div class="field-with-view">
-              <div class="combo-wrap"><select id="f-location-sel" class="combo-sel" onchange="comboSelChange('f-location')"><option value="">—</option></select><input id="f-location" type="text" class="combo-inp" style="display:none;" placeholder="New location…" oninput="updateSublocOptions()"><span class="combo-back" onclick="comboBack('f-location')" style="display:none;">↩ pick existing</span></div>
-              <button class="btn btn-sm view-btn" id="view-loc1" title="View Location 1 contents" onclick="toggleViewLevel(1)"></button>
-            </div>
+      <!-- Location -->
+      <div class="modal-band band-location" id="sec-location">
+        <div class="form-grid loc-grid">
+          <div class="form-field"><label>Room</label><div class="combo-wrap"><select id="f-room-sel" class="combo-sel" onchange="comboSelChange('f-room')"><option value="">—</option></select><input id="f-room" type="text" class="combo-inp" style="display:none;" placeholder="New room…"><span class="combo-back" onclick="comboBack('f-room')" style="display:none;">↩ pick existing</span></div></div>
+          <div class="form-field"><label>Location 1</label>
+            <div class="combo-wrap loc-combo" id="loc1-combo"><select id="f-location-sel" class="combo-sel" onchange="comboSelChange('f-location')"><option value="">—</option></select><input id="f-location" type="text" class="combo-inp" style="display:none;" placeholder="New location…" oninput="updateSublocOptions()"><span class="combo-back" onclick="comboBack('f-location')" style="display:none;">↩ pick existing</span></div>
+            <button class="btn btn-sm loc-view-btn" id="view-loc1" onclick="toggleViewLevel(1)"></button>
           </div>
-          <div class="form-field">
-            <label>Location 2</label>
-            <div class="field-with-view">
-              <div class="combo-wrap"><select id="f-subloc-sel" class="combo-sel" onchange="comboSelChange('f-subloc')"><option value="">—</option></select><input id="f-subloc" type="text" class="combo-inp" style="display:none;" placeholder="New sub-location…"><span class="combo-back" onclick="comboBack('f-subloc')" style="display:none;">↩ pick existing</span></div>
-              <button class="btn btn-sm view-btn" id="view-loc2" title="View Location 2 contents" onclick="toggleViewLevel(2)"></button>
-            </div>
+          <div class="form-field"><label>Location 2</label>
+            <div class="combo-wrap loc-combo" id="loc2-combo"><select id="f-subloc-sel" class="combo-sel" onchange="comboSelChange('f-subloc')"><option value="">—</option></select><input id="f-subloc" type="text" class="combo-inp" style="display:none;" placeholder="New sub-location…"><span class="combo-back" onclick="comboBack('f-subloc')" style="display:none;">↩ pick existing</span></div>
+            <button class="btn btn-sm loc-view-btn" id="view-loc2" onclick="toggleViewLevel(2)"></button>
           </div>
-        </div>
-        <div class="form-row-3">
           <div class="form-field"><label>Box 1</label><div class="combo-wrap"><select id="f-box1-sel" class="combo-sel" onchange="comboSelChange('f-box1');onBoxFieldChange()"><option value="">—</option></select><input id="f-box1" type="text" class="combo-inp" style="display:none;" placeholder="New box…" oninput="onBoxFieldChange()"><span class="combo-back" onclick="comboBack('f-box1');onBoxFieldChange()" style="display:none;">↩ pick existing</span></div></div>
+        </div>
+
+        <!-- Grid X·Y dimensions: new line, right-justified, shown only in move mode. -->
+        <div class="loc-dims-row" id="loc-dims" style="display:none;">
           <div class="form-field">
             <label>Grid X · Y</label>
-            <div style="display:flex;gap:4px;align-items:center;">
+            <div style="display:flex;gap:4px;align-items:center;justify-content:flex-end;">
               <input id="dim-x" type="number" min="1" max="26" placeholder="c" style="width:42px;text-align:center;" oninput="applyDimensionsFromForm()">
               <span style="color:var(--mut);font-size:14px;">·</span>
               <input id="dim-y" type="number" min="1" max="26" placeholder="r" style="width:42px;text-align:center;" oninput="applyDimensionsFromForm()">
             </div>
           </div>
-          <div class="form-field"><label>Room</label><div class="combo-wrap"><select id="f-room-sel" class="combo-sel" onchange="comboSelChange('f-room')"><option value="">—</option></select><input id="f-room" type="text" class="combo-inp" style="display:none;" placeholder="New room…"><span class="combo-back" onclick="comboBack('f-room')" style="display:none;">↩ pick existing</span></div></div>
-          <input type="hidden" id="f-gridxy">
         </div>
+        <input type="hidden" id="f-gridxy">
 
-        <!-- Box / list view, nested inside the Location section -->
+        <!-- Box / list view -->
         <div id="loc-panel-wrap"></div>
       </div>
 
+      <!-- Stock & pricing band (orange — ties to the order/stock workflow) -->
+      <div class="modal-band band-stock">
+        <div class="info-tail">
+          <div class="form-field"><label>Stock</label><input id="f-stock" type="number" value="1" min="0" oninput="autoSaveStockField()"></div>
+          <div class="form-field"><label>Threshold</label><input id="f-threshold" type="number" value="1" min="0" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>Price</label><input id="f-price" type="text" placeholder="$0.00" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>Date received</label><input id="f-date" type="date" onblur="autoSaveField()"></div>
+        </div>
+      </div>
+
     </div>
+
+    <!-- Pinned action bar: contextual buttons left, Done right. Always visible. -->
+    <div class="modal-bottom-actions" id="modal-actions">
+      <button class="btn btn-ok btn-sm"      id="new-btn" onclick="newBtnClick()">New</button>
+      <button class="btn btn-order btn-sm"   id="order-btn" style="display:none;">Order</button>
+      <button class="btn btn-danger btn-sm"  id="archive-btn" style="display:none;" onclick="archiveBtnClick()">Archive</button>
+      <button class="btn btn-primary btn-sm" id="move-btn"    onclick="moveBtnClick()">Move</button>
+      <button class="btn btn-danger btn-sm"  id="use-btn"     onclick="useBtnClick()">Use</button>
+      <span class="modal-actions-spacer"></span>
+      <button class="btn btn-sm"             id="done-btn"    onclick="closeEditModal()">Done</button>
+    </div>
+
+    <h2 id="edit-modal-title" style="display:none;"></h2>
+  </div>
 
   </div>
 </div>
@@ -716,7 +747,7 @@ async function loadData() {
 
   // Both URL and active lab are required. Without either, prompt the user toward Setup.
   if (!API_URL || !activeLab) {
-    $('inv-body').innerHTML = '<tr><td colspan="5" class="empty">' +
+    $('inv-body').innerHTML = '<tr><td colspan="4" class="empty">' +
       'Click <strong>Setup</strong> in the top right to enter your data source URL and choose your lab.' +
       '</td></tr>';
     nextId = 0;
@@ -738,7 +769,7 @@ async function loadData() {
     setRefreshingHint(true);
     paintedFromCache = true;
   } else {
-    $('inv-body').innerHTML = `<tr><td colspan="5" class="empty">Loading <strong>${esc(activeLab)}</strong>…</td></tr>`;
+    $('inv-body').innerHTML = `<tr><td colspan="4" class="empty">Loading <strong>${esc(activeLab)}</strong>…</td></tr>`;
   }
 
   // 2. Always revalidate against the server.
@@ -746,7 +777,7 @@ async function loadData() {
   if (si === null) {
     setRefreshingHint(false);
     if (!paintedFromCache) {
-      $('inv-body').innerHTML = '<tr><td colspan="5" style="padding:20px;color:var(--danger);">Could not load data.</td></tr>';
+      $('inv-body').innerHTML = '<tr><td colspan="4" style="padding:20px;color:var(--danger);">Could not load data.</td></tr>';
     }
     // If we painted from cache, keep showing it — the network call failed but stale data
     // is better than an error wipe.
@@ -1048,8 +1079,8 @@ function updateSublocOptions() {
 // `withNew` adds the "— New —" sentinel for combo fields.
 // If `current` is set but not in `vals` and not `withNew`, it's preserved as a sticky option
 // so the user's filter choice doesn't silently vanish when other filters narrow the data.
-function fillSelect(sel, vals, current, withNew) {
-  sel.innerHTML = '<option value="">—</option>';
+function fillSelect(sel, vals, current, withNew, defaultLabel) {
+  sel.innerHTML = `<option value="">${defaultLabel || '—'}</option>`;
   vals.forEach(v => {
     const o = document.createElement('option');
     o.value = o.textContent = v;
@@ -1099,16 +1130,16 @@ function itemsMatchingFilters(active, except) {
 function buildSubnavFilters() {
   const active = getActiveFilters();
   const specs = [
-    { id:'filter-vendor', key:'vendor', extract: i => (i.Vendor||'').split('(')[0].trim() },
-    { id:'filter-type',   key:'type',   extract: i => i.Type },
-    { id:'filter-loc',    key:'loc',    extract: i => i.Location1 },
-    { id:'filter-box',    key:'box',    extract: i => i.Box1 },
+    { id:'filter-vendor', key:'vendor', label:'Vendor',   extract: i => (i.Vendor||'').split('(')[0].trim() },
+    { id:'filter-type',   key:'type',   label:'Type',     extract: i => i.Type },
+    { id:'filter-loc',    key:'loc',    label:'Location', extract: i => i.Location1 },
+    { id:'filter-box',    key:'box',    label:'Box',      extract: i => i.Box1 },
   ];
-  specs.forEach(({id, key, extract}) => {
+  specs.forEach(({id, key, label, extract}) => {
     const sel = $(id);
     const pool = itemsMatchingFilters(active, key);
     const vals = [...new Set(pool.map(extract).filter(Boolean))].sort();
-    fillSelect(sel, vals, sel.value, false);
+    fillSelect(sel, vals, sel.value, false, label);
   });
 }
 
@@ -1173,7 +1204,26 @@ function applyFilters() {
   });
 
   updateSectionCounts();
+  refreshFilterIndicators();
   renderInventory();
+}
+
+// Reflect "is the list currently narrowed?" in the toolbar:
+//   - Clear button turns blue when the search box OR any dropdown is filtering.
+//   - Each active (non-default) dropdown gets a blue border.
+function refreshFilterIndicators() {
+  const ids = ['filter-vendor','filter-type','filter-loc','filter-box'];
+  let anyDropdown = false;
+  ids.forEach(id => {
+    const el = $(id);
+    if (!el) return;
+    const on = !!el.value;
+    el.classList.toggle('filtering', on);
+    if (on) anyDropdown = true;
+  });
+  const hasSearch = !!($('search-box') && $('search-box').value.trim());
+  const clearBtn = $('clear-btn');
+  if (clearBtn) clearBtn.classList.toggle('active', anyDropdown || hasSearch);
 }
 
 // Status bucket ordering for the flat list. Lower rank sorts first.
@@ -1211,21 +1261,16 @@ function statusRank(item) {
 // Toggle between searching the active lab only and searching every lab.
 function toggleSearchScope() {
   searchScope = (searchScope === 'local') ? 'everywhere' : 'local';
-  const btn = $('scope-toggle');
+  const tog = $('scope-toggle');
   const box = $('search-box');
   if (searchScope === 'everywhere') {
-    btn.textContent = 'Search All';
-    btn.className = 'btn scope-everywhere';
-    btn.style.cssText = 'font-size:14px;padding:3px 10px;white-space:nowrap;';
-    box.placeholder = 'Search all labs…';
+    tog.classList.add('is-all');
+    box.placeholder = 'Search All Labs';
     // Begin fetching the other labs NOW (the home-lab load already warmed Apps Script,
-    // so these don't each pay the cold-start). Reuse the session cache if already
-    // populated — the user only just looked.
+    // so these don't each pay the cold-start). Reuse the session cache if already populated.
     prefetchOtherLabs();
   } else {
-    btn.textContent = 'Search Lab';
-    btn.className = 'btn scope-local';
-    btn.style.cssText = 'font-size:14px;padding:3px 10px;white-space:nowrap;';
+    tog.classList.remove('is-all');
     box.placeholder = defaultLab ? `Search ${defaultLab} Lab` : 'Search…';
   }
   applyFilters();
@@ -1259,13 +1304,14 @@ function prefetchOtherLabs() {
 function applyEverywhere() {
   const q = $('search-box').value.toLowerCase().trim();
   const tbody = $('inv-body');
+  refreshFilterIndicators();
 
   // Keep the home lab slice fresh (it may have changed since toggle).
   crossLabItems[activeLab] = items.slice();
 
   if (!q) {
     const pending = LAB_NAMES.filter(l => !Array.isArray(crossLabItems[l])).length;
-    tbody.innerHTML = '<tr><td colspan="5" class="empty">Enter a search term to look across all labs.'
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">Enter a search term to look across all labs.'
       + (pending ? ` <span style="color:var(--mut);">(${pending} lab${pending===1?'':'s'} still loading)</span>` : '')
       + '</td></tr>';
     $('section-counts').textContent = '';
@@ -1311,13 +1357,13 @@ function renderEverywhere(q) {
     const isForeign = lab !== activeLab;
     const hdr = document.createElement('tr');
     hdr.className = 'lab-group-row' + (isForeign ? ' foreign' : '');
-    hdr.innerHTML = `<td colspan="5">${esc(lab)}${isForeign ? ' — read-only' : ''} · ${matches.length}</td>`;
+    hdr.innerHTML = `<td colspan="4">${esc(lab)}${isForeign ? ' — read-only' : ''} · ${matches.length}</td>`;
     tbody.appendChild(hdr);
     matches.forEach(item => { tbody.appendChild(makeCrossLabRow(item, lab)); total++; });
   });
 
   if (!total) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">No items match “${esc(q)}” in any loaded lab.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" class="empty">No items match “${esc(q)}” in any loaded lab.</td></tr>`;
   }
   $('section-counts').textContent = `${total} match${total===1?'':'es'} across ${labs.length} lab${labs.length===1?'':'s'} searched`;
 }
@@ -1334,10 +1380,6 @@ function makeCrossLabRow(item, lab) {
     ? `<a href="${esc(item.URL)}" target="_blank">${esc(item.Name)}</a>` : esc(item.Name);
   const nameSub  = [(item.Vendor||'').split('(')[0].trim(), item.Catalog, item.Size, item.Price].filter(Boolean).join(' · ');
   const locSub   = [item.Location2, item.Box1].filter(Boolean).join(', ');
-  const sdsLink  = item.SDS && item.SDS!=='N/A'
-    ? `<a href="sds/${esc(item.SDS)}" target="_blank" style="color:var(--warn);text-decoration:none;border-bottom:1px dotted var(--warn);">SDS</a>` : '';
-  const casStr   = item.CAS && item.CAS!=='N/A' ? `CAS ${esc(item.CAS)}` : '';
-  const typeSub  = [sdsLink, casStr].filter(Boolean).join(' · ');
 
   const statusBtn = isForeign
     ? `<button class="status-btn ${statusBtnClass(btnSt)}" onclick="editForeignItem(${item._id},${LAB_NAMES.indexOf(lab)})">${btnSt}</button>`
@@ -1350,10 +1392,6 @@ function makeCrossLabRow(item, lab) {
     <td>
       <div class="item-name">${nameHtml}</div>
       ${nameSub ? `<div class="item-sub">${esc(nameSub)}</div>` : ''}
-    </td>
-    <td>
-      <div>${esc(item.Type||'—')}</div>
-      ${typeSub ? `<div class="item-sub">${typeSub}</div>` : ''}
     </td>
     <td>
       <div>${loc1WithRoom(item)}</div>
@@ -1400,7 +1438,7 @@ function renderInventory() {
   const tbody = $('inv-body');
   tbody.innerHTML = '';
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty">No items match your filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" class="empty">No items match your filters.</td></tr>';
     return;
   }
   filtered.forEach(item => tbody.appendChild(makeItemRow(item)));
@@ -1417,10 +1455,6 @@ function makeItemRow(item) {
   // Host rows show borrower when in a transactional state; a borrowed COPY is itself a
   // loan record (state in Status, no Sharing), so it always shows its borrower line.
   const showBorr = (isShared || isBorrowedCopy(item)) && item.Borrower;
-  const sdsLink  = item.SDS && item.SDS!=='N/A'
-    ? `<a href="sds/${esc(item.SDS)}" target="_blank" style="color:var(--warn);text-decoration:none;border-bottom:1px dotted var(--warn);">SDS</a>` : '';
-  const casStr   = item.CAS && item.CAS!=='N/A' ? `CAS ${esc(item.CAS)}` : '';
-  const typeSub  = [sdsLink, casStr].filter(Boolean).join(' · ');
   const nameHtml = item.URL && item.URL!=='N/A'
     ? `<a href="${esc(item.URL)}" target="_blank">${esc(item.Name)}</a>` : esc(item.Name);
   const nameSub  = [(item.Vendor||'').split('(')[0].trim(), item.Catalog, item.Size, item.Price].filter(Boolean).join(' · ');
@@ -1443,10 +1477,6 @@ function makeItemRow(item) {
     <td>
       <div class="item-name">${nameHtml}</div>
       ${nameSub ? `<div class="item-sub">${esc(nameSub)}</div>` : ''}
-    </td>
-    <td>
-      <div>${esc(item.Type||'—')}</div>
-      ${typeSub ? `<div class="item-sub">${typeSub}</div>` : ''}
     </td>
     <td>
       <div>${loc1WithRoom(item)}</div>
@@ -1603,7 +1633,7 @@ function configureActionForStatus(item, fromShared) {
       configureOrderButton({ label:'Stock',   cls:'btn-order', handler:confirmArrived });
       break;
     case 'Arrived':
-      configureOrderButton({ label:'Receive', cls:'btn-order', handler:receiveItem });
+      configureOrderButton({ label:'Input',   cls:'btn-order', handler:receiveItem });
       break;
     case 'Archived':
       configureOrderButton({ label:'Restore', cls:'btn-ok',    handler:restoreItem });
@@ -1690,10 +1720,12 @@ function fieldLinkUrl(id) {
 // on whether the current value is an openable URL.
 function refreshLinkBtns() {
   const LINK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>';
-  [['open-url','f-url'],['open-sds','f-sds']].forEach(([btnId, fieldId]) => {
+  // Biohazard trefoil for the SDS link, drawn with black (currentColor=ink) strokes.
+  const WARN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="11.3" r="2.1"/><path d="M12 9.2a4.6 4.6 0 0 1 4-6.7 4.6 4.6 0 0 0-4 6.7z"/><path d="M10.2 12.4a4.6 4.6 0 0 1-7.7.9 4.6 4.6 0 0 0 7.7-.9z"/><path d="M13.8 12.4a4.6 4.6 0 0 0 7.7.9 4.6 4.6 0 0 1-7.7-.9z"/><path d="M9.9 11.5 5 9M14.1 11.5 19 9M12 13.4V19"/></svg>';
+  [['open-url','f-url',LINK_SVG],['open-sds','f-sds',WARN_SVG]].forEach(([btnId, fieldId, svg]) => {
     const btn = $(btnId);
     if (!btn) return;
-    btn.innerHTML = LINK_SVG;
+    btn.innerHTML = svg;
     btn.disabled  = !fieldLinkUrl(fieldId);
   });
 }
@@ -1845,6 +1877,22 @@ function setLocFieldsDisabled(disabled) {
   ['f-location-sel','f-location','f-subloc-sel','f-subloc',
    'f-box1-sel','f-box1','f-room-sel','f-room','dim-x','dim-y'].forEach(id => {
     const el = $(id); if (el) el.disabled = disabled;
+  });
+  refreshLocMode();
+}
+
+// In move mode the Location 1/2 fields become editable combos and the Grid X·Y dimension
+// inputs appear; otherwise the fields are clickable view-buttons. Sharing and the box grid
+// stay visible in all modes.
+function refreshLocMode() {
+  const moving = (modalMode === 'move');
+  const dims  = $('loc-dims');
+  if (dims)  dims.style.display  = moving ? '' : 'none';
+  // Location 1/2: editable combo in move mode, clickable view-button when idle.
+  [['loc1-combo','view-loc1'], ['loc2-combo','view-loc2']].forEach(([comboId, btnId]) => {
+    const combo = $(comboId), btn = $(btnId);
+    if (combo) combo.style.display = moving ? '' : 'none';
+    if (btn)   btn.style.display   = moving ? 'none' : '';
   });
 }
 
@@ -2193,38 +2241,35 @@ function toggleViewLevel(level) {
     if (!item.Location1) return;
     locView = { loc1: item.Location1 };
   } else {
-    if (!item.Location1 || !item.Location2) return;
-    locView = { loc1: item.Location1, loc2: item.Location2 };
+    if (!item.Location2) return;
+    locView = { loc1: item.Location1 || '', loc2: item.Location2 };
   }
   locSelected = null;
   renderLocPanel(item);
   updateViewBtns(item);
 }
 
-// Reflect the current View state on the buttons (label + active styling, disabled when the
-// corresponding location field is empty).
+// Reflect the current View state on the location buttons. Each button shows its location
+// VALUE as the label (or the field name when empty/disabled). Clicking drills into that
+// location's contents; clicking the active one returns to the item. Location 2 is enabled
+// whenever it has a value — independent of whether Location 1 has been drilled into.
 function updateViewBtns(item) {
   const btn1 = $('view-loc1');
   const btn2 = $('view-loc2');
   if (!btn1 || !btn2) return;
   const activeLevel = locView && (locView.loc2 ? 2 : 1);
   const has1 = !!(item && item.Location1);
-  const has2 = !!(item && item.Location1 && item.Location2);
+  const has2 = !!(item && item.Location2);
 
-  // Eye = "view this location's contents". Back-arrow = "return to the item" (active state).
-  // Inline SVG keeps the icon under our control and avoids loading an icon font.
-  const EYE_SVG  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
-  const BACK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>';
-
-  btn1.innerHTML = activeLevel === 1 ? BACK_SVG : EYE_SVG;
-  btn1.title     = activeLevel === 1 ? 'Return to item' : 'View Location 1 contents';
+  btn1.textContent = activeLevel === 1 ? `↩ ${item.Location1}` : (has1 ? item.Location1 : 'Location 1');
+  btn1.title       = activeLevel === 1 ? 'Return to item' : 'View Location 1 contents';
   btn1.classList.toggle('is-active', activeLevel === 1);
-  btn1.disabled  = !has1;
+  btn1.disabled    = !has1;
 
-  btn2.innerHTML = activeLevel === 2 ? BACK_SVG : EYE_SVG;
-  btn2.title     = activeLevel === 2 ? 'Return to item' : 'View Location 2 contents';
+  btn2.textContent = activeLevel === 2 ? `↩ ${item.Location2}` : (has2 ? item.Location2 : 'Location 2');
+  btn2.title       = activeLevel === 2 ? 'Return to item' : 'View Location 2 contents';
   btn2.classList.toggle('is-active', activeLevel === 2);
-  btn2.disabled  = !has2;
+  btn2.disabled    = !has2;
 }
 
 // Group items by Name+Vendor+Catalog and accumulate a numeric field.
@@ -2319,20 +2364,33 @@ function renderLocPanel(item) {
 }
 
 function renderUnplacedRows(sibs) {
-  // Group unplaced ('0') tokens by identity, render one row per token
+  // Group by identity, tracking both unplaced ('0') tokens and any out-of-stock units.
+  // An out-of-stock item that was once in this box stays listed (labeled "out of stock")
+  // until it's archived, so it isn't silently lost when the last unit is used.
   const groups = groupByIdentity(sibs, () => 0, (entry, it) => {
     entry.surplus = (entry.surplus || 0) + box2ListCount(it.Box2);
+    if (getStock(it) === 0) entry.outOfStock = true;
   });
   let html = '';
-  groups.forEach(({rep, surplus}) => {
-    if (!surplus) return;
-    // An unplaced token is "selected" when locSelected is the '0' sentinel.
-    const isSel = !!(locSelected && locSelected.coord === '0');
+  groups.forEach(({rep, surplus, outOfStock}) => {
     const short = rep.Name.length > 20 ? rep.Name.slice(0,19)+'…' : rep.Name;
-    for (let k = 0; k < surplus; k++) {
-      html += `<div class="bli bli-unplaced${isSel?' bli-active':''}" onclick="locSelectUnplaced()">
-        <div class="bli-name" title="Click to place in a grid cell">□ ${esc(short)}</div>
-        <div class="bli-status">unplaced</div>
+    if (surplus) {
+      // An unplaced token is "selected" when locSelected is the '0' sentinel.
+      const isSel = !!(locSelected && locSelected.coord === '0');
+      for (let k = 0; k < surplus; k++) {
+        html += `<div class="bli bli-unplaced${isSel?' bli-selected':''}" onclick="locSelectUnplaced()">
+          <div class="bli-name" title="Click to place in a grid cell">□ ${esc(short)}</div>
+          <div class="bli-status">unplaced</div>
+        </div>`;
+      }
+    } else if (outOfStock) {
+      // Out of stock, no units to place. Stays in the box list (clickable to navigate)
+      // until archived. Not a placement target.
+      const isCur = rep._id === editIdx;
+      const handler = isCur ? '' : `onclick="locNavigateTo(${rep._id})"`;
+      html += `<div class="bli bli-oos${isCur?' bli-active':''}" ${handler}>
+        <div class="bli-name" title="${esc(rep.Name)}">${esc(short)}</div>
+        <div class="bli-status">out of stock</div>
       </div>`;
     }
   });
@@ -2658,83 +2716,80 @@ function deleteCurrentItem() {
 }
 
 // ── Sharing panel ──────────────────────────────────────────────────────
-function setSharingTitle(label) {
-  const el = $('sharing-title-suffix');
-  if (el) el.textContent = label ? ` \u2014 ${label}` : '';
+function setSharingTitle(label, accent) {
+  const el = $('share-title');
+  if (!el) return;
+  el.textContent = label || '';
+  el.className = 'share-title' + (accent ? ' ' + accent : '');
 }
 
 function renderSharingPanel(item, overridePolicy) {
-  const card    = $('sec-sharing');
   const wrap    = $('sharing-panel-wrap');
-  if (!card || !wrap) return;
+  if (!wrap) return;
   const isCopy   = isBorrowedCopy(item);
-  // Loan state lives in the Sharing column for BOTH host rows and borrowed copies (the
-  // copy uses 'Borrowed' where the host shows 'Shared'). Map Borrowed→Shared so the
-  // shared panel branches are reused; the borrower-vs-host control split is via `own`.
   const sharing  = (s => s === 'Borrowed' ? 'Shared' : s)(getSharingState(item));
-  // `policy` is the EFFECTIVE policy used for the card accent + title (may be bumped down
-  // from Yes→Ask for Low Stock items as a safety cue). `storedPolicy` is the item's TRUE
-  // saved policy, used for the editable dropdown so the user always sees/sets the real
-  // value — otherwise setting Yes on a low-stock item would silently snap back to Ask.
   const policy       = overridePolicy || getSharingPolicy(item);
   const storedPolicy = getSharingPolicy(item);
   const borrower = item.Borrower || '';
   const borrowed = (item.Borrowed || '').slice(0, 10);
-  // "own" = the host (owning-lab) view, which gets host controls (Bring Back / Resolved /
-  // policy editor). A borrowed COPY lives in the viewer's own tab but they are the
-  // BORROWER, not the host — so it must use the borrower controls regardless of isOwnLab().
   const own      = isOwnLab() && !isCopy;
 
-  // Card accent colour. IOU and Bring Back are danger states regardless of source policy.
-  card.classList.remove('policy-yes', 'policy-ask', 'policy-no', 'policy-iou');
-  if (sharing === 'IOU' || sharing === 'Bring Back' || sharing === 'Denied') card.classList.add('policy-iou');
-  else if (policy === 'Yes')   card.classList.add('policy-yes');
-  else if (policy === 'Ask')   card.classList.add('policy-ask');
-  else                         card.classList.add('policy-no');
+  // Title accent colour (the standalone sharing card is gone; the accent now lives on the
+  // status title line). IOU / Bring Back / Denied are danger; Yes = ok; Ask = warn.
+  let accent = '';
+  if (sharing === 'IOU' || sharing === 'Bring Back' || sharing === 'Denied') accent = 'danger';
+  else if (policy === 'Yes') accent = 'ok';
+  else if (policy === 'Ask') accent = 'warn';
 
-  // Title carries the sharing STATE (plus borrower · date for active transactions);
-  // idle items show the policy word.
-  const nd = borrower ? `${borrower}${borrowed ? ' \u00b7 ' + borrowed : ''}` : '';
+  // Colour the Sharing band's left stripe + tint by state: No / danger = red, Ask = yellow,
+  // Yes = green. (Active Shared/Requested inherit the underlying policy colour.)
+  const band = $('sharing-inline');
+  if (band) {
+    band.classList.remove('share-no','share-ask','share-yes','share-danger');
+    const bandCls = accent === 'danger' ? 'share-danger'
+                  : accent === 'ok'     ? 'share-yes'
+                  : accent === 'warn'   ? 'share-ask'
+                  :                       'share-no';
+    band.classList.add(bandCls);
+  }
+
+  // The borrowing lab in parens, when known (for active transactions on the host side).
+  const lab = isCopy ? '' : (parseBorrower(item.Borrower).lab || '');
+  const who = borrower ? `${borrower}${lab ? ' (' + lab + ')' : ''}${borrowed ? ' \u00b7 ' + borrowed : ''}` : '';
+
+  // Title carries the sharing STATE (+ who · date for active transactions); idle items show
+  // the policy word.
   let titleLabel;
-  if (sharing === 'IOU' && borrower)             titleLabel = `IOU \u00b7 ${nd}`;
-  else if (sharing === 'Denied' && borrower)     titleLabel = `Denied \u00b7 ${nd}`;
-  else if (sharing === 'Bring Back' && borrower) titleLabel = `Bring Back \u00b7 ${nd}`;
-  else if (sharing === 'Requested' && borrower)  titleLabel = `Requested \u00b7 ${nd}`;
-  else if (sharing === 'Shared' && borrower)     titleLabel = `Shared \u00b7 ${nd}`;
-  else                                           titleLabel = policy; // Yes / Ask / No
-  setSharingTitle(titleLabel);
+  if (sharing === 'IOU' && borrower)             titleLabel = `IOU \u00b7 ${who}`;
+  else if (sharing === 'Denied' && borrower)     titleLabel = `Denied \u00b7 ${who}`;
+  else if (sharing === 'Bring Back' && borrower) titleLabel = `Bring Back \u00b7 ${who}`;
+  else if (sharing === 'Requested' && borrower)  titleLabel = `Request \u00b7 ${who}`;
+  else if (sharing === 'Shared' && borrower)     titleLabel = `Shared \u00b7 ${who}`;
+  else if (policy === 'Yes')                     titleLabel = 'Sharing — Yes';
+  else if (policy === 'Ask')                     titleLabel = 'Sharing — Ask';
+  else                                           titleLabel = 'Sharing — No';
+  setSharingTitle(titleLabel, accent);
 
-  // Body — a single horizontal row. Active transactions show their action buttons only
-  // (name/date now live in the title). Idle items: policy editor in your own lab, or the
-  // borrow/request control when viewing another lab's item.
+  // Body — a single control row. Active transactions show their action buttons; idle items
+  // show the policy editor (your lab) or borrow/request control (another lab).
   let body;
   if (sharing === 'Denied' && borrower) {
-    // Borrower's copy after the host denied the request. Acknowledge soft-deletes it.
     body = `<div class="sharing-row">
         <span class="muted-italic" style="flex:1;">Request was denied.</span>
         <button class="btn btn-ok btn-sm" onclick="acknowledgeDenied()">OK</button>
       </div>`;
   } else if (sharing === 'IOU' && borrower) {
-    // IOU: the borrower consumed the unit. Only the host resolves it (single click,
-    // no PI gate). The borrower has nothing left to do — show state via the title only.
     body = own
-      ? `<div class="sharing-row">
-          <button class="btn btn-ok btn-sm" onclick="resolveSharing()">Resolved</button>
-        </div>`
+      ? `<div class="sharing-row"><button class="btn btn-ok btn-sm" onclick="resolveSharing()">Resolved</button></div>`
       : `<div class="sharing-row muted-italic">Item owed back to the owning lab.</div>`;
   } else if (sharing === 'Bring Back' && borrower) {
-    // Host recalled the item. Host can force-resolve back to In Stock; the borrower
-    // still has Return / IOU (the normal ways the loan ends).
     body = own
-      ? `<div class="sharing-row">
-          <button class="btn btn-ok btn-sm" onclick="resolveSharing()">Resolved</button>
-        </div>`
+      ? `<div class="sharing-row"><button class="btn btn-ok btn-sm" onclick="resolveSharing()">Resolved</button></div>`
       : `<div class="sharing-row">
           <button class="btn btn-ok btn-sm" onclick="returnItem()">Return</button>
           <button class="btn btn-danger btn-sm" onclick="iouItem()">IOU</button>
         </div>`;
   } else if (sharing === 'Requested' && borrower && isCopy) {
-    // Borrower's own copy of a still-pending request — passive, waiting on the host.
     body = `<div class="sharing-row muted-italic">Request pending host approval.</div>`;
   } else if (sharing === 'Requested' && borrower) {
     body = `<div class="sharing-row">
@@ -2742,21 +2797,17 @@ function renderSharingPanel(item, overridePolicy) {
         <button class="btn btn-danger btn-sm" onclick="denyRequest()">Deny</button>
       </div>`;
   } else if (sharing === 'Shared' && borrower) {
-    // Host can recall (Bring Back). Borrower can Return or flag IOU.
     body = own
-      ? `<div class="sharing-row">
-          <button class="btn btn-danger btn-sm" onclick="bringBackItem()">Bring Back</button>
-        </div>`
+      ? `<div class="sharing-row"><button class="btn btn-danger btn-sm" onclick="bringBackItem()">Bring Back</button></div>`
       : `<div class="sharing-row">
           <button class="btn btn-ok btn-sm" onclick="returnItem()">Return</button>
           <button class="btn btn-danger btn-sm" onclick="iouItem()">IOU</button>
         </div>`;
   } else if (own) {
-    // Idle, your own lab: set the sharing policy. Set commits immediately, modal stays open.
+    // Idle, your own lab: policy dropdown auto-saves on change (no Set button).
     const opt = p => `<option value="${p}"${storedPolicy===p?' selected':''}>${p}</option>`;
     body = `<div class="sharing-row">
-        <select id="sp-policy" class="sp-inp sp-inp-name">${opt('No')}${opt('Ask')}${opt('Yes')}</select>
-        <button class="btn btn-borrow btn-sm" onclick="setPolicy()">Set</button>
+        <select id="sp-policy" class="sp-inp sp-inp-name" onchange="setPolicy()">${opt('No')}${opt('Ask')}${opt('Yes')}</select>
       </div>`;
   } else if (policy === 'No') {
     body = `<div class="sharing-row muted-italic">Item is not shared.</div>`;
@@ -2764,7 +2815,7 @@ function renderSharingPanel(item, overridePolicy) {
     // Idle, foreign lab: borrow or request the item.
     const actionBtn = policy === 'Yes'
       ? `<button class="btn btn-borrow btn-sm" onclick="borrowItem()">Borrow</button>`
-      : `<button class="btn btn-ask btn-sm"    onclick="requestItem()">Request</button>`;
+      : `<button class="btn btn-ask btn-sm"    onclick="requestItem()">Ask</button>`;
     body = `<div class="sharing-row">
         <input id="sp-borrower" class="sp-inp sp-inp-name" type="text" placeholder="Name">
         <input id="sp-date"     class="sp-inp sp-inp-date" type="date" value="${todayLocal()}">
@@ -2773,7 +2824,6 @@ function renderSharingPanel(item, overridePolicy) {
   }
 
   wrap.innerHTML = body;
-  card.style.display = '';
 }
 
 // Apply the chosen policy. Persists, keeps the modal open, re-renders the panel so the
@@ -3106,10 +3156,6 @@ function applyLabBranding() {
   if (box && searchScope === 'local') {
     box.placeholder = defaultLab ? `Search ${defaultLab} Lab` : 'Search…';
   }
-  // Keep the scope toggle label correct on load (it only updated on toggle before,
-  // so a fresh page showed the stale static text).
-  const btn = $('scope-toggle');
-  if (btn) btn.textContent = (searchScope === 'everywhere') ? 'Search All' : 'Search Lab';
 }
 </script>
 </body>
