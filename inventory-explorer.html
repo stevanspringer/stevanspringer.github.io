@@ -41,6 +41,10 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 
 #subnav{display:flex;align-items:center;padding:4px 18px;gap:7px;background:var(--paper);border-bottom:1px solid var(--bord);flex-shrink:0;flex-wrap:wrap;}
 .subnav-spacer{flex:1;}
+/* The four dropdowns stay together; the search + toggle + clear stay together and wrap
+   to a second row as a unit when the toolbar is too narrow. Clear sits at the far right. */
+.subnav-filters{display:flex;gap:7px;align-items:center;}
+.subnav-search{display:flex;gap:7px;align-items:center;margin-left:auto;}
 /* Filter dropdowns: uniform fixed width (sized for "Location", the longest field name).
    The default option shows the field name; selecting a value replaces it. Long selected
    values are clipped by the fixed width (no ellipsis). */
@@ -81,6 +85,9 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .item-name a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--bord);}
 .item-name a:hover{border-bottom-color:var(--ink);}
 .item-sub{color:var(--mut);font-size:12px;margin-top:2px;}
+/* SDS link under the stock number in the list: small + red, like the other sub-text. */
+.sds-sub{display:block;font-size:12px;margin-top:2px;color:var(--danger);text-decoration:none;border-bottom:1px dotted var(--danger);width:fit-content;}
+.sds-sub:hover{color:var(--danger);border-bottom-style:solid;}
 .loc-sub{color:var(--mut);font-size:12px;}
 .borrower-sub{color:var(--mut);font-size:12px;margin-top:3px;font-style:italic;}
 
@@ -126,7 +133,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 /* Single-column modal: a scrolling content region above a pinned action bar. Same on
    desktop and mobile; on phones the box fills the viewport. */
 .modal-box{background:var(--paper);display:flex;flex-direction:column;max-height:90vh;width:560px;max-width:96vw;overflow:hidden;}
-.modal-scroll{overflow-y:auto;padding:0;display:flex;flex-direction:column;min-height:0;}
+.modal-scroll{overflow-y:auto;overflow-x:hidden;padding:0;display:flex;flex-direction:column;min-height:0;}
 /* Three gapless colour-coded bands. Each carries a 3px left stripe + a faint background
    tint, butting directly against its neighbours (no gaps, no dividers). */
 .modal-band{padding:12px 16px;border-left:3px solid var(--mut);}
@@ -190,6 +197,8 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .share-title.danger{color:var(--danger);}
 .share-title.ok{color:var(--ok);}
 .share-title.warn{color:var(--yellow-b);}
+/* Inline explanatory note in the sharing row — sits left, takes the slack so buttons go right. */
+.share-note{flex:1;min-width:0;font-size:13px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--ink);}
 .combo-wrap{display:flex;flex-direction:column;gap:2px;}
 .combo-sel,.combo-inp{width:100%;padding:4px 7px;border:1px solid var(--bord);border-radius:2px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:var(--paper);outline:none;}
@@ -218,6 +227,9 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .sharing-row .sp-inp:focus{border-color:var(--ink);}
 .sharing-row .sp-inp-name{flex:1;}
 .sharing-row .sp-inp-date{width:140px;flex:0 0 auto;}
+/* Show the native calendar picker icon on the sharing date input (matches the order/date
+   field). Make it clearly visible and clickable. */
+.sharing-row .sp-inp-date::-webkit-calendar-picker-indicator{opacity:1;cursor:pointer;}
 .sharing-row .btn{flex:0 0 auto;}
 .muted-italic{font-size:14px;color:var(--mut);font-style:italic;}
 /* End of sharing panel CSS */
@@ -226,7 +238,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .loc-inner{display:flex;flex-direction:column;}
 
 /* Grid */
-.grid-outer{overflow:auto;margin-bottom:8px;}
+.grid-outer{overflow-x:hidden;overflow-y:auto;margin-bottom:8px;}
 .grid-col-labels{display:flex;margin-left:26px;gap:0;margin-bottom:0;}
 .grid-col-lbl{width:28px;text-align:center;font-size:12px;color:var(--mut);}
 .grid-col-lbl + .grid-col-lbl{margin-left:-1px;}
@@ -315,17 +327,21 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 <div id="subnav">
   <button class="btn btn-ok" style="font-size:14px;padding:3px 10px;" onclick="openAddModal()">New</button>
   <div class="subnav-spacer"></div>
-  <button class="btn" id="clear-btn" style="font-size:14px;padding:3px 8px;" onclick="clearFilters()">Clear</button>
-  <select class="filter-select" id="filter-vendor" onchange="applyFilters()"><option value="">Vendor</option></select>
-  <select class="filter-select" id="filter-type" onchange="applyFilters()"><option value="">Type</option></select>
-  <select class="filter-select" id="filter-loc" onchange="applyFilters()"><option value="">Location</option></select>
-  <select class="filter-select" id="filter-box" onchange="applyFilters()"><option value="">Box</option></select>
-  <input id="search-box" type="text" placeholder="Search…" oninput="applyFilters()">
-  <span class="scope-toggle" id="scope-toggle" onclick="toggleSearchScope()" title="Toggle search scope">
-    <span class="scope-label scope-label-lab">Lab</span>
-    <span class="scope-switch"><span class="scope-knob"></span></span>
-    <span class="scope-label scope-label-all">All</span>
-  </span>
+  <div class="subnav-filters">
+    <select class="filter-select" id="filter-vendor" onchange="applyFilters()"><option value="">Vendor</option></select>
+    <select class="filter-select" id="filter-type" onchange="applyFilters()"><option value="">Type</option></select>
+    <select class="filter-select" id="filter-loc" onchange="applyFilters()"><option value="">Location</option></select>
+    <select class="filter-select" id="filter-box" onchange="applyFilters()"><option value="">Box</option></select>
+  </div>
+  <div class="subnav-search">
+    <input id="search-box" type="text" placeholder="Search…" oninput="applyFilters()">
+    <span class="scope-toggle" id="scope-toggle" onclick="toggleSearchScope()" title="Toggle search scope">
+      <span class="scope-label scope-label-lab">Lab</span>
+      <span class="scope-switch"><span class="scope-knob"></span></span>
+      <span class="scope-label scope-label-all">All</span>
+    </span>
+    <button class="btn" id="clear-btn" style="font-size:14px;padding:3px 8px;" onclick="clearFilters()">Clear</button>
+  </div>
 </div>
 
 <div id="content">
@@ -1383,6 +1399,8 @@ function makeCrossLabRow(item, lab) {
     ? `<a href="${esc(item.URL)}" target="_blank">${esc(item.Name)}</a>` : esc(item.Name);
   const nameSub  = [(item.Vendor||'').split('(')[0].trim(), item.Catalog, item.Size, item.Price].filter(Boolean).join(' · ');
   const locSub   = [item.Location2, item.Box1].filter(Boolean).join(', ');
+  const sdsLink  = /^https?:\/\/\S+$/i.test((item.SDS||'').trim())
+    ? `<a class="sds-sub" href="${esc(item.SDS.trim())}" target="_blank" rel="noopener" onclick="event.stopPropagation()">SDS</a>` : '';
 
   const statusBtn = isForeign
     ? `<button class="status-btn ${statusBtnClass(btnSt)}" onclick="editForeignItem(${item._id},${LAB_NAMES.indexOf(lab)})">${btnSt}</button>`
@@ -1391,7 +1409,7 @@ function makeCrossLabRow(item, lab) {
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td style="white-space:nowrap;">${statusBtn}</td>
-    <td><div class="stock-cell"><span class="stock-num ${stockCls} readonly">${stock}</span></div></td>
+    <td><div class="stock-cell"><span class="stock-num ${stockCls} readonly">${stock}</span></div>${sdsLink}</td>
     <td>
       <div class="item-name">${nameHtml}</div>
       ${nameSub ? `<div class="item-sub">${esc(nameSub)}</div>` : ''}
@@ -1462,6 +1480,8 @@ function makeItemRow(item) {
     ? `<a href="${esc(item.URL)}" target="_blank">${esc(item.Name)}</a>` : esc(item.Name);
   const nameSub  = [(item.Vendor||'').split('(')[0].trim(), item.Catalog, item.Size, item.Price].filter(Boolean).join(' · ');
   const locSub   = [item.Location2, item.Box1].filter(Boolean).join(', ');
+  const sdsLink  = /^https?:\/\/\S+$/i.test((item.SDS||'').trim())
+    ? `<a class="sds-sub" href="${esc(item.SDS.trim())}" target="_blank" rel="noopener" onclick="event.stopPropagation()">SDS</a>` : '';
 
   const stockEditable = !item.Box1;
   const stockCell = stockEditable
@@ -1476,7 +1496,7 @@ function makeItemRow(item) {
       <button class="status-btn ${statusBtnClass(btnSt)}" onclick="editItem(${item._id},${isShared})">${btnSt}</button>
       ${showBorr ? `<div class="borrower-sub">${esc(item.Borrower)}${item.Borrowed?' · '+esc(item.Borrowed.slice(0,10)):''}</div>` : ''}
     </td>
-    <td><div class="stock-cell">${stockCell}</div></td>
+    <td><div class="stock-cell">${stockCell}</div>${sdsLink}</td>
     <td>
       <div class="item-name">${nameHtml}</div>
       ${nameSub ? `<div class="item-sub">${esc(nameSub)}</div>` : ''}
@@ -1723,8 +1743,8 @@ function fieldLinkUrl(id) {
 // on whether the current value is an openable URL.
 function refreshLinkBtns() {
   const LINK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>';
-  // Biohazard trefoil for the SDS link, drawn with black (currentColor=ink) strokes.
-  const WARN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="11.3" r="2.1"/><path d="M12 9.2a4.6 4.6 0 0 1 4-6.7 4.6 4.6 0 0 0-4 6.7z"/><path d="M10.2 12.4a4.6 4.6 0 0 1-7.7.9 4.6 4.6 0 0 0 7.7-.9z"/><path d="M13.8 12.4a4.6 4.6 0 0 0 7.7.9 4.6 4.6 0 0 1-7.7-.9z"/><path d="M9.9 11.5 5 9M14.1 11.5 19 9M12 13.4V19"/></svg>';
+  // Warning triangle (point up) with an exclamation mark, for the SDS link.
+  const WARN_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 1.8 20.5h20.4z"/><path d="M12 9.5v5"/><path d="M12 17.6h.01"/></svg>';
   [['open-url','f-url',LINK_SVG],['open-sds','f-sds',WARN_SVG]].forEach(([btnId, fieldId, svg]) => {
     const btn = $(btnId);
     if (!btn) return;
@@ -2760,49 +2780,54 @@ function renderSharingPanel(item, overridePolicy) {
   const lab = isCopy ? '' : (parseBorrower(item.Borrower).lab || '');
   const who = borrower ? `${borrower}${lab ? ' (' + lab + ')' : ''}${borrowed ? ' \u00b7 ' + borrowed : ''}` : '';
 
-  // Title carries the sharing STATE (+ who · date for active transactions); idle items show
-  // the policy word.
+  // The title stays short (the state word); the detailed who · date explanatory text moves
+  // down onto the button row so it sits beside the actions it relates to.
   let titleLabel;
-  if (sharing === 'IOU' && borrower)             titleLabel = `IOU \u00b7 ${who}`;
-  else if (sharing === 'Denied' && borrower)     titleLabel = `Denied \u00b7 ${who}`;
-  else if (sharing === 'Bring Back' && borrower) titleLabel = `Bring Back \u00b7 ${who}`;
-  else if (sharing === 'Requested' && borrower)  titleLabel = `Request \u00b7 ${who}`;
-  else if (sharing === 'Shared' && borrower)     titleLabel = `Shared \u00b7 ${who}`;
+  if (sharing === 'IOU' && borrower)             titleLabel = 'IOU';
+  else if (sharing === 'Denied' && borrower)     titleLabel = 'Denied';
+  else if (sharing === 'Bring Back' && borrower) titleLabel = 'Bring Back';
+  else if (sharing === 'Requested' && borrower)  titleLabel = 'Request';
+  else if (sharing === 'Shared' && borrower)     titleLabel = 'Shared';
   else if (policy === 'Yes')                     titleLabel = 'Sharing — Yes';
   else if (policy === 'Ask')                     titleLabel = 'Sharing — Ask';
   else                                           titleLabel = 'Sharing — No';
   setSharingTitle(titleLabel, accent);
 
-  // Body — a single control row. Active transactions show their action buttons; idle items
-  // show the policy editor (your lab) or borrow/request control (another lab).
+  // Inline explanatory note for active transactions (who · date), shown at the left of the
+  // button row. `flex:1` pushes the buttons to the right.
+  const note = who ? `<span class="share-note">${esc(who)}</span>` : '';
+
+  // Body — a single control row. Active transactions show their explanatory note + action
+  // buttons; idle items show the policy editor (your lab) or borrow/request control.
   let body;
   if (sharing === 'Denied' && borrower) {
     body = `<div class="sharing-row">
-        <span class="muted-italic" style="flex:1;">Request was denied.</span>
+        <span class="share-note">Request was denied${who ? ' · ' + esc(who) : ''}.</span>
         <button class="btn btn-ok btn-sm" onclick="acknowledgeDenied()">OK</button>
       </div>`;
   } else if (sharing === 'IOU' && borrower) {
+    const ownerLab = (item.Vendor || '').trim();
     body = own
-      ? `<div class="sharing-row"><button class="btn btn-ok btn-sm" onclick="resolveSharing()">Resolved</button></div>`
-      : `<div class="sharing-row muted-italic">Item owed back to the owning lab.</div>`;
+      ? `<div class="sharing-row">${note}<button class="btn btn-ok btn-sm" onclick="resolveSharing()">Resolved</button></div>`
+      : `<div class="sharing-row"><span class="share-note">Item owed back to ${ownerLab ? esc(ownerLab) : 'the owning lab'}.</span></div>`;
   } else if (sharing === 'Bring Back' && borrower) {
     body = own
-      ? `<div class="sharing-row"><button class="btn btn-ok btn-sm" onclick="resolveSharing()">Resolved</button></div>`
-      : `<div class="sharing-row">
+      ? `<div class="sharing-row">${note}<button class="btn btn-ok btn-sm" onclick="resolveSharing()">Resolved</button></div>`
+      : `<div class="sharing-row">${note}
           <button class="btn btn-ok btn-sm" onclick="returnItem()">Return</button>
           <button class="btn btn-danger btn-sm" onclick="iouItem()">IOU</button>
         </div>`;
   } else if (sharing === 'Requested' && borrower && isCopy) {
-    body = `<div class="sharing-row muted-italic">Request pending host approval.</div>`;
+    body = `<div class="sharing-row"><span class="share-note">Request pending host approval${who ? ' · ' + esc(who) : ''}.</span></div>`;
   } else if (sharing === 'Requested' && borrower) {
-    body = `<div class="sharing-row">
+    body = `<div class="sharing-row">${note}
         <button class="btn btn-borrow btn-sm" onclick="acceptRequest()">Accept</button>
         <button class="btn btn-danger btn-sm" onclick="denyRequest()">Deny</button>
       </div>`;
   } else if (sharing === 'Shared' && borrower) {
     body = own
-      ? `<div class="sharing-row"><button class="btn btn-danger btn-sm" onclick="bringBackItem()">Bring Back</button></div>`
-      : `<div class="sharing-row">
+      ? `<div class="sharing-row">${note}<button class="btn btn-danger btn-sm" onclick="bringBackItem()">Bring Back</button></div>`
+      : `<div class="sharing-row">${note}
           <button class="btn btn-ok btn-sm" onclick="returnItem()">Return</button>
           <button class="btn btn-danger btn-sm" onclick="iouItem()">IOU</button>
         </div>`;
