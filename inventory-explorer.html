@@ -259,9 +259,12 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .bli:hover{background:#f0ede8;}
 .bli.bli-active{background:#e8f4fd;border-color:var(--vb-lo-b);}
 /* A unit picked up to place into the grid: darker blue, matching the in-grid selected
-   marker (mk-active), so the selection reads consistently between list and grid. */
-.bli.bli-selected{background:var(--vb-hi);border-color:var(--vb-hi-b);color:#fff;}
-.bli.bli-selected .bli-status{color:#dceaf5;}
+   marker (mk-active), so the selection reads consistently between list and grid. The
+   text is forced white so it stays legible over the dark blue (overrides .bli-unplaced). */
+.bli.bli-selected,
+.bli.bli-unplaced.bli-selected{background:var(--vb-hi);border-color:var(--vb-hi-b);color:#fff;}
+.bli.bli-selected .bli-name,
+.bli.bli-selected .bli-status{color:#fff;}
 .bli.bli-unplaced{border-style:dashed;color:var(--mut);}
 /* Out-of-stock item still shown in its box list (until archived): pale red. */
 .bli.bli-oos{border-style:dashed;color:var(--mut);background:#fbeaea;}
@@ -2389,7 +2392,7 @@ function renderUnplacedRows(sibs) {
       const isCur = rep._id === editIdx;
       const handler = isCur ? '' : `onclick="locNavigateTo(${rep._id})"`;
       html += `<div class="bli bli-oos${isCur?' bli-active':''}" ${handler}>
-        <div class="bli-name" title="${esc(rep.Name)}">${esc(short)}</div>
+        <div class="bli-name" title="${esc(rep.Name)}">□ ${esc(short)}</div>
         <div class="bli-status">out of stock</div>
       </div>`;
     }
