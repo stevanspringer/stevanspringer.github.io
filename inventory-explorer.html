@@ -12,10 +12,10 @@
   color-scheme: light;
   --paper:#fff;--bord:#ccc8c0;--ink:#1a1714;--mut:#888078;
   --vb-lo:#bdd9f5;--vb-lo-b:#8bbfe8;--vb-hi:#2c7bb6;--vb-hi-b:#1d5a8a;
-  --ok:#35974a;--ok-lo:#b8de8a;--ok-b:#1e6b33;
-  --warn:#f07000;--warn-lo:#ffd0a0;--warn-b:#c05000;
-  --danger:#b00000;--danger-lo:#ffb0b0;
-  --yellow:#c49b00;--yellow-lo:#fde68a;--yellow-b:#8a6d00;
+  --ok:#35974a;--ok-b:#1e6b33;
+  --warn:#f07000;--warn-b:#c05000;
+  --danger:#b00000;
+  --yellow:#c49b00;--yellow-b:#8a6d00;
 }
 *{box-sizing:border-box;margin:0;padding:0;forced-color-adjust:none;}
 html,body{height:100%;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:#fff !important;}
@@ -80,7 +80,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .inv-table th.no-sort:hover{color:var(--mut);}
 .inv-table td{padding:6px 8px;border-bottom:1px solid #f0ede8;vertical-align:top;background:#fff;}
 .inv-table tr:hover td{background:#faf9f7 !important;}
-.section-hdr td{padding:10px 8px 4px;font-size:14px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);border-top:2px solid var(--bord);border-bottom:1px solid var(--bord);}
 
 .item-name a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--bord);}
 .item-name a:hover{border-bottom-color:var(--ink);}
@@ -180,8 +179,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
    row, so that row spans full width with its own 4-col sub-grid. */
 .info-tail{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
 
-/* Panel-less modal: regions separated by hairline grey dividers, no card chrome. */
-.modal-divider{border-top:1px solid var(--bord);}
 #sec-location > #loc-panel-wrap{margin-top:8px;}
 .loc-grid{grid-template-columns:repeat(4,1fr);}
 /* Location 1/2 are full-width buttons when idle (click to view that location's contents),
@@ -209,8 +206,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .form-field textarea{resize:vertical;min-height:60px;}
 #f-notes-text{min-height:60px;}
 
-/* ── Section titles (used elsewhere) ───────────────────────── */
-.sec-title{font-size:14px;font-weight:400;letter-spacing:.05em;text-transform:uppercase;color:var(--ink);margin-bottom:8px;}
 /* Pinned action bar: contextual buttons grouped left, Done pushed right. Always visible. */
 .modal-bottom-actions{display:flex;align-items:center;gap:8px;padding:10px 20px;flex-shrink:0;border-top:1px solid var(--bord);background:var(--paper);}
 .modal-bottom-actions > button{flex:0 0 auto;}
@@ -219,9 +214,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 /* Sharing panel: every state fits on a single horizontal row. Inputs use placeholders
    (no labels) so the row stays one line tall. */
 .sharing-row{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;justify-content:flex-end;}
-/* Text-only sharing states keep their note left-aligned, taking the slack so it doesn't
-   get pushed to the right edge. */
-.sharing-row > .muted-italic{margin-right:auto;}
 .sharing-row .sp-inp{padding:4px 7px;border:1px solid var(--bord);border-radius:2px;
   font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:var(--paper);outline:none;min-width:0;}
 .sharing-row .sp-inp:focus{border-color:var(--ink);}
@@ -510,11 +502,14 @@ function writeLabCache(lab, rawItems) {
 }
 const LOCKED_ST       = new Set(['on order','arrived','archived']);
 const COMBO_NEW       = '\u2014 New \u2014';
+// The six transactional loan states (single source of truth). 'Borrowed' is the state a
+// borrowed COPY shows where the host shows 'Shared'. Used to recognise a loan state on read.
+const LOAN_STATE_SET = new Set(['Shared','Borrowed','Requested','IOU','Bring Back','Denied']);
 
 // Lab list — each entry is both a Google Sheet tab name and the PI confirmation code
 // for that lab. The list is ordered alphabetically (matching the dropdown).
-const LAB_NAMES = ['Biology', 'Deziel', 'Gray', 'Lacroix', 'Ladouceur', 'Murphy',
-  'Quijon', 'Robicheau', 'Ross', 'Seib', 'Silva-Opps', 'Springer', 'van den Heuvel'];
+const LAB_NAMES = ['Biology', 'Deziel', 'Germitsch', 'Gordon', 'Gray', 'Kilfoil', 'Lacroix', 'Ladouceur',
+  'Murphy', 'Penney', 'Quijon', 'Robicheau', 'Ross', 'Seib', 'Silva-Opps', 'Springer', 'van den Heuvel'];
 
 // PI confirmation code for sharing-policy changes and IOU acceptance.
 // Each lab's code is just the lab name itself. The active lab determines which code is valid.
@@ -556,6 +551,8 @@ let locView     = null;  // breadcrumb drill-down: null | { loc1, loc2? }
 const $  = id => document.getElementById(id);
 const fv = id => ($(id) ? $(id).value.trim() : '');
 const fn = id => parseInt(($(id) || {}).value, 10);
+// Numeric field read with a fallback when blank/non-numeric (reads the field once).
+const fnOr = (id, fallback) => { const v = fn(id); return isNaN(v) ? fallback : v; };
 
 function esc(s) {
   return String(s == null ? '' : s)
@@ -963,7 +960,7 @@ function getEffectiveStatus(item) {
 // no suffixes — the exact string in the sheet is the state.
 function getSharingState(item) {
   const sh = (item.Sharing||'').trim();
-  return ['Shared','Borrowed','Requested','IOU','Bring Back','Denied'].includes(sh) ? sh : '';
+  return LOAN_STATE_SET.has(sh) ? sh : '';
 }
 
 // Policy is its own column: Yes / Ask / No. Read it directly — no parsing, no suffix.
@@ -995,6 +992,15 @@ function updateStatus(item, status) {
 function updateSharing(item, val) {
   item.Sharing = val;
   persistItem(item);
+}
+// After a stock change: recompute the status from stock UNLESS the item is in a locked
+// lifecycle state (On Order / Arrived / Archived), in which case just persist as-is.
+function persistWithStockStatus(item) {
+  if (!LOCKED_ST.has((item.Status||'').toLowerCase())) {
+    updateStatus(item, stockDerivedStatus(item));
+  } else {
+    persistItem(item);
+  }
 }
 
 // ── Stock ──────────────────────────────────────────────────────────────
@@ -1387,46 +1393,61 @@ function renderEverywhere(q) {
   $('section-counts').textContent = `${total} match${total===1?'':'es'} across ${labs.length} lab${labs.length===1?'':'s'} searched`;
 }
 
+// ── Shared row-cell builders (used by both makeItemRow and makeCrossLabRow) ──
+// Kept as small helpers so the two renderers can't drift apart (a recurring source of bugs).
+function stockClassFor(stock, thresh) {
+  return stock <= 0 ? 'stock-danger' : stock <= thresh ? 'stock-warn' : 'stock-ok';
+}
+function nameLinkHtml(item) {
+  return item.URL && item.URL !== 'N/A'
+    ? `<a href="${esc(item.URL)}" target="_blank">${esc(item.Name)}</a>` : esc(item.Name);
+}
+function nameSubText(item) {
+  return [(item.Vendor||'').split('(')[0].trim(), item.Catalog, item.Size, item.Price].filter(Boolean).join(' · ');
+}
+function locSubText(item) {
+  return [item.Location2, item.Box1].filter(Boolean).join(', ');
+}
+function sdsSubHtml(item) {
+  return /^https?:\/\/\S+$/i.test((item.SDS||'').trim())
+    ? `<a class="sds-sub" href="${esc(item.SDS.trim())}" target="_blank" rel="noopener" onclick="event.stopPropagation()">SDS</a>` : '';
+}
+// The Name cell (linked name + vendor/catalog/size/price sub-line) and the Location cell
+// (Location 1 + room, with a Location 2 / Box sub-line) are identical across both renderers.
+function nameCellHtml(item) {
+  const sub = nameSubText(item);
+  return `<div class="item-name">${nameLinkHtml(item)}</div>${sub ? `<div class="item-sub">${esc(sub)}</div>` : ''}`;
+}
+function locCellHtml(item) {
+  const sub = locSubText(item);
+  return `<div>${loc1WithRoom(item)}</div>${sub ? `<div class="loc-sub">${esc(sub)}</div>` : ''}`;
+}
+
 // A row in everywhere mode. Active-lab rows are editable (open modal); foreign rows are
 // read-only — clicking does nothing destructive, the status button is non-interactive.
 function makeCrossLabRow(item, lab) {
   const isForeign = lab !== activeLab;
-  const stock    = getStock(item);
-  const thresh   = getThreshold(item);
-  const stockCls = stock<=0 ? 'stock-danger' : stock<=thresh ? 'stock-warn' : 'stock-ok';
-  const btnSt    = displayStatus(item);
-  const nameHtml = item.URL && item.URL!=='N/A'
-    ? `<a href="${esc(item.URL)}" target="_blank">${esc(item.Name)}</a>` : esc(item.Name);
-  const nameSub  = [(item.Vendor||'').split('(')[0].trim(), item.Catalog, item.Size, item.Price].filter(Boolean).join(' · ');
-  const locSub   = [item.Location2, item.Box1].filter(Boolean).join(', ');
-  const sdsLink  = /^https?:\/\/\S+$/i.test((item.SDS||'').trim())
-    ? `<a class="sds-sub" href="${esc(item.SDS.trim())}" target="_blank" rel="noopener" onclick="event.stopPropagation()">SDS</a>` : '';
-
-  const statusBtn = isForeign
-    ? `<button class="status-btn ${statusBtnClass(btnSt)}" onclick="editForeignItem(${item._id},${LAB_NAMES.indexOf(lab)})">${btnSt}</button>`
-    : `<button class="status-btn ${statusBtnClass(btnSt)}" onclick="editItem(${item._id},false)">${btnSt}</button>`;
+  const stock     = getStock(item);
+  const stockCls  = stockClassFor(stock, getThreshold(item));
+  const btnSt     = displayStatus(item);
+  const onclick   = isForeign
+    ? `editForeignItem(${item._id},${LAB_NAMES.indexOf(lab)})`
+    : `editItem(${item._id},false)`;
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td style="white-space:nowrap;">${statusBtn}</td>
-    <td><div class="stock-cell"><span class="stock-num ${stockCls} readonly">${stock}</span></div>${sdsLink}</td>
-    <td>
-      <div class="item-name">${nameHtml}</div>
-      ${nameSub ? `<div class="item-sub">${esc(nameSub)}</div>` : ''}
-    </td>
-    <td>
-      <div>${loc1WithRoom(item)}</div>
-      ${locSub ? `<div class="loc-sub">${esc(locSub)}</div>` : ''}
-    </td>`;
+    <td style="white-space:nowrap;"><button class="status-btn ${statusBtnClass(btnSt)}" onclick="${onclick}">${btnSt}</button></td>
+    <td><div class="stock-cell"><span class="stock-num ${stockCls} readonly">${stock}</span></div>${sdsSubHtml(item)}</td>
+    <td>${nameCellHtml(item)}</td>
+    <td>${locCellHtml(item)}</td>`;
   return tr;
 }
 
 // Section ordering and predicates — single source of truth. The "Shared" section also
 // holds borrowed copies, whose state lives entirely in Status (surfaced via displayStatus):
-// Borrowed / Requested / Bring Back / IOU / Denied.
-const SHARED_DISPLAY = new Set(['Shared','Requested','Bring Back','IOU','Denied','Borrowed']);
+// any loan state.
 const SECTIONS = [
-  ['Shared',       i => SHARED_DISPLAY.has(displayStatus(i))],
+  ['Shared',       i => LOAN_STATE_SET.has(displayStatus(i))],
   ['Arrived',      i => getEffectiveStatus(i) === 'Arrived'],
   ['Ordered',      i => getEffectiveStatus(i) === 'On Order'],
   ['Out of Stock', i => getEffectiveStatus(i) === 'Out of Stock'],
@@ -1467,28 +1488,22 @@ function renderInventory() {
 
 function makeItemRow(item) {
   const stock    = getStock(item);
-  const thresh   = getThreshold(item);
-  const stockCls = stock<=0 ? 'stock-danger' : stock<=thresh ? 'stock-warn' : 'stock-ok';
+  const stockCls = stockClassFor(stock, getThreshold(item));
   const sharing  = getSharingState(item);
   // Transactional sharing state takes precedence over stock status on the row button.
-  const isShared = (sharing==='Shared'||sharing==='Requested'||sharing==='Bring Back'||sharing==='IOU'||sharing==='Denied');
+  // (Excludes 'Borrowed', which only appears on a borrowed copy, handled via isBorrowedCopy.)
+  const isShared = sharing !== '' && sharing !== 'Borrowed';
   const btnSt    = displayStatus(item);
   // Host rows show borrower when in a transactional state; a borrowed COPY is itself a
   // loan record (state in Status, no Sharing), so it always shows its borrower line.
   const showBorr = (isShared || isBorrowedCopy(item)) && item.Borrower;
-  const nameHtml = item.URL && item.URL!=='N/A'
-    ? `<a href="${esc(item.URL)}" target="_blank">${esc(item.Name)}</a>` : esc(item.Name);
-  const nameSub  = [(item.Vendor||'').split('(')[0].trim(), item.Catalog, item.Size, item.Price].filter(Boolean).join(' · ');
-  const locSub   = [item.Location2, item.Box1].filter(Boolean).join(', ');
-  const sdsLink  = /^https?:\/\/\S+$/i.test((item.SDS||'').trim())
-    ? `<a class="sds-sub" href="${esc(item.SDS.trim())}" target="_blank" rel="noopener" onclick="event.stopPropagation()">SDS</a>` : '';
 
-  const stockEditable = !item.Box1;
-  const stockCell = stockEditable
-    ? `<span class="stock-num ${stockCls}" contenteditable="true"
+  // Boxed items edit stock via the grid (read-only here); loose items edit inline.
+  const stockCell = item.Box1
+    ? `<span class="stock-num ${stockCls} readonly" title="Boxed item — edit via grid">${stock}</span>`
+    : `<span class="stock-num ${stockCls}" contenteditable="true"
          onblur="setStockDirect(${item._id},this.textContent)"
-         onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">${stock}</span>`
-    : `<span class="stock-num ${stockCls} readonly" title="Boxed item — edit via grid">${stock}</span>`;
+         onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">${stock}</span>`;
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
@@ -1496,15 +1511,9 @@ function makeItemRow(item) {
       <button class="status-btn ${statusBtnClass(btnSt)}" onclick="editItem(${item._id},${isShared})">${btnSt}</button>
       ${showBorr ? `<div class="borrower-sub">${esc(item.Borrower)}${item.Borrowed?' · '+esc(item.Borrowed.slice(0,10)):''}</div>` : ''}
     </td>
-    <td><div class="stock-cell">${stockCell}</div>${sdsLink}</td>
-    <td>
-      <div class="item-name">${nameHtml}</div>
-      ${nameSub ? `<div class="item-sub">${esc(nameSub)}</div>` : ''}
-    </td>
-    <td>
-      <div>${loc1WithRoom(item)}</div>
-      ${locSub ? `<div class="loc-sub">${esc(locSub)}</div>` : ''}
-    </td>`;
+    <td><div class="stock-cell">${stockCell}</div>${sdsSubHtml(item)}</td>
+    <td>${nameCellHtml(item)}</td>
+    <td>${locCellHtml(item)}</td>`;
   return tr;
 }
 
@@ -1514,11 +1523,7 @@ function setStockDirect(id, val) {
   const n = parseInt(String(val).replace(/\D/g,''), 10);
   if (isNaN(n)) { applyFilters(); return; }
   applyStockChange(item, n);
-  if (!LOCKED_ST.has((item.Status||'').toLowerCase())) {
-    updateStatus(item, stockDerivedStatus(item));
-  } else {
-    persistItem(item);
-  }
+  persistWithStockStatus(item);
   applyFilters();
 }
 
@@ -1606,36 +1611,25 @@ function editForeignItem(id, labIdx) {
 // Enable/disable the Information, Status, and Location sections based on editReadOnly.
 // The Sharing section is never disabled — cross-lab borrowing happens there.
 // View/Return location-drill buttons stay active (navigation only, no mutation).
+const INFO_FIELD_IDS = [
+  'f-name','f-vendor-sel','f-vendor','f-catalog','f-size','f-type-sel','f-type',
+  'f-cas','f-container-sel','f-container','f-safety','f-sds','f-url','f-notes-text',
+  'f-price','f-date','f-stock','f-threshold',
+];
+const LOCATION_FIELD_IDS = [
+  'f-location-sel','f-location','f-subloc-sel','f-subloc','f-box1-sel','f-box1',
+  'f-room-sel','f-room','dim-x','dim-y',
+];
+const ACTION_BTN_IDS = ['new-btn','archive-btn','order-btn','move-btn','use-btn'];
+
 function applyReadOnlyState() {
   const ro = editReadOnly;
-  const lockIds = [
-    // Information fields
-    'f-name','f-vendor-sel','f-vendor','f-catalog','f-size','f-type-sel','f-type',
-    'f-cas','f-container-sel','f-container','f-safety','f-sds','f-url','f-notes-text',
-    'f-price','f-date','f-stock','f-threshold',
-    // Location fields
-    'f-location-sel','f-location','f-subloc-sel','f-subloc','f-box1-sel','f-box1',
-    'f-room-sel','f-room','dim-x','dim-y',
-    // Bottom-bar action buttons
-    'new-btn','archive-btn','order-btn','move-btn','use-btn',
-  ];
-  if (ro) {
-    lockIds.forEach(id => { const el = $(id); if (el) el.disabled = true; });
-  } else {
-    // Re-enable Information inputs (a prior read-only open may have disabled them).
-    const inputIds = [
-      'f-name','f-vendor-sel','f-vendor','f-catalog','f-size','f-type-sel','f-type',
-      'f-cas','f-container-sel','f-container','f-safety','f-sds','f-url','f-notes-text',
-      'f-price','f-date','f-stock','f-threshold',
-    ];
-    inputIds.forEach(id => { const el = $(id); if (el) el.disabled = false; });
-    // Action buttons always enabled when not read-only.
-    ['new-btn','archive-btn','order-btn','move-btn','use-btn'].forEach(id => {
-      const el = $(id); if (el) el.disabled = false;
-    });
-    // Location fields: stay disabled outside move-mode. setLocFieldsDisabled is called
-    // by the caller (editItem/openAddModal) after applyReadOnlyState.
-  }
+  // Information + Location fields and the action buttons are disabled when viewing a
+  // foreign item read-only, and re-enabled otherwise. (Location fields are then re-locked
+  // by setLocFieldsDisabled, which the caller runs next, since they only edit in move-mode.)
+  [...INFO_FIELD_IDS, ...LOCATION_FIELD_IDS, ...ACTION_BTN_IDS].forEach(id => {
+    const el = $(id); if (el) el.disabled = ro;
+  });
   const box = document.querySelector('.modal-box');
   if (box) box.classList.toggle('read-only', ro);
 }
@@ -1795,7 +1789,7 @@ function readForm() {
     Type:      fv('f-type'),
     Size:      fv('f-size'),
     Received:  fv('f-date'),
-    Threshold: isNaN(fn('f-threshold')) ? 1 : fn('f-threshold'),
+    Threshold: fnOr('f-threshold', 1),
     Location1: fv('f-location'),
     Location2: fv('f-subloc'),
     Box1:      fv('f-box1'),
@@ -1807,7 +1801,7 @@ function readForm() {
     SDS:       fv('f-sds'),
     URL:       fv('f-url'),
     Notes:     fv('f-notes-text'),
-    _stock:    isNaN(fn('f-stock')) ? 0 : fn('f-stock'),
+    _stock:    fnOr('f-stock', 0),
   };
 }
 
@@ -1829,7 +1823,7 @@ function autoSaveField() {
   item.Notes     = fv('f-notes-text');
   item.Price     = fv('f-price');
   item.Received  = fv('f-date');
-  item.Threshold = isNaN(fn('f-threshold')) ? 1 : fn('f-threshold');
+  item.Threshold = fnOr('f-threshold', 1);
   persistItem(item);
   buildFilterOptions();
   applyFilters();
@@ -1858,13 +1852,9 @@ function autoSaveStockField() {
   if (editReadOnly) return;
   if (editIdx === null) return;
   const item = currentOwnItem(); if (!item) return;
-  const newStock = isNaN(fn('f-stock')) ? 0 : fn('f-stock');
+  const newStock = fnOr('f-stock', 0);
   applyStockChange(item, newStock);
-  if (!LOCKED_ST.has((item.Status||'').toLowerCase())) {
-    updateStatus(item, stockDerivedStatus(item));
-  } else {
-    persistItem(item);
-  }
+  persistWithStockStatus(item);
   configureActionForStatus(item, false);
   renderLocPanel(item);
   applyFilters();
@@ -1876,7 +1866,7 @@ function createItem() {
   const name = fv('f-name');
   if (!name) { alert('Name is required.'); return; }
   const f = readForm();
-  const stock = isNaN(fn('f-stock')) ? 1 : fn('f-stock');
+  const stock = fnOr('f-stock', 1);
   const newItem = makeNewItem(f, stock);
   items.push(newItem);
   persistItem(newItem);
@@ -1897,10 +1887,7 @@ function createItem() {
 
 // Enable/disable the location form fields (Location1, Location2, Box1, GridXY, Room, dims).
 function setLocFieldsDisabled(disabled) {
-  ['f-location-sel','f-location','f-subloc-sel','f-subloc',
-   'f-box1-sel','f-box1','f-room-sel','f-room','dim-x','dim-y'].forEach(id => {
-    const el = $(id); if (el) el.disabled = disabled;
-  });
+  LOCATION_FIELD_IDS.forEach(id => { const el = $(id); if (el) el.disabled = disabled; });
   refreshLocMode();
 }
 
@@ -1990,9 +1977,6 @@ function renderBottomBar() {
   useBtn.onclick         = useBtnClick;
 }
 
-// Compatibility shim — old call sites call refreshMoveButtons; redirect to renderBottomBar.
-function refreshMoveButtons() { renderBottomBar(); }
-
 // [+ New] clicked from inside an existing-item modal: open new-mode and inherit Location
 // from the host item; Information fields go blank. Cancel returns to the host.
 function newBtnClick() {
@@ -2037,7 +2021,7 @@ function newBtnClick() {
 // - From host:     return to the host item in default state.
 function newCancelClick() {
   if (modalMode === 'new-from-toolbar') {
-    closeEditModal(true);
+    closeEditModal();
     return;
   }
   if (modalMode === 'new-from-host') {
@@ -2056,7 +2040,7 @@ function newCancelClick() {
         return;
       }
     }
-    closeEditModal(true);
+    closeEditModal();
   }
 }
 
@@ -2177,11 +2161,7 @@ function useBtnClick() {
   if (!item.Box1) {
     const newStock = Math.max(0, getStock(item) - 1);
     item.Stock = newStock;
-    if (!LOCKED_ST.has((item.Status||'').toLowerCase())) {
-      updateStatus(item, stockDerivedStatus(item));
-    } else {
-      persistItem(item);
-    }
+    persistWithStockStatus(item);
     const stockEl = $('f-stock');
     if (stockEl) stockEl.value = newStock;
     configureActionForStatus(item, false);
@@ -2206,10 +2186,7 @@ function useBtnClick() {
 // (applyStockChange defined earlier — see line ~870 for the canonical implementation.)
 
 // Close the edit modal and reset all modal-related state.
-function closeEditModal(force) {
-  if (!force) {
-    // No dirty check (auto-save means there's nothing pending), but allow callers a hook.
-  }
+function closeEditModal() {
   $('edit-modal-overlay').classList.remove('open');
   editIdx = null;
   editLab = '';
@@ -2221,11 +2198,17 @@ function closeEditModal(force) {
   const box = document.querySelector('.modal-box');
   if (box) box.classList.remove('read-only');
 }
+// Close the modal and rebuild the list + filter options (used after delete/archive/resolve).
+function closeAndRefresh() {
+  closeEditModal();
+  buildFilterOptions();
+  applyFilters();
+}
 
 // Live preview when stock or box fields change (for the location panel)
 function onBoxFieldChange() {
   if (editIdx === null) return;
-  const item = items.find(i => i._id === editIdx);
+  const item = currentOwnItem();
   if (!item) return;
   const preview = Object.assign({}, item, {
     Box1: fv('f-box1'),
@@ -2242,7 +2225,7 @@ function applyDimensionsFromForm() {
   $('f-gridxy').value = val;
 
   if (editIdx === null) return;
-  const item = items.find(i => i._id === editIdx);
+  const item = currentOwnItem();
   if (!item || !item.Box1) return;
   const preview = Object.assign({}, item, { GridXY: val, Box1: fv('f-box1') });
   renderLocPanel(preview);
@@ -2363,7 +2346,7 @@ function resetLocState() { locSelected = null; }
 // Re-render the loc panel for the currently-edited item plus refresh the main list.
 // Most placement actions end with these two calls, so consolidate.
 function redrawLoc() {
-  renderLocPanel(items.find(i => i._id === editIdx));
+  renderLocPanel(currentOwnItem());
   applyFilters();
 }
 
@@ -2516,7 +2499,7 @@ function refreshLocActionRow() {}
 
 function locCancelSelect() {
   resetLocState();
-  const cur = items.find(i => i._id === editIdx);
+  const cur = currentOwnItem();
   if (cur) renderLocPanel(cur);
 }
 
@@ -2528,7 +2511,7 @@ function locCancelSelect() {
 //   - Otherwise: pick an unplaced token (if any) and place it.
 function locSelectEmpty(coord) {
   if (editReadOnly) return;
-  const cur = items.find(i => i._id === editIdx);
+  const cur = currentOwnItem();
   if (!cur || !coord) return;
   const tokens = parseBox2(cur.Box2 || '');
 
@@ -2602,7 +2585,7 @@ function locSelectOccupied(coord, itemId) {
 //   - Clicking again deselects.
 function locSelectUnplaced() {
   if (editReadOnly) return;
-  const cur = items.find(i => i._id === editIdx);
+  const cur = currentOwnItem();
   if (!cur) return;
   if (locSelected && locSelected.coord === '0') {
     locCancelSelect();
@@ -2657,11 +2640,7 @@ function consumeOneToken(item, token) {
   if (idx !== -1) tokens.splice(idx, 1);
   item.Box2  = encodeBox2(tokens);
   item.Stock = parseBox2(item.Box2).length;
-  if (!LOCKED_ST.has((item.Status||'').toLowerCase())) {
-    updateStatus(item, stockDerivedStatus(item));
-  } else {
-    persistItem(item);
-  }
+  persistWithStockStatus(item);
   // If the consumed item is the one currently displayed in the modal form, mirror the
   // stock change into the Stock input so it's visible without re-clicking another item.
   if (item._id === editIdx) {
@@ -2675,7 +2654,7 @@ function consumeOneToken(item, token) {
 // transition button (Order / Add Stock / Receive / Restore). After mutation, re-populate
 // the form, reconfigure the status button for the new state, and refresh the location panel.
 function commitAndStayOpen(mutator) {
-  const item = items.find(i => i._id === editIdx);
+  const item = currentOwnItem();
   if (!item) return;
   mutator(item);
   populateForm(item);                       // refresh the form from the item
@@ -2698,7 +2677,7 @@ function commitAndClose(mutator) {
   if (!item) return;
   mutator(item);
   applyFilters();
-  closeEditModal(true);   // force-close — we handled the save
+  closeEditModal();   // we handled the save
 }
 
 // ── Archive / Delete ───────────────────────────────────────────────────
@@ -2735,7 +2714,7 @@ function deleteCurrentItem() {
     updateStatus(item, 'Archived');
   }
 
-  closeEditModal(true); buildFilterOptions(); applyFilters();
+  closeAndRefresh();
 }
 
 // ── Sharing panel ──────────────────────────────────────────────────────
@@ -2776,9 +2755,12 @@ function renderSharingPanel(item, overridePolicy) {
     band.classList.add(bandCls);
   }
 
-  // The borrowing lab in parens, when known (for active transactions on the host side).
-  const lab = isCopy ? '' : (parseBorrower(item.Borrower).lab || '');
-  const who = borrower ? `${borrower}${lab ? ' (' + lab + ')' : ''}${borrowed ? ' \u00b7 ' + borrowed : ''}` : '';
+  // item.Borrower may be stored as "Name (Lab)". Parse it so the lab isn't appended twice.
+  const parsed = parseBorrower(item.Borrower);
+  const lab = isCopy ? '' : (parsed.lab || '');
+  const who = borrower
+    ? `${parsed.name}${lab ? ' (' + lab + ')' : ''}${borrowed ? ' \u00b7 ' + borrowed : ''}`
+    : '';
 
   // The title stays short (the state word); the detailed who · date explanatory text moves
   // down onto the button row so it sits beside the actions it relates to.
@@ -2838,7 +2820,7 @@ function renderSharingPanel(item, overridePolicy) {
         <select id="sp-policy" class="sp-inp sp-inp-name" onchange="setPolicy()">${opt('No')}${opt('Ask')}${opt('Yes')}</select>
       </div>`;
   } else if (policy === 'No') {
-    body = `<div class="sharing-row muted-italic">Item is not shared.</div>`;
+    body = `<div class="sharing-row"><span class="share-note">Item is not shared.</span></div>`;
   } else {
     // Idle, foreign lab: borrow or request the item.
     const actionBtn = policy === 'Yes'
@@ -2927,7 +2909,7 @@ function acknowledgeDenied() {
   item.Status = 'Deleted';
   item._deleted = true;
   persistItem(item);
-  closeEditModal(true); buildFilterOptions(); applyFilters();
+  closeAndRefresh();
 }
 
 // Resolve the (borrowingLab, hostLab) pair for the open item, working from EITHER side:
@@ -2976,7 +2958,7 @@ function endLoan(item) {
     syncHost(borrowingLab, hostLab, match, { Sharing:'', Borrower:'', Borrowed:'' });
     item.Status = 'Deleted'; item._deleted = true;
     persistItem(item);
-    closeEditModal(true); buildFilterOptions(); applyFilters();
+    closeAndRefresh();
   } else {
     commitAndClose(it => {
       it.Borrower = ''; it.Borrowed = '';
@@ -2991,16 +2973,14 @@ function returnItem()    { const it = modalFind(editIdx); if (it) endLoan(it); }
 // Resolve: host force-ends IOU / Bring Back. Same end-state as Return.
 function resolveSharing(){ const it = modalFind(editIdx); if (it) endLoan(it); }
 // IOU: borrower flags they consumed/owe the item. Both sides → Sharing='IOU'.
-function iouItem() {
-  const it = modalFind(editIdx); if (!it) return;
-  loanStateChange(it, 'IOU');
-  populateForm(it); configureActionForStatus(it, false); renderLocPanel(it); applyFilters();
-}
+function iouItem()       { const it = modalFind(editIdx); if (it) { loanStateChange(it, 'IOU');        refreshOpenModal(it); } }
 // Bring Back: host recalls a Shared item. Both sides → Sharing='Bring Back'.
-function bringBackItem() {
-  const it = modalFind(editIdx); if (!it) return;
-  loanStateChange(it, 'Bring Back');
-  populateForm(it); configureActionForStatus(it, false); renderLocPanel(it); applyFilters();
+function bringBackItem() { const it = modalFind(editIdx); if (it) { loanStateChange(it, 'Bring Back'); refreshOpenModal(it); } }
+
+// Redraw the open modal in place for `item` (form fields, action buttons, location panel)
+// and refresh the underlying list. Used after an in-modal loan-state change.
+function refreshOpenModal(item) {
+  populateForm(item); configureActionForStatus(item, false); renderLocPanel(item); applyFilters();
 }
 
 function propagateBox1Rename(oldKey, newBox1, sourceId) {
