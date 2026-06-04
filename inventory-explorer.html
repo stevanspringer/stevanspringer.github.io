@@ -4,7 +4,7 @@
 <meta name="color-scheme" content="light">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inventory Explorer</title>
+<title>Inventory</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <style>
@@ -41,17 +41,19 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 
 #subnav{display:flex;align-items:center;padding:4px 18px;gap:7px;background:var(--paper);border-bottom:1px solid var(--bord);flex-shrink:0;flex-wrap:wrap;}
 .subnav-spacer{flex:1;}
-/* The four dropdowns stay together; the search + toggle + clear stay together and wrap
-   to a second row as a unit when the toolbar is too narrow. Clear sits at the far right. */
-.subnav-filters{display:flex;gap:7px;align-items:center;}
-.subnav-search{display:flex;gap:7px;align-items:center;margin-left:auto;}
+/* New + search + toggle + Clear form one cluster (left); the four filter dropdowns form a
+   second cluster (right). On a phone the dropdown cluster wraps below as a unit. */
+.subnav-main{display:flex;gap:7px;align-items:center;flex:1 1 auto;min-width:0;}
+.subnav-filters{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+#new-toolbar-btn{font-size:14px;padding:3px 10px;flex:0 0 auto;}
+#clear-btn{font-size:14px;padding:3px 8px;flex:0 0 auto;}
 /* Filter dropdowns: uniform fixed width (sized for "Location", the longest field name).
    The default option shows the field name; selecting a value replaces it. Long selected
    values are clipped by the fixed width (no ellipsis). */
 .filter-select{width:104px;flex:0 0 104px;padding:3px 8px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);cursor:pointer;outline:none;text-overflow:clip;}
 /* A dropdown with an active (non-default) selection gets a subtle blue border to show it's filtering. */
 .filter-select.filtering{border-color:var(--vb-hi-b);}
-#search-box{padding:3px 10px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);width:200px;outline:none;}
+#search-box{padding:3px 10px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);flex:1 1 120px;min-width:80px;outline:none;}
 #search-box:focus{border-color:var(--ink);}
 /* Clear button turns blue whenever a search or any dropdown is narrowing the list. */
 #clear-btn.active{background:var(--vb-hi) !important;border-color:var(--vb-hi-b) !important;color:#fff !important;}
@@ -172,8 +174,11 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 /* Information grid: positional rows.
    1: Name (full) · 2: Vendor/Catalog/Size · 3: Type/Container/URL · 4: Notes (full) ·
    5: Price/Date/Stock/Low */
-.info-grid{grid-template-columns:repeat(3,1fr);}
-.info-grid .info-name{grid-column:1/-1;}
+/* Information grid: 8 tracks. The two left fields take 3 each (⅜ apiece) and the rightmost
+   field takes 2 (¼). Name spans the left ¾ with ID in the right ¼ on the first row. */
+.info-grid{grid-template-columns:3fr 3fr 2fr;}
+.info-grid .info-name{grid-column:1/3;}
+.info-grid .info-id{grid-column:3/4;}
 .info-grid .info-notes{grid-column:1/-1;}
 /* The Price/Date/Stock/Low row is four across; the three-col grid can't host four in one
    row, so that row spans full width with its own 4-col sub-grid. */
@@ -289,6 +294,13 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 
 /* ── Phones: full-screen modal, tighter spacing, responsive box grid ── */
 @media (max-width: 640px){
+  /* Toolbar: the search cluster takes the top row; the four dropdowns wrap below as a
+     full-width unit, each shrinking to share the width so all four fit on an iPhone. */
+  #subnav{padding:6px 10px;gap:6px;}
+  .subnav-spacer{display:none;}
+  .subnav-main{flex:1 1 100%;}
+  .subnav-filters{flex:1 1 100%;gap:5px;}
+  .subnav-filters .filter-select{flex:1 1 0;width:auto;min-width:0;padding:3px 4px;}
   .modal-overlay{padding:0;}
   .modal-box{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0;border:0;}
   .modal-band{padding:12px;}
@@ -308,29 +320,29 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 <div id="app">
 
 <div id="topnav">
-  <div class="logo" id="app-title">Inventory <span>Explorer</span></div>
+  <div class="logo" id="app-title">Inventory</div>
   <div class="nav-spacer"></div>
-  <button class="nbtn" onclick="exportCSV()">Download CSV</button>
+  <button class="nbtn" onclick="exportCSV()" title="Download a CSV backup">↓ Backup</button>
   <button class="nbtn" onclick="openSetup()">Setup</button>
 </div>
 
 <div id="subnav">
-  <button class="btn btn-ok" style="font-size:14px;padding:3px 10px;" onclick="openAddModal()">New</button>
-  <div class="subnav-spacer"></div>
-  <div class="subnav-filters">
-    <select class="filter-select" id="filter-vendor" onchange="applyFilters()"><option value="">Vendor</option></select>
-    <select class="filter-select" id="filter-type" onchange="applyFilters()"><option value="">Type</option></select>
-    <select class="filter-select" id="filter-loc" onchange="applyFilters()"><option value="">Location</option></select>
-    <select class="filter-select" id="filter-box" onchange="applyFilters()"><option value="">Box</option></select>
-  </div>
-  <div class="subnav-search">
+  <div class="subnav-main">
+    <button class="btn btn-ok" id="new-toolbar-btn" onclick="openAddModal()">New</button>
     <input id="search-box" type="text" placeholder="Search…" oninput="applyFilters()">
     <span class="scope-toggle" id="scope-toggle" onclick="toggleSearchScope()" title="Toggle search scope">
       <span class="scope-label scope-label-lab">Lab</span>
       <span class="scope-switch"><span class="scope-knob"></span></span>
       <span class="scope-label scope-label-all">All</span>
     </span>
-    <button class="btn" id="clear-btn" style="font-size:14px;padding:3px 8px;" onclick="clearFilters()">Clear</button>
+    <button class="btn" id="clear-btn" onclick="clearFilters()">Clear</button>
+  </div>
+  <div class="subnav-spacer"></div>
+  <div class="subnav-filters">
+    <select class="filter-select" id="filter-vendor" onchange="applyFilters()"><option value="">Vendor</option></select>
+    <select class="filter-select" id="filter-type" onchange="applyFilters()"><option value="">Type</option></select>
+    <select class="filter-select" id="filter-loc" onchange="applyFilters()"><option value="">Location</option></select>
+    <select class="filter-select" id="filter-box" onchange="applyFilters()"><option value="">Box</option></select>
   </div>
 </div>
 
@@ -395,14 +407,15 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
       <div class="modal-band band-info" id="sec-info">
         <div class="form-grid info-grid">
           <div class="form-field info-name"><label>Name *</label><input id="f-name" type="text" onblur="autoSaveNameField()"></div>
+          <div class="form-field info-id"><label>ID</label><input id="f-id" type="text" onblur="autoSaveField()"></div>
           <div class="form-field"><label>Vendor</label><div class="combo-wrap"><select id="f-vendor-sel" class="combo-sel" onchange="comboSelChange('f-vendor');autoSaveField()"><option value="">—</option></select><input id="f-vendor" type="text" class="combo-inp" style="display:none;" placeholder="New vendor…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-vendor');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
           <div class="form-field"><label>Catalog #</label><input id="f-catalog" type="text" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>CAS #</label><input id="f-cas" type="text" onblur="autoSaveField()"></div>
           <div class="form-field"><label>Size</label><input id="f-size" type="text" placeholder="e.g. 500 g" onblur="autoSaveField()"></div>
-          <div class="form-field"><label>Type</label><div class="combo-wrap"><select id="f-type-sel" class="combo-sel" onchange="comboSelChange('f-type');autoSaveField()"><option value="">—</option></select><input id="f-type" type="text" class="combo-inp" style="display:none;" placeholder="New type…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-type');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
           <div class="form-field"><label>Container</label><div class="combo-wrap"><select id="f-container-sel" class="combo-sel" onchange="comboSelChange('f-container');autoSaveField()"><option value="">—</option></select><input id="f-container" type="text" class="combo-inp" style="display:none;" placeholder="New container…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-container');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
           <div class="form-field"><label>URL</label><div class="field-with-view"><input id="f-url" type="text" placeholder="https://…" oninput="refreshLinkBtns()" onblur="autoSaveField()"><button class="btn btn-sm view-btn link-btn" id="open-url" title="Open URL in a new tab" onclick="openFieldLink('f-url')"></button></div></div>
+          <div class="form-field"><label>Type</label><div class="combo-wrap"><select id="f-type-sel" class="combo-sel" onchange="comboSelChange('f-type');autoSaveField()"><option value="">—</option></select><input id="f-type" type="text" class="combo-inp" style="display:none;" placeholder="New type…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-type');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
           <div class="form-field"><label>Description</label><input id="f-safety" type="text" placeholder="e.g. corrosive, flammable" onblur="autoSaveField()"></div>
-          <div class="form-field"><label>CAS #</label><input id="f-cas" type="text" onblur="autoSaveField()"></div>
           <div class="form-field"><label>SDS</label><div class="field-with-view"><input id="f-sds" type="text" placeholder="URL or file link" oninput="refreshLinkBtns()" onblur="autoSaveField()"><button class="btn btn-sm view-btn link-btn sds-btn" id="open-sds" title="Open SDS link in a new tab" onclick="openFieldLink('f-sds')"></button></div></div>
           <div class="form-field info-notes"><label>Notes</label><textarea id="f-notes-text" onblur="autoSaveField()"></textarea></div>
         </div>
@@ -512,7 +525,7 @@ const LAB_NAMES = ['Biology', 'Deziel', 'Germitsch', 'Gordon', 'Gray', 'Kilfoil'
 // lab currently being browsed when the item was opened from a cross-lab search.
 
 // Field lists used by both populate and serialise paths
-const TEXT_FIELDS  = ['Name','Catalog','Price','Size','CAS','Safety','SDS','URL'];
+const TEXT_FIELDS  = ['Name','ID','Catalog','Price','Size','CAS','Safety','SDS','URL'];
 const COMBO_FIELDS = ['f-vendor','f-container','f-type','f-location','f-subloc','f-box1','f-room'];
 
 // ── State ──────────────────────────────────────────────────────────────
@@ -1606,7 +1619,7 @@ function editForeignItem(id, labIdx) {
 // The Sharing section is never disabled — cross-lab borrowing happens there.
 // View/Return location-drill buttons stay active (navigation only, no mutation).
 const INFO_FIELD_IDS = [
-  'f-name','f-vendor-sel','f-vendor','f-catalog','f-size','f-type-sel','f-type',
+  'f-name','f-id','f-vendor-sel','f-vendor','f-catalog','f-size','f-type-sel','f-type',
   'f-cas','f-container-sel','f-container','f-safety','f-sds','f-url','f-notes-text',
   'f-price','f-date','f-stock','f-threshold',
 ];
@@ -1690,6 +1703,7 @@ function configureOrderButton(spec) {
 
 function populateForm(item) {
   $('f-name').value     = item.Name     || '';
+  $('f-id').value       = item.ID       || '';
   $('f-catalog').value  = item.Catalog  || '';
   $('f-price').value    = item.Price    || '';
   $('f-size').value     = item.Size     || '';
@@ -1777,6 +1791,7 @@ let _hostBeforeNew = null;  // host item id we'll return to when Cancel in new-f
 function readForm() {
   return {
     Name:      fv('f-name'),
+    ID:        fv('f-id'),
     Vendor:    fv('f-vendor'),
     Catalog:   fv('f-catalog'),
     Price:     fv('f-price'),
@@ -1805,6 +1820,7 @@ function autoSaveField() {
   if (editReadOnly) return;
   if (editIdx === null) return;       // create-mode: no item yet, wait for [Create]
   const item = currentOwnItem(); if (!item) return;
+  item.ID        = fv('f-id');
   item.Vendor    = fv('f-vendor');
   item.Catalog   = fv('f-catalog');
   item.Size      = fv('f-size');
@@ -2374,31 +2390,44 @@ function renderLocPanel(item) {
 }
 
 function renderUnplacedRows(sibs) {
-  // Group by identity, tracking both unplaced ('0') tokens and any out-of-stock units.
-  // An out-of-stock item that was once in this box stays listed (labeled "out of stock")
-  // until it's archived, so it isn't silently lost when the last unit is used.
-  const groups = groupByIdentity(sibs, () => 0, (entry, it) => {
+  // Placement acts on the CURRENT item only (locSelectUnplaced/locSelectEmpty operate on
+  // currentOwnItem). So only the current item's own unplaced units are selectable here.
+  // Sibling items in the same box appear as navigate-only rows (click switches the modal to
+  // them) — either their unplaced units or, if they're out of stock, an "out of stock" row —
+  // so nothing in the box is hidden, but you can't try to place a unit the logic can't move.
+  const cur = currentOwnItem();
+  let html = '';
+
+  // (1) The current item's own unplaced units — selectable / placeable.
+  if (cur) {
+    const myUnplaced = box2ListCount(cur.Box2);
+    const isSel = !!(locSelected && locSelected.coord === '0');
+    const short = cur.Name.length > 20 ? cur.Name.slice(0,19)+'…' : cur.Name;
+    for (let k = 0; k < myUnplaced; k++) {
+      html += `<div class="bli bli-unplaced${isSel?' bli-selected':''}" onclick="locSelectUnplaced()">
+        <div class="bli-name" title="Click to place in a grid cell">□ ${esc(short)}</div>
+        <div class="bli-status">unplaced</div>
+      </div>`;
+    }
+  }
+
+  // (2) Sibling items (not the current one): navigate-only rows. Group by identity so each
+  // distinct reagent shows once.
+  const others = sibs.filter(it => !cur || it._id !== cur._id);
+  const groups = groupByIdentity(others, () => 0, (entry, it) => {
     entry.surplus = (entry.surplus || 0) + box2ListCount(it.Box2);
     if (getStock(it) === 0) entry.outOfStock = true;
   });
-  let html = '';
   groups.forEach(({rep, surplus, outOfStock}) => {
     const short = rep.Name.length > 20 ? rep.Name.slice(0,19)+'…' : rep.Name;
     if (surplus) {
-      // An unplaced token is "selected" when locSelected is the '0' sentinel.
-      const isSel = !!(locSelected && locSelected.coord === '0');
-      for (let k = 0; k < surplus; k++) {
-        html += `<div class="bli bli-unplaced${isSel?' bli-selected':''}" onclick="locSelectUnplaced()">
-          <div class="bli-name" title="Click to place in a grid cell">□ ${esc(short)}</div>
-          <div class="bli-status">unplaced</div>
-        </div>`;
-      }
+      // A sibling's unplaced unit: click to switch to that item, then it can be placed.
+      html += `<div class="bli bli-unplaced" onclick="locNavigateTo(${rep._id})">
+        <div class="bli-name" title="Click to open this item">□ ${esc(short)}</div>
+        <div class="bli-status">unplaced</div>
+      </div>`;
     } else if (outOfStock) {
-      // Out of stock, no units to place. Stays in the box list (clickable to navigate)
-      // until archived. Not a placement target.
-      const isCur = rep._id === editIdx;
-      const handler = isCur ? '' : `onclick="locNavigateTo(${rep._id})"`;
-      html += `<div class="bli bli-oos${isCur?' bli-active':''}" ${handler}>
+      html += `<div class="bli bli-oos" onclick="locNavigateTo(${rep._id})">
         <div class="bli-name" title="${esc(rep.Name)}">□ ${esc(short)}</div>
         <div class="bli-status">out of stock</div>
       </div>`;
@@ -2603,7 +2632,7 @@ function locSelectUnplaced() {
 function makeNewItem(f, stock) {
   const item = {
     _id: nextId++, _row: null, _deleted: false,
-    Name: f.Name, Vendor: f.Vendor, Catalog: f.Catalog, Price: f.Price,
+    Name: f.Name, ID: f.ID, Vendor: f.Vendor, Catalog: f.Catalog, Price: f.Price,
     Type: f.Type, Size: f.Size, Received: f.Received,
     Threshold: f.Threshold,
     Location1: f.Location1, Location2: f.Location2,
@@ -3103,7 +3132,7 @@ function saveSetup() {
 
 // ── Export ─────────────────────────────────────────────────────────────
 function exportCSV() {
-  const headers = ['Vendor','Catalog','Price','Name','Type','Size','Received',
+  const headers = ['Vendor','Catalog','Price','Name','ID','Type','Size','Received',
     'Stock','Threshold','Room','Location1','Location2','Box1','GridXY','Box2',
     'Sharing','Borrower','Borrowed','Notes','CAS','SDS','URL','Status'];
   const rows = items.map(item =>
@@ -3114,7 +3143,9 @@ function exportCSV() {
   );
   const a = document.createElement('a');
   a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent([headers.join(','), ...rows].join('\n'));
-  a.download = 'inventory.csv'; a.click();
+  const ymd = (() => { const d = new Date(); const p = n => String(n).padStart(2,'0');
+    return `${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}`; })();
+  a.download = `${ymd}-Inventory(${activeLab||'lab'}).csv`; a.click();
 }
 
 // ── Grid cell tooltip ──────────────────────────────────────────────────
@@ -3154,8 +3185,8 @@ function applyLabBranding() {
   const title = $('app-title');
   if (title) {
     title.innerHTML = defaultLab
-      ? `Inventory <span>Explorer</span> — ${esc(defaultLab)} Lab`
-      : `Inventory <span>Explorer</span>`;
+      ? `Inventory <span>- ${esc(defaultLab)}</span>`
+      : `Inventory`;
   }
   const box = $('search-box');
   if (box && searchScope === 'local') {
