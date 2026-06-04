@@ -4,7 +4,7 @@
 <meta name="color-scheme" content="light">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inventory</title>
+<title>Inventory Explorer</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
 <style>
@@ -35,8 +35,10 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 #app{display:flex;flex-direction:column;height:100vh;height:100dvh;}
 
 #topnav{display:flex;align-items:center;padding:6px 18px;gap:7px;background:var(--paper);border-bottom:1px solid var(--bord);flex-shrink:0;}
-.logo{font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-right:10px;white-space:nowrap;}
-.logo span{color:var(--mut);}
+#topnav > .btn{flex-shrink:0;align-self:center;}
+.logo{font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-right:10px;}
+.logo-main,.logo-lab{display:inline-block;}
+.logo-lab{color:var(--mut);}
 .nav-spacer{flex:1;}
 
 #subnav{display:flex;align-items:center;padding:4px 18px;gap:7px;background:var(--paper);border-bottom:1px solid var(--bord);flex-shrink:0;flex-wrap:wrap;}
@@ -85,11 +87,15 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 
 .item-name a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--bord);}
 .item-name a:hover{border-bottom-color:var(--ink);}
-.item-sub{color:var(--mut);font-size:12px;margin-top:2px;}
-/* SDS link under the stock number in the list: small + red, like the other sub-text. */
-.sds-sub{display:block;font-size:12px;margin-top:2px;color:var(--danger);text-decoration:none;border-bottom:1px dotted var(--danger);width:fit-content;}
+.item-name,.loc-main{line-height:1.4;}
+.item-sub{color:var(--mut);font-size:12px;margin-top:2px;line-height:1.4;}
+/* SDS link under the stock number in the list: small + red, like the other sub-text. The
+   stock number above it carries a 1px transparent border (for the editable focus state),
+   adding ~2px of height the Name/Location first lines don't have — so this sub-line uses 0
+   top margin to line up with .item-sub / .loc-sub in the neighbouring columns. */
+.sds-sub{display:block;font-size:12px;margin-top:0;line-height:1.4;color:var(--danger);text-decoration:none;border-bottom:1px dotted var(--danger);width:fit-content;}
 .sds-sub:hover{color:var(--danger);border-bottom-style:solid;}
-.loc-sub{color:var(--mut);font-size:12px;}
+.loc-sub{color:var(--mut);font-size:12px;margin-top:2px;line-height:1.4;}
 .borrower-sub{color:var(--mut);font-size:12px;margin-top:3px;font-style:italic;}
 
 .status-btn{display:inline-block;box-sizing:border-box;width:120px;text-align:center;padding:1px 7px;border-radius:2px;font-size:14px;line-height:1.4;cursor:pointer;font-family:'DM Mono',monospace;border:1px solid var(--bord);background:var(--paper);color:var(--ink);white-space:nowrap;letter-spacing:.03em;}
@@ -103,7 +109,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .status-btn.bring-back  {background:#e60000;border-color:#b30000;color:#fff;}
 .status-btn.archived    {background:#b0a898;border-color:#888078;color:#fff;}
 
-.stock-cell{display:flex;align-items:center;gap:4px;white-space:nowrap;}
+.stock-cell{display:flex;align-items:center;gap:4px;white-space:nowrap;line-height:1.4;}
 .stock-num{display:inline-block;min-width:28px;text-align:center;font-family:'DM Mono',monospace;font-size:14px;line-height:1.4;font-weight:400;border:1px solid transparent;border-radius:2px;padding:0 2px;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .stock-num:focus{border-color:var(--bord);outline:none;}
 .stock-num.readonly{cursor:not-allowed;}
@@ -111,7 +117,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .stock-warn  {color:var(--warn);}
 .stock-danger{color:var(--danger);}
 
-.btn{padding:5px 14px;border-radius:2px;font-size:14px;line-height:1.4;cursor:pointer;font-family:'DM Mono',monospace;border:1px solid var(--bord);background:var(--paper);color:var(--ink);}
+.btn{padding:5px 14px;border-radius:2px;font-size:14px;line-height:1.4;cursor:pointer;font-family:'DM Mono',monospace;border:1px solid var(--bord);background:var(--paper);color:var(--ink);white-space:nowrap;}
 .btn:hover{background:#f0ede8;}
 .btn:disabled{opacity:.45;cursor:not-allowed;}
 /* Toolbar controls before a home lab is loaded: white and greyed-out (unusable). The New
@@ -327,7 +333,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 <div id="app">
 
 <div id="topnav">
-  <div class="logo" id="app-title">Inventory</div>
+  <div class="logo" id="app-title"><span class="logo-main">Inventory Explorer</span></div>
   <div class="nav-spacer"></div>
   <button class="btn" onclick="exportCSV()" title="Download a CSV backup">↓ Backup</button>
   <button class="btn" id="setup-btn" onclick="openSetup()">Setup</button>
@@ -367,7 +373,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 
 <div id="footer">
   <span id="section-counts"></span>
-  <span>Made by <a href="https://stevanspringer.github.io" target="_blank" rel="noopener">Springer Lab</a> · UPEI Biology · Copyright <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a></span>
+  <span><a href="https://stevanspringer.github.io" target="_blank" rel="noopener">Springer Lab</a> · UPEI Biology · Copyright <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a></span>
 </div>
 </div>
 
@@ -483,9 +489,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
       <span class="modal-actions-spacer"></span>
       <button class="btn btn-sm"             id="done-btn"    onclick="closeEditModal()">Done</button>
     </div>
-
-    <h2 id="edit-modal-title" style="display:none;"></h2>
-  </div>
 
   </div>
 </div>
@@ -888,6 +891,11 @@ function box2Coords(b3)    { return parseBox2(b3).filter(s => s !== '0'); }
 function box2ListCount(b3) { return parseBox2(b3).filter(s => s === '0').length; }
 function encodeBox2(arr)   { return arr.join(' '); }
 
+// For a boxed item, Stock is always the number of unit tokens in Box2 (placed + unplaced).
+// Call this immediately after any mutation of item.Box2 to keep Stock in sync — this is the
+// single invariant that prevents stock drift between the grid and the stock number.
+function syncStockFromBox2(item) { item.Stock = parseBox2(item.Box2).length; }
+
 // Reconcile Box2 to a stock count.
 //   - Grow: append '0' (unplaced) tokens to reach the new count.
 //   - Shrink: truncate from the END of the token list. The last-added units (whether
@@ -943,7 +951,7 @@ function applyStockChange(item, newStock) {
   newStock = Math.max(0, newStock|0);
   if (item.Box1) {
     item.Box2  = reconcileBox2(item.Box2 || '', newStock);
-    item.Stock = parseBox2(item.Box2).length;
+    syncStockFromBox2(item);
   } else {
     item.Stock = newStock;
     if (!useSheets) localStorage.setItem(stockKey(item), newStock);
@@ -1435,7 +1443,7 @@ function nameCellHtml(item) {
 }
 function locCellHtml(item) {
   const sub = locSubText(item);
-  return `<div>${loc1WithRoom(item)}</div>${sub ? `<div class="loc-sub">${esc(sub)}</div>` : ''}`;
+  return `<div class="loc-main">${loc1WithRoom(item)}</div>${sub ? `<div class="loc-sub">${esc(sub)}</div>` : ''}`;
 }
 
 // A row in everywhere mode. Active-lab rows are editable (open modal); foreign rows are
@@ -1553,6 +1561,7 @@ function openAddModal() {
   _moveSnapshot = null;
   $('loc-panel-wrap').innerHTML = '';
   resetFormBlank();
+  buildFormCombos();               // populate Vendor/Type/Container/Location/Box/Room dropdowns
   // Sharing card stays visible — its policy can be set up front. Synthetic blank item.
   renderSharingPanel({ Policy:'No', Sharing:'', Borrower:'', Borrowed:'' });
   applyReadOnlyState();
@@ -1955,13 +1964,17 @@ function setLocFieldsDisabled(disabled) {
 // stay visible in all modes.
 function refreshLocMode() {
   const moving = (modalMode === 'move');
+  const creating = (modalMode === 'new-from-toolbar' || modalMode === 'new-from-host');
+  // The Grid X·Y dimension inputs are a move-mode concern (rearranging an existing box).
   const dims  = $('loc-dims');
   if (dims)  dims.style.display  = moving ? '' : 'none';
-  // Location 1/2: editable combo in move mode, clickable view-button when idle.
+  // Location 1/2 are editable combos when moving OR creating a new item (both need to set a
+  // location); otherwise they're clickable view-buttons that show the current value.
+  const editable = moving || creating;
   [['loc1-combo','view-loc1'], ['loc2-combo','view-loc2']].forEach(([comboId, btnId]) => {
     const combo = $(comboId), btn = $(btnId);
-    if (combo) combo.style.display = moving ? '' : 'none';
-    if (btn)   btn.style.display   = moving ? 'none' : '';
+    if (combo) combo.style.display = editable ? '' : 'none';
+    if (btn)   btn.style.display   = editable ? 'none' : '';
   });
 }
 
@@ -2062,6 +2075,7 @@ function newBtnClick() {
   editLab = activeLab;                // the inherited-from-host new item belongs here
   modalMode = 'new-from-host';
   resetFormBlank();
+  buildFormCombos();                  // ensure dropdown options exist before selecting values
   // Re-populate Location only.
   comboSet('f-location', inherited.Location1);
   comboSet('f-subloc',   inherited.Location2);
@@ -2705,7 +2719,7 @@ function makeNewItem(f, stock) {
   if (policySel && ['No','Ask','Yes'].includes(policySel.value)) item.Policy = policySel.value;
   if (item.Box1) {
     item.Box2 = encodeBox2(new Array(Math.max(1, stock|0)).fill('0'));
-    item.Stock = parseBox2(item.Box2).length;
+    syncStockFromBox2(item);
   } else {
     item.Stock = Math.max(0, stock|0);
   }
@@ -2730,7 +2744,7 @@ function consumeOneToken(item, token) {
   const idx = tokens.indexOf(token);
   if (idx !== -1) tokens.splice(idx, 1);
   item.Box2  = encodeBox2(tokens);
-  item.Stock = parseBox2(item.Box2).length;
+  syncStockFromBox2(item);
   persistWithStockStatus(item);
   // If the consumed item is the one currently displayed in the modal form, mirror the
   // stock change into the Stock input so it's visible without re-clicking another item.
@@ -3183,9 +3197,11 @@ function saveSetup() {
 
 // ── Export ─────────────────────────────────────────────────────────────
 function exportCSV() {
+  // A complete backup: mirror the backend HEADERS exactly so nothing is dropped and the
+  // file round-trips cleanly. (Stock is derived live from box placement for boxed items.)
   const headers = ['Vendor','Catalog','Price','Name','ID','Type','Size','Received',
     'Stock','Threshold','Room','Location1','Location2','Box1','GridXY','Box2',
-    'Sharing','Borrower','Borrowed','Notes','CAS','SDS','URL','Status'];
+    'Policy','Sharing','Borrower','Borrowed','Notes','CAS','Container','Safety','SDS','URL','Status'];
   const rows = items.map(item =>
     headers.map(h => {
       const v = String(h === 'Stock' ? getStock(item) : (item[h] || ''));
@@ -3235,9 +3251,11 @@ function exportCSV() {
 function applyLabBranding() {
   const title = $('app-title');
   if (title) {
+    // Two inline-block parts so the line breaks at the hyphen (between the parts) rather
+    // than mid-phrase — keeps "Inventory Explorer" and "- Name Lab" each intact on a phone.
     title.innerHTML = defaultLab
-      ? `Inventory <span>- ${esc(defaultLab)}</span>`
-      : `Inventory`;
+      ? `<span class="logo-main">Inventory Explorer</span> <span class="logo-lab">- ${esc(defaultLab)} Lab</span>`
+      : `<span class="logo-main">Inventory Explorer</span>`;
   }
   const box = $('search-box');
   if (box && searchScope === 'local') {
