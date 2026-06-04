@@ -18,12 +18,12 @@
   --yellow:#c49b00;--yellow-b:#8a6d00;
 }
 *{box-sizing:border-box;margin:0;padding:0;forced-color-adjust:none;}
-html,body{height:100%;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:#fff !important;}
+html,body{height:100%;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:#fff !important;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 @media (prefers-color-scheme: dark){
   html,body,#topnav,#subnav,#content,.inv-table,.inv-table td,.inv-table th,
   .modal-box,.modal-scroll,
   .form-field input,.form-field select,.form-field textarea,
-  .btn,.nbtn,.filter-select,#search-box{background-color:#fff !important;color:var(--ink) !important;}
+  .filter-select,#search-box{background-color:#fff !important;color:var(--ink) !important;}
 }
 /* Lock the viewport so the top bar and footer cannot be scrolled out of view on iPad
    or other mobile browsers. Two pieces:
@@ -104,7 +104,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .status-btn.archived    {background:#b0a898;border-color:#888078;color:#fff;}
 
 .stock-cell{display:flex;align-items:center;gap:4px;white-space:nowrap;}
-.stock-num{min-width:28px;text-align:center;font-size:14px;border:1px solid transparent;border-radius:2px;padding:0 2px;}
+.stock-num{display:inline-block;min-width:28px;text-align:center;font-family:'DM Mono',monospace;font-size:14px;line-height:1.4;font-weight:400;border:1px solid transparent;border-radius:2px;padding:0 2px;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .stock-num:focus{border-color:var(--bord);outline:none;}
 .stock-num.readonly{cursor:not-allowed;}
 .stock-ok    {color:var(--ok);}
@@ -114,6 +114,11 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .btn{padding:5px 14px;border-radius:2px;font-size:14px;line-height:1.4;cursor:pointer;font-family:'DM Mono',monospace;border:1px solid var(--bord);background:var(--paper);color:var(--ink);}
 .btn:hover{background:#f0ede8;}
 .btn:disabled{opacity:.45;cursor:not-allowed;}
+/* Toolbar controls before a home lab is loaded: white and greyed-out (unusable). The New
+   button drops its green and reads as a plain disabled control. */
+#new-toolbar-btn:disabled{background:var(--paper);border-color:var(--bord);color:var(--mut);}
+.filter-select:disabled,#search-box:disabled{background:var(--paper);color:var(--mut);opacity:.55;cursor:not-allowed;}
+.scope-toggle.disabled{opacity:.45;pointer-events:none;cursor:not-allowed;}
 .btn-primary{background:var(--vb-hi)!important;color:#fff!important;border-color:var(--vb-hi-b)!important;}
 .btn-primary:hover{background:var(--vb-hi-b)!important;}
 .btn-ok,.btn-borrow{background:var(--ok)!important;color:#fff!important;border-color:var(--ok-b)!important;}
@@ -125,8 +130,10 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .btn-ask{background:var(--yellow)!important;color:#fff!important;border-color:var(--yellow-b)!important;}
 .btn-ask:hover{background:var(--yellow-b)!important;}
 .btn-sm{padding:5px 10px!important;}
-.nbtn{padding:5px 10px;border-radius:2px;font-size:14px;line-height:1.4;cursor:pointer;border:1px solid var(--vb-lo-b);background:var(--vb-lo);color:var(--ink);font-family:'DM Mono',monospace;}
-.nbtn:hover{background:var(--vb-lo-b);}
+/* Setup button is dark blue (like the Move button) while no home lab is loaded, prompting
+   the user to set one up; it reverts to a plain white .btn once a lab is loaded. */
+#setup-btn.attention{background:var(--vb-hi);color:#fff;border-color:var(--vb-hi-b);}
+#setup-btn.attention:hover{background:var(--vb-hi-b);}
 
 /* ── Modal ── */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;}
@@ -158,14 +165,13 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .field-with-view{display:flex;gap:4px;align-items:center;}
 .field-with-view .combo-wrap{flex:1;min-width:0;}
 .field-with-view > input{flex:1;min-width:0;}
-/* Link buttons (SDS / URL) carry a subtle blue tint to read as an "open" affordance,
-   distinct from the neutral eye/view buttons. */
-.link-btn{color:var(--vb-hi);border-color:var(--vb-hi-b);}
-.link-btn:not(:disabled):hover{background:var(--vb-hi);color:#fff;}
-/* SDS link: neutral grey border like the other buttons, but a faint red-tinted background
-   as a safety signal. The icon itself uses the default ink (black) lines. */
-.sds-btn{background:#f7e3e3;color:var(--ink);}
-.sds-btn:not(:disabled):hover{background:#f0d0d0;}
+/* Link buttons open a URL in a new tab. The URL button is saturated blue (matching the Move
+   button); the SDS button is saturated red (matching the Use button) as a safety signal.
+   Both icons use currentColor, so the white text colour renders them white. */
+.link-btn{background:var(--vb-hi);color:#fff;border-color:var(--vb-hi-b);}
+.link-btn:not(:disabled):hover{background:var(--vb-hi-b);}
+.sds-btn{background:#e03030;color:#fff;border-color:var(--danger);}
+.sds-btn:not(:disabled):hover{background:var(--danger);}
 .view-btn{flex:0 0 auto;width:28px;height:28px;padding:0!important;display:inline-flex;align-items:center;justify-content:center;}
 .view-btn.is-active{background:var(--vb-hi)!important;color:#fff!important;border-color:var(--vb-hi-b)!important;}
 .view-btn:disabled{opacity:.35;cursor:not-allowed;}
@@ -174,11 +180,12 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 /* Information grid: positional rows.
    1: Name (full) · 2: Vendor/Catalog/Size · 3: Type/Container/URL · 4: Notes (full) ·
    5: Price/Date/Stock/Low */
-/* Information grid: 8 tracks. The two left fields take 3 each (⅜ apiece) and the rightmost
-   field takes 2 (¼). Name spans the left ¾ with ID in the right ¼ on the first row. */
+/* Information grid: 3 columns sized 3fr / 3fr / 2fr, so the two left fields take ⅜ each and
+   the rightmost takes ¼. Name spans the two left columns (the ¾), pushing the first row's
+   right-hand field (CAS #) into the ¼ column; Notes spans the full width. Every other field
+   auto-flows into the remaining cells in source order. */
 .info-grid{grid-template-columns:3fr 3fr 2fr;}
 .info-grid .info-name{grid-column:1/3;}
-.info-grid .info-id{grid-column:3/4;}
 .info-grid .info-notes{grid-column:1/-1;}
 /* The Price/Date/Stock/Low row is four across; the three-col grid can't host four in one
    row, so that row spans full width with its own 4-col sub-grid. */
@@ -235,9 +242,9 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .loc-inner{display:flex;flex-direction:column;}
 
 /* Grid */
-.grid-outer{overflow-x:hidden;overflow-y:auto;margin-bottom:8px;}
+.grid-outer{overflow-x:hidden;overflow-y:auto;margin-bottom:8px;--cell:28px;}
 .grid-col-labels{display:flex;margin-left:26px;gap:0;margin-bottom:0;}
-.grid-col-lbl{width:28px;text-align:center;font-size:12px;color:var(--mut);}
+.grid-col-lbl{width:var(--cell);text-align:center;font-size:12px;color:var(--mut);}
 .grid-col-lbl + .grid-col-lbl{margin-left:-1px;}
 .grid-row{display:flex;align-items:center;gap:0;margin-bottom:0;}
 .grid-row + .grid-row{margin-top:-1px;}
@@ -245,12 +252,12 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .grid-row-lbl{width:22px;font-size:12px;color:var(--mut);text-align:right;padding-right:4px;flex-shrink:0;}
 /* Base grid reads as a lattice of thin lines: empty cells have no fill and no rounding,
    just a hairline border. Occupied / placing / staged cells layer colour on top. */
-.grid-cell{width:28px;height:28px;background:transparent;border:1px solid var(--bord);display:flex;align-items:center;justify-content:center;cursor:default;position:relative;flex-shrink:0;transition:background .1s;}
+.grid-cell{width:var(--cell);height:var(--cell);background:transparent;border:1px solid var(--bord);display:flex;align-items:center;justify-content:center;cursor:default;position:relative;flex-shrink:0;transition:background .1s;}
 .grid-cell.c-placing{cursor:crosshair;background:#f0f8ff;}
 .grid-cell.c-placing:hover{background:#d0ecff;border-color:var(--vb-hi);}
 .grid-cell.c-occupied{cursor:pointer;}
 .grid-cell.c-staged{background:#d4edda;border-color:var(--ok);}
-.grid-marker{width:22px;height:22px;border-radius:2px;background:var(--mut);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:500;letter-spacing:-.02em;overflow:hidden;}
+.grid-marker{width:80%;height:80%;border-radius:2px;background:var(--mut);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:500;letter-spacing:-.02em;overflow:hidden;}
 /* `mk-owned` highlights every cell occupied by the item currently focused on the left
    side of the modal — a softer, persistent indicator of "this is the item you're
    editing." `mk-active` is the stronger highlight for the one specifically-clicked
@@ -281,7 +288,9 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .bli-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bli-status{font-size:12px;color:var(--mut);white-space:nowrap;}
 
-#footer{padding:8px 18px;border-top:1px solid var(--bord);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;font-size:14px;color:var(--mut);background:var(--paper);}
+#footer{padding:8px 18px;border-top:1px solid var(--bord);flex-shrink:0;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:2px 16px;font-size:14px;color:var(--mut);background:var(--paper);}
+#footer > span{flex:0 1 auto;}
+#footer #section-counts{white-space:nowrap;}
 #footer a{color:var(--mut);text-decoration:none;border-bottom:1px solid var(--bord);}
 #footer a:hover{color:var(--ink);border-bottom-color:var(--ink);}
 
@@ -306,13 +315,11 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
   .modal-band{padding:12px;}
   .modal-bottom-actions{padding:8px 14px;gap:6px;}
   .modal-bottom-actions > button{padding-left:10px;padding-right:10px;}
-  /* Box grid: merged-border lattice; cells shrink to fit up to 12 wide, capped at 28px so
-     small grids still show large cells. Floor ~21px keeps a 12-wide grid within ~320px. */
+  /* Box grid on phone: narrower row-label gutter; cell size is computed in JS per render. */
   .grid-row{gap:0;margin-bottom:0;}
   .grid-col-labels{gap:0;margin-left:20px;}
-  .grid-cell{width:clamp(21px, calc((100vw - 20px - 26px) / 12), 28px);
-             height:clamp(21px, calc((100vw - 20px - 26px) / 12), 28px);}
-  .grid-marker{width:80%;height:80%;font-size:11px;}
+  .grid-row-lbl{width:16px;padding-right:4px;}
+  .grid-marker{font-size:11px;}
 }
 </style>
 </head>
@@ -322,8 +329,8 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 <div id="topnav">
   <div class="logo" id="app-title">Inventory</div>
   <div class="nav-spacer"></div>
-  <button class="nbtn" onclick="exportCSV()" title="Download a CSV backup">↓ Backup</button>
-  <button class="nbtn" onclick="openSetup()">Setup</button>
+  <button class="btn" onclick="exportCSV()" title="Download a CSV backup">↓ Backup</button>
+  <button class="btn" id="setup-btn" onclick="openSetup()">Setup</button>
 </div>
 
 <div id="subnav">
@@ -407,10 +414,10 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
       <div class="modal-band band-info" id="sec-info">
         <div class="form-grid info-grid">
           <div class="form-field info-name"><label>Name *</label><input id="f-name" type="text" onblur="autoSaveNameField()"></div>
-          <div class="form-field info-id"><label>ID</label><input id="f-id" type="text" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>CAS #</label><input id="f-cas" type="text" onblur="autoSaveField()"></div>
           <div class="form-field"><label>Vendor</label><div class="combo-wrap"><select id="f-vendor-sel" class="combo-sel" onchange="comboSelChange('f-vendor');autoSaveField()"><option value="">—</option></select><input id="f-vendor" type="text" class="combo-inp" style="display:none;" placeholder="New vendor…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-vendor');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
           <div class="form-field"><label>Catalog #</label><input id="f-catalog" type="text" onblur="autoSaveField()"></div>
-          <div class="form-field"><label>CAS #</label><input id="f-cas" type="text" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>ID</label><input id="f-id" type="text" onblur="autoSaveField()"></div>
           <div class="form-field"><label>Size</label><input id="f-size" type="text" placeholder="e.g. 500 g" onblur="autoSaveField()"></div>
           <div class="form-field"><label>Container</label><div class="combo-wrap"><select id="f-container-sel" class="combo-sel" onchange="comboSelChange('f-container');autoSaveField()"><option value="">—</option></select><input id="f-container" type="text" class="combo-inp" style="display:none;" placeholder="New container…" onblur="autoSaveField()"><span class="combo-back" onclick="comboBack('f-container');autoSaveField()" style="display:none;">↩ pick existing</span></div></div>
           <div class="form-field"><label>URL</label><div class="field-with-view"><input id="f-url" type="text" placeholder="https://…" oninput="refreshLinkBtns()" onblur="autoSaveField()"><button class="btn btn-sm view-btn link-btn" id="open-url" title="Open URL in a new tab" onclick="openFieldLink('f-url')"></button></div></div>
@@ -468,6 +475,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
     <!-- Pinned action bar: contextual buttons left, Done right. Always visible. -->
     <div class="modal-bottom-actions" id="modal-actions">
       <button class="btn btn-ok btn-sm"      id="new-btn" onclick="newBtnClick()">New</button>
+      <button class="btn btn-ok btn-sm"      id="import-btn" style="display:none;" onclick="importForeignItem()">Import</button>
       <button class="btn btn-order btn-sm"   id="order-btn" style="display:none;">Order</button>
       <button class="btn btn-danger btn-sm"  id="archive-btn" style="display:none;" onclick="archiveBtnClick()">Archive</button>
       <button class="btn btn-primary btn-sm" id="move-btn"    onclick="moveBtnClick()">Move</button>
@@ -1615,6 +1623,48 @@ function editForeignItem(id, labIdx) {
   $('edit-modal-overlay').classList.add('open');
 }
 
+// Import a foreign lab's item into your home lab: copies the descriptive Information fields
+// into a brand-new home-lab item. Stock, threshold, price, and all location fields are NOT
+// copied (those are lab-specific); sharing policy defaults to 'Ask'.
+function importForeignItem() {
+  const src = modalFind(editIdx);
+  if (!src) return;
+  const copy = {
+    _id: nextId++, _row: null, _deleted: false,
+    // Descriptive fields carried over:
+    Name: src.Name || '', ID: src.ID || '', Vendor: src.Vendor || '',
+    Catalog: src.Catalog || '', Type: src.Type || '', Size: src.Size || '',
+    Container: src.Container || '', CAS: src.CAS || '', Safety: src.Safety || '',
+    SDS: src.SDS || '', URL: src.URL || '', Notes: src.Notes || '',
+    // Deliberately NOT copied — lab-specific:
+    Price: '', Threshold: 1, Received: '',
+    Room: '', Location1: '', Location2: '', Box1: '', GridXY: '', Box2: '',
+    Stock: 0,
+    // Sharing defaults to Ask for an imported item.
+    Policy: 'Ask', Sharing: '', Borrower: '', Borrowed: '',
+    Status: '',
+  };
+  copy.Status = stockDerivedStatus(copy);
+
+  // Switch context back to the home lab, add and persist the new item, then open it.
+  activeLab = defaultLab;
+  editReadOnly = false;
+  editLab = defaultLab;
+  items.push(copy);
+  persistItem(copy);
+
+  editIdx = copy._id;
+  modalMode = 'default';
+  populateForm(copy);
+  configureActionForStatus(copy, false);
+  renderLocPanel(copy);
+  applyReadOnlyState();
+  setLocFieldsDisabled(true);
+  renderBottomBar();
+  buildFilterOptions();
+  applyFilters();
+}
+
 // Enable/disable the Information, Status, and Location sections based on editReadOnly.
 // The Sharing section is never disabled — cross-lab borrowing happens there.
 // View/Return location-drill buttons stay active (navigation only, no mutation).
@@ -1647,7 +1697,6 @@ function applyReadOnlyState() {
 // the Sharing panel now always renders and carries its own state in its title.
 function configureActionForStatus(item, fromShared) {
   const status  = getEffectiveStatus(item);
-  setStatusTitle(status);
 
   // The order-btn slot holds the contextual workflow action. Status determines label.
   // (In new-mode the slot is repurposed as [Create] — renderBottomBar handles that.)
@@ -1924,9 +1973,16 @@ function renderBottomBar() {
   const archBtn = $('archive-btn');
   const moveBtn = $('move-btn');
   const useBtn  = $('use-btn');
+  const importBtn = $('import-btn');
   if (!newBtn || !orderBtn || !archBtn || !moveBtn || !useBtn) return;
   // Hide everything; the active branch reveals what it needs.
-  [newBtn, orderBtn, archBtn, moveBtn, useBtn].forEach(b => b.style.display = 'none');
+  [newBtn, orderBtn, archBtn, moveBtn, useBtn, importBtn].forEach(b => { if (b) b.style.display = 'none'; });
+
+  // Foreign read-only item: the only action is to import a copy into your home lab.
+  if (editReadOnly) {
+    if (importBtn) importBtn.style.display = '';
+    return;
+  }
 
   if (modalMode === 'new-from-toolbar' || modalMode === 'new-from-host') {
     // [Create] (in order-btn slot) and [Cancel] (in use-btn slot)
@@ -2376,7 +2432,7 @@ function renderLocPanel(item) {
   // Location2 scope, which is meaningful even for items without a Box1 of their own.
   if (locView) { renderScopedList(item, wrap); updateViewBtns(item); refreshLocActionRow(); return; }
   if (!item || !item.Box1) {
-    wrap.innerHTML = `<div class="muted-italic" style="padding:8px 2px;">Assign Box 1 to enable location tracking.</div>`;
+    wrap.innerHTML = '';
     updateViewBtns(item);
     refreshLocActionRow();
     return;
@@ -2476,7 +2532,7 @@ function renderLocGrid(item, wrap, dims, preview) {
   const occ = {};
   sibs.forEach(sib => box2Coords(sib.Box2).forEach(c => { occ[c] = sib; }));
 
-  let colLbls = '<div class="grid-col-labels">';
+  let colLbls = `<div class="grid-col-labels">`;
   for (let c=1; c<=cols; c++) colLbls += `<div class="grid-col-lbl">${c}</div>`;
   colLbls += '</div>';
 
@@ -2512,7 +2568,9 @@ function renderLocGrid(item, wrap, dims, preview) {
   }
 
   const unplaced = renderUnplacedRows(sibs);
-  const body = `<div class="grid-outer">${colLbls}${gridRows}</div>` +
+  // Fixed 30px cells.
+  const cell = 35;
+  const body = `<div class="grid-outer" style="--cell:${cell}px;">${colLbls}${gridRows}</div>` +
                (unplaced ? `<div class="box-list" style="margin-top:6px;">${unplaced}</div>` : '');
 
   wrap.innerHTML = locPanelHTML(item, body);
@@ -2883,13 +2941,6 @@ function setPolicy() {
   configureActionForStatus(item, false); // re-render panel (title + accent + body)
 }
 
-// Render a single status-message notice into the right-column status messages area.
-function setStatusTitle(label) {
-  const el = $('status-title-suffix');
-  if (!el) return;
-  el.textContent = label ? ` \u2014 ${label}` : '';
-}
-
 // Common starter for borrow/request: validate name, capture borrower + date, persist
 // the host row to the loan state, and write the borrowed copy to the borrowing lab.
 // `hostState` is what the host row records ('Shared' for Borrow, 'Requested' for Request);
@@ -3192,6 +3243,17 @@ function applyLabBranding() {
   if (box && searchScope === 'local') {
     box.placeholder = defaultLab ? `Search ${defaultLab} Lab` : 'Search…';
   }
+  // Setup button is dark blue (attention) when no lab is loaded, plain white once one is.
+  const setupBtn = $('setup-btn');
+  if (setupBtn) setupBtn.classList.toggle('attention', !defaultLab);
+
+  // Until a home lab is loaded, the New button and all search/filter controls are disabled
+  // (white + greyed) — there's nothing to act on yet.
+  const ready = !!defaultLab;
+  ['new-toolbar-btn','search-box','clear-btn','filter-vendor','filter-type','filter-loc','filter-box']
+    .forEach(id => { const el = $(id); if (el) el.disabled = !ready; });
+  const scope = $('scope-toggle');
+  if (scope) scope.classList.toggle('disabled', !ready);
 }
 </script>
 </body>
