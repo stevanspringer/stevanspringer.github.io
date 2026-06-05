@@ -263,7 +263,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .grid-cell.c-placing:hover{background:#d0ecff;border-color:var(--vb-hi);}
 .grid-cell.c-occupied{cursor:pointer;}
 .grid-cell.c-staged{background:#d4edda;border-color:var(--ok);}
-.grid-marker{width:80%;height:80%;border-radius:2px;background:var(--mut);display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;font-weight:500;letter-spacing:-.02em;overflow:hidden;}
+.grid-marker{width:30px;height:30px;background:var(--mut);display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:400;overflow:hidden;}
 /* `mk-owned` highlights every cell occupied by the item currently focused on the left
    side of the modal — a softer, persistent indicator of "this is the item you're
    editing." `mk-active` is the stronger highlight for the one specifically-clicked
@@ -305,7 +305,33 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 /* Setup modal */
 #setup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;}
 #setup-overlay.open{display:flex;}
-.setup-box{background:#fff;border:1px solid var(--bord);border-radius:3px;padding:28px;width:480px;max-width:90vw;}
+.setup-box{background:#fff;border:1px solid var(--bord);border-radius:3px;padding:28px;width:560px;max-width:96vw;max-height:90vh;overflow-y:auto;}
+
+/* In-app manual, appended below the Setup form. Inherits the app font ('DM Mono') from
+   <body>; uses the same colour tokens and muted-uppercase heading treatment as the modals. */
+.setup-manual{margin-top:26px;padding-top:22px;border-top:1px solid var(--bord);}
+.setup-manual .man-title{font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:3px;}
+.setup-manual .man-sub{font-size:12px;color:var(--mut);margin-bottom:18px;line-height:1.5;}
+.setup-manual .man-disclaimer{font-style:italic;font-size:12px;line-height:1.55;color:var(--ink);margin:0 -28px 20px;padding:13px 28px;background:#eaf3fb;border-left:3px solid var(--vb-hi);}
+.setup-manual .man-lead{font-size:13px;line-height:1.55;color:var(--ink);margin-bottom:18px;}
+.setup-manual h3{font-size:13px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:20px 0 8px;}
+.setup-manual h3:first-of-type{margin-top:0;}
+.setup-manual p{font-size:13px;line-height:1.55;color:var(--ink);margin-bottom:8px;}
+.setup-manual .man-note{font-size:12px;color:var(--mut);}
+.setup-manual ol,.setup-manual ul{margin:0 0 10px 22px;padding:0;}
+.setup-manual li{font-size:13px;line-height:1.55;color:var(--ink);margin-bottom:5px;}
+.setup-manual ul{list-style:none;margin-left:0;}
+.setup-manual ul > li{position:relative;padding-left:16px;}
+.setup-manual ul > li::before{content:"\2013";position:absolute;left:0;color:var(--mut);}
+.setup-manual strong{font-weight:500;}
+/* Bracketed button/status references rendered as small chips echoing the UI controls. */
+.setup-manual .chip{display:inline-block;padding:0 5px;border:1px solid var(--bord);border-radius:2px;background:var(--paper);font-size:12px;white-space:nowrap;}
+.setup-manual .arr{color:var(--mut);padding:0 4px;}
+/* Sharing-policy keys: fixed-width term so the descriptions line up. */
+.setup-manual .man-policy{list-style:none;margin:0 0 10px 0;padding:0;}
+.setup-manual .man-policy li{display:flex;gap:8px;padding-left:0;}
+.setup-manual .man-policy li::before{content:none;}
+.setup-manual .man-policy .k{flex:0 0 44px;font-weight:500;}
 
 /* ── Phones: full-screen modal, tighter spacing, responsive box grid ── */
 @media (max-width: 640px){
@@ -325,7 +351,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
   .grid-row{gap:0;margin-bottom:0;}
   .grid-col-labels{gap:0;margin-left:20px;}
   .grid-row-lbl{width:16px;padding-right:4px;}
-  .grid-marker{font-size:11px;}
 }
 </style>
 </head>
@@ -383,10 +408,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 <div id="setup-overlay">
   <div class="setup-box">
     <div class="form-field" style="margin-bottom:16px;">
-      <label>Google Apps Script URL</label>
-      <input id="setup-url" type="text" value="https://script.google.com/macros/s/AKfycbyOoLJvGwQuqVRLz1x9lOPV4mwwFCqDfjjf2wo-QYvaLBIG6MpNyJQA5pfsXCYHgVPY/exec" placeholder="https://script.google.com/macros/s/…/exec">
-    </div>
-    <div class="form-field" style="margin-bottom:16px;">
       <label>Set Home Lab</label>
       <select id="setup-lab" style="width:100%;padding:6px 8px;font-family:'DM Mono',monospace;font-size:14px;border:1px solid var(--bord);border-radius:2px;background:var(--paper);"></select>
       <input id="setup-new-lab" type="text" placeholder="Name for the new lab" style="display:none;margin-top:6px;">
@@ -398,6 +419,87 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
       </div>
       <button class="btn btn-primary" onclick="saveSetup()">Save</button>
       <button class="btn" onclick="closeSetup()">Done</button>
+    </div>
+
+    <!-- In-app manual -->
+    <div class="setup-manual">
+      <p class="man-disclaimer"><strong>Disclaimer:</strong> I hope <strong>Inventory Explorer</strong> will be useful, but I won&#8217;t help you use it. I do not guarantee anything about the operation of this program. You should backup often. I am not responsible for lost data. I will not help you recover your data. By using this program, you accept these terms and release me from any and all liability related to its operation.</p>
+
+      <div class="man-title">Inventory Explorer</div>
+      <div class="man-sub">Springer Lab &middot; UPEI Biology &middot; Copyright CC BY-NC 4.0 &middot; v 1.0 (2026.06.01)</div>
+
+      <p class="man-lead">The program is simple. Everything saves automatically. Buttons guide each workflow. I hope it will be useful!</p>
+
+      <h3>1. Setup</h3>
+      <p>You need to set your own lab as default. You do this once per device. Students can do it easily.</p>
+      <ol>
+        <li>Click the <strong>Setup</strong> button (coloured blue until home lab is set).</li>
+        <li><strong>Set Home Lab.</strong> Pick your lab from the dropdown.</li>
+        <li><strong>Enter Password.</strong> The password is the <strong>lab name</strong>. <span class="man-note">(This is so people don&#8217;t switch from lab to lab. It isn&#8217;t for security.)</span></li>
+        <li>Click <strong>Save</strong>.</li>
+      </ol>
+
+      <h3>2. Ordering</h3>
+      <p>Each item has a status. Items on order appear at the top of the main list. You can see outstanding orders, or items that have arrived and need to be received in the UPEI system.</p>
+      <ol>
+        <li>When you order an item it moves to the top of the list.<br><span class="chip">Order</span><span class="arr">&rarr;</span>Status changes to <span class="chip">On Order</span></li>
+        <li>When an item arrives, you or your students can update the inventory.<br><span class="chip">Stock</span><span class="arr">&rarr;</span>Status changes to <span class="chip">Arrived</span></li>
+        <li>Receive the item in the UPEI system (you can verify stock and location).<br><span class="chip">Input</span><span class="arr">&rarr;</span>Status changes to <span class="chip">In Stock</span></li>
+      </ol>
+      <p>You can:</p>
+      <ul>
+        <li>Set a <strong>Threshold</strong> which determines when an item is <strong>In Stock</strong> vs. <strong>Low Stock</strong>.</li>
+        <li><strong>Archive</strong> an item to move it to the bottom of the list. Click <strong>Move</strong> and then <strong>Archive</strong>.</li>
+        <li><strong>Restore</strong> or <strong>Delete</strong> an archived item. <span class="man-note">(Deleted items are removed from the active list, but nothing is deleted. You can recover them using <strong>Backup</strong> if needed.)</span></li>
+      </ul>
+
+      <h3>3. Sharing</h3>
+      <p>Sharing tracks items that labs borrow from one another. While an item is on loan the owner and borrower&#8217;s copy sync, so both can see the current state.</p>
+      <p>To <strong>borrow</strong> an item:</p>
+      <ol>
+        <li>Toggle the search bar to <strong>All Labs</strong>.</li>
+        <li><strong>Search</strong> for the item you need.</li>
+        <li>Enter name and date and click <strong>Borrow</strong> or <strong>Request</strong>.</li>
+      </ol>
+      <p>Owners can:</p>
+      <ul>
+        <li>Click <strong>Bring Back</strong> to recall a shared item.</li>
+        <li>Set a <strong>Policy</strong> to control your items:</li>
+      </ul>
+      <ul class="man-policy">
+        <li><span class="k">No</span><span>Private. Others can&#8217;t borrow the item.</span></li>
+        <li><span class="k">Ask</span><span>Restricted. Others must send a request that you approve or decline.</span></li>
+        <li><span class="k">Yes</span><span>Available. Tracks name and date so others can borrow the item without asking.</span></li>
+      </ul>
+      <p>Borrowers can:</p>
+      <ul>
+        <li>Click <strong>Return</strong> to give an item back.</li>
+        <li>Click <strong>IOU</strong> if they owe a replacement.</li>
+      </ul>
+
+      <h3>4. Data</h3>
+      <p>You can click <strong>Import</strong> when viewing someone else&#8217;s item to copy its details (name, vendor, catalog, CAS, SDS) to a fresh item in your own lab. Import does not copy stock, price, or location.</p>
+      <p>The <strong>SDS</strong> field holds links to safety data sheets.</p>
+      <ul>
+        <li>An <strong>SDS</strong> link shows on the main list, so you can pull up safety info quickly.</li>
+        <li>Place your own SDS sheets in a shared Google Drive folder to link to them.</li>
+        <li>Search to find existing SDS and link or copy to your folder.</li>
+      </ul>
+      <p>If you have a barcode scanner it will work without any special setup.</p>
+      <ul>
+        <li><strong>Enter</strong> a barcode &mdash; Click the <strong>ID</strong> field, scan the item, and the code will drop in.</li>
+        <li><strong>Search</strong> by barcode &mdash; Click the <strong>Search</strong> field and scan the item to find matches.</li>
+      </ul>
+
+      <h3>5. Location</h3>
+      <p>You can:</p>
+      <ul>
+        <li>Track the <strong>room</strong> and two <strong>sub-locations</strong> (ex. DSC 122 <span class="arr">&rarr;</span> Fridge <span class="arr">&rarr;</span> Shelf 2).</li>
+        <li>Click to view all items in a sublocation.</li>
+        <li>Place items in <strong>boxes</strong> to collect them as a <strong>list</strong> or <strong>grid</strong>.</li>
+        <li>Rearrange items within a grid by point and click.</li>
+        <li>Click <strong>Use</strong> to remove an item and decrease the stock number by 1.</li>
+      </ul>
     </div>
   </div>
 </div>
@@ -487,7 +589,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
       <button class="btn btn-primary btn-sm" id="move-btn"    onclick="moveBtnClick()">Move</button>
       <button class="btn btn-danger btn-sm"  id="use-btn"     onclick="useBtnClick()">Use</button>
       <span class="modal-actions-spacer"></span>
-      <button class="btn btn-sm"             id="done-btn"    onclick="closeEditModal()">Done</button>
+      <button class="btn btn-sm"             id="done-btn"    onclick="requestModalClose()">Done</button>
     </div>
 
   </div>
@@ -497,6 +599,9 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 'use strict';
 
 // ── Constants ──────────────────────────────────────────────────────────
+// The Apps Script deployment URL is hard-coded for this distribution (not user-editable).
+// If the backend is ever redeployed, update this one line.
+const DEFAULT_URL     = 'https://script.google.com/macros/s/AKfycbyOoLJvGwQuqVRLz1x9lOPV4mwwFCqDfjjf2wo-QYvaLBIG6MpNyJQA5pfsXCYHgVPY/exec';
 const KEY_URL         = 'inv_api_url';
 const KEY_DEFAULT_LAB = 'inv_default_lab';
 const KEY_ACTIVE_LAB  = 'inv_active_lab';
@@ -1566,7 +1671,7 @@ function openAddModal() {
   renderSharingPanel({ Policy:'No', Sharing:'', Borrower:'', Borrowed:'' });
   applyReadOnlyState();
   setLocFieldsDisabled(false);     // new-mode allows location entry
-  renderBottomBar();               // shows [Create] ... [Cancel]
+  renderBottomBar();               // new-mode bar: just [Cancel] (Done commits)
   $('edit-modal-overlay').classList.add('open');
   setTimeout(() => $('f-name').focus(), 0);
 }
@@ -1708,7 +1813,7 @@ function configureActionForStatus(item, fromShared) {
   const status  = getEffectiveStatus(item);
 
   // The order-btn slot holds the contextual workflow action. Status determines label.
-  // (In new-mode the slot is repurposed as [Create] — renderBottomBar handles that.)
+  // (In new-mode this slot is unused — there's no [Create] button; Done commits.)
   switch (status) {
     case 'On Order':
       if (!$('f-date').value) $('f-date').value = todayLocal();
@@ -1876,7 +1981,7 @@ function readForm() {
 // have their own variants). Read all Info fields back to the item, then persist.
 function autoSaveField() {
   if (editReadOnly) return;
-  if (editIdx === null) return;       // create-mode: no item yet, wait for [Create]
+  if (editIdx === null) return;       // new-mode: no item yet (Done/click-out commits)
   const item = currentOwnItem(); if (!item) return;
   item.ID        = fv('f-id');
   item.Vendor    = fv('f-vendor');
@@ -1928,11 +2033,12 @@ function autoSaveStockField() {
   applyFilters();
 }
 
-// Toolbar/+ Add Item flow: [Create] button validates Name and creates the item.
-// On success, modal flips to edit-mode of the new item (Create slot reverts to Order).
+// Commit the new item being entered. Returns true if created, false if blocked (no Name).
+// Name is required: if it's missing we alert and leave the modal open so the user can either
+// enter a name or Cancel — this prevents both data loss and nameless junk rows.
 function createItem() {
   const name = fv('f-name');
-  if (!name) { alert('Name is required.'); return; }
+  if (!name) { alert('Name is required — enter a name, or click Cancel to discard.'); $('f-name').focus(); return false; }
   const f = readForm();
   const stock = fnOr('f-stock', 1);
   const newItem = makeNewItem(f, stock);
@@ -1948,6 +2054,35 @@ function createItem() {
   renderBottomBar();
   buildFilterOptions();
   applyFilters();
+  return true;
+}
+
+// Single entry point for Done / click-outside. In new-item mode this commits the item (or
+// blocks the close if it has no Name); otherwise it just closes.
+function requestModalClose() {
+  if (modalMode === 'new-from-toolbar' || modalMode === 'new-from-host') {
+    // Empty form (no Name and nothing else worth keeping) → just close, create nothing.
+    if (!fv('f-name') && newFormIsEmpty()) {
+      if (modalMode === 'new-from-host') { newCancelClick(); return; }  // return to host
+      closeEditModal();
+      return;
+    }
+    // Otherwise require a Name: createItem() commits, or blocks (alerts) and keeps it open.
+    if (!createItem()) return;          // blocked — leave modal open
+    closeEditModal();                   // committed — now close
+    return;
+  }
+  closeEditModal();
+}
+
+// True when the new-item form carries no meaningful data (so closing loses nothing).
+function newFormIsEmpty() {
+  const fields = ['f-name','f-id','f-vendor','f-catalog','f-cas','f-size','f-container',
+                  'f-type','f-safety','f-sds','f-url','f-notes-text','f-price','f-date',
+                  'f-location','f-subloc','f-box1','f-room'];
+  if (fields.some(id => (fv(id) || '').trim())) return false;
+  if (fnOr('f-stock', 1) !== 1) return false;   // stock defaults to 1; treat default as empty
+  return true;
 }
 
 // ── Bottom-bar state machine ──────────────────────────────────────────
@@ -1998,11 +2133,7 @@ function renderBottomBar() {
   }
 
   if (modalMode === 'new-from-toolbar' || modalMode === 'new-from-host') {
-    // [Create] (in order-btn slot) and [Cancel] (in use-btn slot)
-    orderBtn.style.display = '';
-    orderBtn.textContent   = 'Create';
-    orderBtn.className     = 'btn btn-primary btn-sm';
-    orderBtn.onclick       = createItem;
+    // No [Create] button — Done (or clicking outside) commits the item; [Cancel] discards.
     useBtn.style.display   = '';
     useBtn.textContent     = 'Cancel';
     useBtn.className       = 'btn btn-sm';
@@ -2059,7 +2190,7 @@ function renderBottomBar() {
 // [+ New] clicked from inside an existing-item modal: open new-mode and inherit Location
 // from the host item; Information fields go blank. Cancel returns to the host.
 function newBtnClick() {
-  if (editIdx === null) return;       // would have been Create, not New
+  if (editIdx === null) return;       // new-mode has no committed item yet
   const host = currentOwnItem();
   if (!host) return;
   _hostBeforeNew = host._id;
@@ -2285,7 +2416,7 @@ function closeEditModal() {
 let _overlayPressOnBackdrop = false;
 function overlayMouseDown(e) { _overlayPressOnBackdrop = (e.target === e.currentTarget); }
 function overlayMouseUp(e)   {
-  if (_overlayPressOnBackdrop && e.target === e.currentTarget) closeEditModal();
+  if (_overlayPressOnBackdrop && e.target === e.currentTarget) requestModalClose();
   _overlayPressOnBackdrop = false;
 }
 // Close the modal and rebuild the list + filter options (used after delete/archive/resolve).
@@ -2470,13 +2601,23 @@ function renderUnplacedRows(sibs) {
 
   // (1) The current item's own unplaced units — selectable / placeable.
   if (cur) {
-    const myUnplaced = box2ListCount(cur.Box2);
+    const myTokens   = parseBox2(cur.Box2).length;   // placed + unplaced
+    const myUnplaced = box2ListCount(cur.Box2);       // unplaced only
     const isSel = !!(locSelected && locSelected.coord === '0');
     const short = cur.Name.length > 20 ? cur.Name.slice(0,19)+'…' : cur.Name;
     for (let k = 0; k < myUnplaced; k++) {
       html += `<div class="bli bli-unplaced${isSel?' bli-selected':''}" onclick="locSelectUnplaced()">
         <div class="bli-name" title="Click to place in a grid cell">□ ${esc(short)}</div>
         <div class="bli-status">unplaced</div>
+      </div>`;
+    }
+    // If the current item has NO units in the box at all (used down to zero), keep it listed
+    // as an out-of-stock row so it doesn't silently vanish. It's the open item, so the row is
+    // a passive indicator (no click handler) — it stays put until the item is archived.
+    if (myTokens === 0 && cur.Box1) {
+      html += `<div class="bli bli-oos bli-active">
+        <div class="bli-name" title="${esc(cur.Name)}">□ ${esc(short)}</div>
+        <div class="bli-status">out of stock</div>
       </div>`;
     }
   }
@@ -2582,8 +2723,8 @@ function renderLocGrid(item, wrap, dims, preview) {
   }
 
   const unplaced = renderUnplacedRows(sibs);
-  // Fixed 30px cells.
-  const cell = 35;
+  // Fixed 32px cells (desktop and phone).
+  const cell = 32;
   const body = `<div class="grid-outer" style="--cell:${cell}px;">${colLbls}${gridRows}</div>` +
                (unplaced ? `<div class="box-list" style="margin-top:6px;">${unplaced}</div>` : '');
 
@@ -3123,10 +3264,6 @@ function propagateGridXY(source) {
 
 // ── Setup ──────────────────────────────────────────────────────────────
 function openSetup() {
-  // Default-deploy URL — hard-coded for this distribution. Stored value still wins if
-  // someone has pointed at a different sheet.
-  const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbyOoLJvGwQuqVRLz1x9lOPV4mwwFCqDfjjf2wo-QYvaLBIG6MpNyJQA5pfsXCYHgVPY/exec';
-  $('setup-url').value = API_URL || DEFAULT_URL;
   $('setup-pw').value = '';
   $('setup-new-lab').value = '';
   $('setup-new-lab').style.display = 'none';
@@ -3165,9 +3302,7 @@ function onSetupLabChange() {
 
 function closeSetup() { $('setup-overlay').classList.remove('open'); }
 function saveSetup() {
-  const url = fv('setup-url');
   let lab   = $('setup-lab').value;
-  if (!url) { alert('Please enter a URL.'); return; }
   if (lab === '__new__') {
     lab = (fv('setup-new-lab') || '').trim();
     if (!lab) { alert('Please enter a name for the new lab.'); return; }
@@ -3189,7 +3324,7 @@ function saveSetup() {
     }
   }
 
-  localStorage.setItem(KEY_URL, url);
+  localStorage.setItem(KEY_URL, DEFAULT_URL);
   localStorage.setItem(KEY_DEFAULT_LAB, lab);
   localStorage.setItem(KEY_ACTIVE_LAB, lab);
   location.reload();
@@ -3239,7 +3374,7 @@ function exportCSV() {
 
 // ── Boot ───────────────────────────────────────────────────────────────
 (async () => {
-  API_URL    = localStorage.getItem(KEY_URL)         || '';
+  API_URL    = localStorage.getItem(KEY_URL)         || DEFAULT_URL;
   defaultLab = localStorage.getItem(KEY_DEFAULT_LAB) || '';
   // Lab is set from Setup only. The active lab always equals the home lab.
   activeLab  = defaultLab;
