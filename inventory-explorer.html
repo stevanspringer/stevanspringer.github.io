@@ -205,8 +205,8 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .loc-view-btn.is-active{background:var(--vb-hi)!important;color:#fff!important;border-color:var(--vb-hi-b)!important;}
 .loc-view-btn:disabled{opacity:.5;cursor:default;color:var(--mut);}
 /* Grid X·Y row (move mode): a new line under the location fields, right-justified. */
-.loc-dims-row{display:flex;justify-content:flex-end;margin-top:8px;}
-.loc-dims-row .form-field{flex:0 0 auto;text-align:right;}
+.loc-dims-row{display:flex;justify-content:flex-start;margin-top:8px;}
+.loc-dims-row .form-field{flex:0 0 auto;text-align:left;}
 /* Sharing area: a status title line spanning the width, then a control row. */
 .share-title{font-size:12px;color:var(--mut);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;min-height:15px;}
 .share-title.danger{color:var(--danger);}
@@ -309,15 +309,27 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 
 /* In-app manual, appended below the Setup form. Inherits the app font ('DM Mono') from
    <body>; uses the same colour tokens and muted-uppercase heading treatment as the modals. */
-.setup-manual{margin-top:26px;padding-top:22px;border-top:1px solid var(--bord);}
-.setup-manual .man-title{font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:3px;}
-.setup-manual .man-sub{font-size:12px;color:var(--mut);margin-bottom:18px;line-height:1.5;}
-.setup-manual .man-disclaimer{font-style:italic;font-size:12px;line-height:1.55;color:var(--ink);margin:0 -28px 20px;padding:13px 28px;background:#eaf3fb;border-left:3px solid var(--vb-hi);}
-.setup-manual .man-lead{font-size:13px;line-height:1.55;color:var(--ink);margin-bottom:18px;}
-.setup-manual h3{font-size:13px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:20px 0 8px;}
+.setup-manual{margin-top:26px;}
+.setup-box > .man-title,.setup-manual .man-title{font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:3px;}
+.setup-box > .man-sub,.setup-manual .man-sub{font-size:12px;color:var(--mut);margin-bottom:18px;line-height:1.5;}
+.setup-box > .man-disclaimer,.setup-manual .man-disclaimer{font-style:italic;font-size:12px;line-height:1.55;color:var(--ink);margin:0 -28px 20px;padding:13px 28px;background:#eaf3fb;border-left:3px solid var(--vb-hi);}
+.man-disclaimer-top{margin:0 0 20px 0!important;background:var(--paper)!important;border-left:none!important;padding:0!important;}
+.setup-box > .man-disclaimer:first-child{margin-top:-28px;border-radius:3px 3px 0 0;}
+.setup-manual h3{font-size:14px;font-weight:400;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin:20px 0 8px;}
 .setup-manual h3:first-of-type{margin-top:0;}
+/* Each section is a full-width band echoing the modal's colour-coded sections: a soft tinted
+   background bled to the edges of the setup box (like the disclaimer) with a wide, darker
+   left indicator stripe. Setup stays white; Data grey; Location blue; Ordering orange;
+   Sharing green. */
+.setup-manual .man-sec{margin:0 -28px;padding:16px 28px;border-left:3px solid var(--bord);}
+.setup-manual .man-sec h3{margin-top:0;}
+.setup-manual .man-sec > *:last-child{margin-bottom:0;}
+.setup-manual .man-sec-data{background:#fafaf8;border-left-color:#6b6359;}
+.setup-manual .man-sec-location{background:#eaf3fb;border-left-color:var(--vb-hi);}
+.setup-manual .man-sec-ordering{background:#fdf2e8;border-left-color:var(--warn);}
+.setup-manual .man-sec-sharing{background:#eef7ea;border-left-color:var(--ok);}
 .setup-manual p{font-size:13px;line-height:1.55;color:var(--ink);margin-bottom:8px;}
-.setup-manual .man-note{font-size:12px;color:var(--mut);}
+.setup-manual .man-note{display:block;font-size:12px;color:var(--mut);margin-top:2px;}
 .setup-manual ol,.setup-manual ul{margin:0 0 10px 22px;padding:0;}
 .setup-manual li{font-size:13px;line-height:1.55;color:var(--ink);margin-bottom:5px;}
 .setup-manual ul{list-style:none;margin-left:0;}
@@ -325,13 +337,21 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .setup-manual ul > li::before{content:"\2013";position:absolute;left:0;color:var(--mut);}
 .setup-manual strong{font-weight:500;}
 /* Bracketed button/status references rendered as small chips echoing the UI controls. */
-.setup-manual .chip{display:inline-block;padding:0 5px;border:1px solid var(--bord);border-radius:2px;background:var(--paper);font-size:12px;white-space:nowrap;}
+.setup-manual .chip{display:inline-block;padding:0 6px;border:1px solid var(--bord);border-radius:2px;background:var(--paper);color:var(--ink);font-size:12px;line-height:1.5;white-space:nowrap;}
+/* Button chips mirror the real button colours in the app. */
+.setup-manual .chip-blue{background:var(--vb-hi);border-color:var(--vb-hi-b);color:#fff;}
+.setup-manual .chip-green{background:var(--ok);border-color:var(--ok-b);color:#fff;}
+.setup-manual .chip-red{background:#e03030;border-color:var(--danger);color:#fff;}
+.setup-manual .chip-orange{background:var(--warn);border-color:var(--warn-b);color:#fff;}
+.setup-manual .chip-yellow{background:var(--yellow);border-color:var(--yellow-b);color:#fff;}
+.setup-manual .chip-grey{background:#6b6359;border-color:#544d45;color:#fff;}
 .setup-manual .arr{color:var(--mut);padding:0 4px;}
 /* Sharing-policy keys: fixed-width term so the descriptions line up. */
 .setup-manual .man-policy{list-style:none;margin:0 0 10px 0;padding:0;}
 .setup-manual .man-policy li{display:flex;gap:8px;padding-left:0;}
 .setup-manual .man-policy li::before{content:none;}
-.setup-manual .man-policy .k{flex:0 0 44px;font-weight:500;}
+.setup-manual .man-policy .k{flex:0 0 54px;}
+.setup-manual .man-policy .k .chip{display:inline-block;min-width:34px;text-align:center;}
 
 /* ── Phones: full-screen modal, tighter spacing, responsive box grid ── */
 @media (max-width: 640px){
@@ -407,99 +427,103 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 <!-- Setup Modal -->
 <div id="setup-overlay">
   <div class="setup-box">
+    <div class="man-title" style="margin-bottom:3px;">Inventory Explorer</div>
+    <div class="man-sub" style="margin-bottom:16px;">Stevan Springer &middot; UPEI Biology &middot; Copyright CC BY-NC 4.0</div>
+    <p class="man-disclaimer man-disclaimer-top"><strong>Disclaimer:</strong> I hope <strong>Inventory Explorer</strong> will be useful, but I won&#8217;t help you use it. You should backup often. I am not responsible for lost data. I will not help you recover your data. By using this program, you release me from any liability related to its operation.</p>
     <div class="form-field" style="margin-bottom:16px;">
-      <label>Set Home Lab</label>
+      <label>Google Apps Script URL</label>
+      <input id="setup-url" type="text" placeholder="https://script.google.com/macros/s/&hellip;/exec" autocomplete="off">
+    </div>
+    <div class="form-field" style="margin-bottom:16px;">
+      <label>Home Lab</label>
       <select id="setup-lab" style="width:100%;padding:6px 8px;font-family:'DM Mono',monospace;font-size:14px;border:1px solid var(--bord);border-radius:2px;background:var(--paper);"></select>
       <input id="setup-new-lab" type="text" placeholder="Name for the new lab" style="display:none;margin-top:6px;">
     </div>
     <div class="form-field" style="display:flex;align-items:flex-end;gap:8px;">
       <div style="flex:1;">
-        <label>PI password</label>
-        <input id="setup-pw" type="password" placeholder="Required to set or change lab" autocomplete="off">
+        <label>Password</label>
+        <input id="setup-pw" type="password" placeholder="Enter lab name to agree" autocomplete="off">
       </div>
-      <button class="btn btn-primary" onclick="saveSetup()">Save</button>
-      <button class="btn" onclick="closeSetup()">Done</button>
+      <button class="btn btn-primary" onclick="saveSetup()">Agree</button>
+      <button class="btn" onclick="closeSetup()">Cancel</button>
     </div>
 
     <!-- In-app manual -->
     <div class="setup-manual">
-      <p class="man-disclaimer"><strong>Disclaimer:</strong> I hope <strong>Inventory Explorer</strong> will be useful, but I won&#8217;t help you use it. I do not guarantee anything about the operation of this program. You should backup often. I am not responsible for lost data. I will not help you recover your data. By using this program, you accept these terms and release me from any and all liability related to its operation.</p>
-
-      <div class="man-title">Inventory Explorer</div>
-      <div class="man-sub">Springer Lab &middot; UPEI Biology &middot; Copyright CC BY-NC 4.0 &middot; v 1.0 (2026.06.01)</div>
-
-      <p class="man-lead">The program is simple. Everything saves automatically. Buttons guide each workflow. I hope it will be useful!</p>
-
-      <h3>1. Setup</h3>
-      <p>You need to set your own lab as default. You do this once per device. Students can do it easily.</p>
-      <ol>
-        <li>Click the <strong>Setup</strong> button (coloured blue until home lab is set).</li>
-        <li><strong>Set Home Lab.</strong> Pick your lab from the dropdown.</li>
-        <li><strong>Enter Password.</strong> The password is the <strong>lab name</strong>. <span class="man-note">(This is so people don&#8217;t switch from lab to lab. It isn&#8217;t for security.)</span></li>
-        <li>Click <strong>Save</strong>.</li>
-      </ol>
-
-      <h3>2. Ordering</h3>
-      <p>Each item has a status. Items on order appear at the top of the main list. You can see outstanding orders, or items that have arrived and need to be received in the UPEI system.</p>
-      <ol>
-        <li>When you order an item it moves to the top of the list.<br><span class="chip">Order</span><span class="arr">&rarr;</span>Status changes to <span class="chip">On Order</span></li>
-        <li>When an item arrives, you or your students can update the inventory.<br><span class="chip">Stock</span><span class="arr">&rarr;</span>Status changes to <span class="chip">Arrived</span></li>
-        <li>Receive the item in the UPEI system (you can verify stock and location).<br><span class="chip">Input</span><span class="arr">&rarr;</span>Status changes to <span class="chip">In Stock</span></li>
-      </ol>
-      <p>You can:</p>
+      <div class="man-sec man-sec-data">
+      <h3>1. Data</h3>
+      <p><strong>The program is simple. Everything saves automatically.</strong></p>
       <ul>
-        <li>Set a <strong>Threshold</strong> which determines when an item is <strong>In Stock</strong> vs. <strong>Low Stock</strong>.</li>
-        <li><strong>Archive</strong> an item to move it to the bottom of the list. Click <strong>Move</strong> and then <strong>Archive</strong>.</li>
-        <li><strong>Restore</strong> or <strong>Delete</strong> an archived item. <span class="man-note">(Deleted items are removed from the active list, but nothing is deleted. You can recover them using <strong>Backup</strong> if needed.)</span></li>
+        <li>Click <span class="chip chip-green">New</span> and enter information for an item. <span class="man-note">In the panel clicking <span class="chip chip-green">New</span> copies the current location.</span></li>
+        <li>Click <span class="chip">Done</span> or click outside the panel to save your edits.</li>
+        <li>Click <span class="chip">Cancel</span> to cancel any edit.</li>
+        <li>Click <span class="chip chip-green">Import</span> when searching an item to copy its details. <span class="man-note">Easily bring (name, vendor, etc.) to a new item in your lab.</span></li>
       </ul>
+      <p><strong>SDS field holds links to safety data sheets:</strong></p>
+      <ul>
+        <li>SDS link on main list to pull up safety info quickly.</li>
+        <li>Place SDS sheets in a Google Drive folder to link to them.</li>
+        <li>Search existing SDS sheets and link or copy to your folder.</li>
+      </ul>
+      <p><strong>Barcode scanners work without any special setup.</strong></p>
+      <ul>
+        <li><strong>Enter</strong> &mdash; Click the ID field and scan to fill.</li>
+        <li><strong>Search</strong> &mdash; Click the search field and scan to find.</li>
+      </ul>
+      </div>
 
-      <h3>3. Sharing</h3>
-      <p>Sharing tracks items that labs borrow from one another. While an item is on loan the owner and borrower&#8217;s copy sync, so both can see the current state.</p>
-      <p>To <strong>borrow</strong> an item:</p>
-      <ol>
-        <li>Toggle the search bar to <strong>All Labs</strong>.</li>
-        <li><strong>Search</strong> for the item you need.</li>
-        <li>Enter name and date and click <strong>Borrow</strong> or <strong>Request</strong>.</li>
-      </ol>
-      <p>Owners can:</p>
+      <div class="man-sec man-sec-location">
+      <h3>2. Location</h3>
+      <p><strong>Location allows you to search for them by where they are.</strong></p>
       <ul>
-        <li>Click <strong>Bring Back</strong> to recall a shared item.</li>
-        <li>Set a <strong>Policy</strong> to control your items:</li>
-      </ul>
-      <ul class="man-policy">
-        <li><span class="k">No</span><span>Private. Others can&#8217;t borrow the item.</span></li>
-        <li><span class="k">Ask</span><span>Restricted. Others must send a request that you approve or decline.</span></li>
-        <li><span class="k">Yes</span><span>Available. Tracks name and date so others can borrow the item without asking.</span></li>
-      </ul>
-      <p>Borrowers can:</p>
-      <ul>
-        <li>Click <strong>Return</strong> to give an item back.</li>
-        <li>Click <strong>IOU</strong> if they owe a replacement.</li>
-      </ul>
-
-      <h3>4. Data</h3>
-      <p>You can click <strong>Import</strong> when viewing someone else&#8217;s item to copy its details (name, vendor, catalog, CAS, SDS) to a fresh item in your own lab. Import does not copy stock, price, or location.</p>
-      <p>The <strong>SDS</strong> field holds links to safety data sheets.</p>
-      <ul>
-        <li>An <strong>SDS</strong> link shows on the main list, so you can pull up safety info quickly.</li>
-        <li>Place your own SDS sheets in a shared Google Drive folder to link to them.</li>
-        <li>Search to find existing SDS and link or copy to your folder.</li>
-      </ul>
-      <p>If you have a barcode scanner it will work without any special setup.</p>
-      <ul>
-        <li><strong>Enter</strong> a barcode &mdash; Click the <strong>ID</strong> field, scan the item, and the code will drop in.</li>
-        <li><strong>Search</strong> by barcode &mdash; Click the <strong>Search</strong> field and scan the item to find matches.</li>
-      </ul>
-
-      <h3>5. Location</h3>
-      <p>You can:</p>
-      <ul>
-        <li>Track the <strong>room</strong> and two <strong>sub-locations</strong> (ex. DSC 122 <span class="arr">&rarr;</span> Fridge <span class="arr">&rarr;</span> Shelf 2).</li>
-        <li>Click to view all items in a sublocation.</li>
+        <li>Track room, sublocations, and boxes. <span class="man-note">(DSC 122 <span class="arr">&rarr;</span> Fridge <span class="arr">&rarr;</span> Shelf 2 <span class="arr">&rarr;</span> PCR Box).</span></li>
+        <li>Click <span class="chip chip-blue">Location 1</span> or <span class="chip chip-blue">Location 2</span> to view all items there.</li>
         <li>Place items in <strong>boxes</strong> to collect them as a <strong>list</strong> or <strong>grid</strong>.</li>
         <li>Rearrange items within a grid by point and click.</li>
-        <li>Click <strong>Use</strong> to remove an item and decrease the stock number by 1.</li>
+        <li>Click <span class="chip chip-red">Use</span> to remove an item and decrease the stock number.</li>
+        <li><strong>Archive</strong> to show an item at the bottom of the list. <span class="man-note">Click <span class="chip chip-blue">Move</span> and then <span class="chip chip-red">Archive</span>.</span></li>
+        <li><span class="chip chip-green">Restore</span> or <span class="chip chip-red">Delete</span> an archived item. <span class="man-note">Nothing is permanently deleted. Recover from backup if needed.</span></li>
       </ul>
+      </div>
+
+      <div class="man-sec man-sec-ordering">
+      <h3>3. Ordering</h3>
+      <p><strong>Ordering tracks outstanding orders and lets you see arrivals so you can receive items in the procurement system.</strong></p>
+      <ul>
+        <li>Set a <strong>Threshold</strong> to determine when an item is <strong>Low Stock</strong>.</li>
+      </ul>
+      <ol>
+        <li>When you order an item, it moves to the top of the main list.<br>Click <span class="chip chip-orange">Order</span><span class="arr">&rarr;</span>Status changes to <span class="chip chip-orange">On Order</span></li>
+        <li>When an item arrives, your techs can update the stock.<br>Click <span class="chip chip-orange">Stock</span><span class="arr">&rarr;</span>Status changes to <span class="chip chip-orange">Arrived</span></li>
+        <li>Receive the item in the UPEI system.<br>Click <span class="chip chip-orange">Input</span><span class="arr">&rarr;</span>Status changes to <span class="chip">In Stock</span></li>
+      </ol>
+      </div>
+
+      <div class="man-sec man-sec-sharing">
+      <h3>4. Sharing</h3>
+      <p><strong>Sharing tracks items that labs borrow from one another.</strong> <span class="man-note">Borrowed items sync so you can see who borrowed what and when.</span></p>
+      <p>Set a <strong>Policy</strong> to control your items:</p>
+      <ul class="man-policy">
+        <li><span class="k"><span class="chip chip-grey">No</span></span><span><strong>Private</strong> &nbsp;Others can&#8217;t borrow the item.</span></li>
+        <li><span class="k"><span class="chip chip-yellow">Ask</span></span><span><strong>Restricted</strong> &nbsp;Others must send a request.</span></li>
+        <li><span class="k"><span class="chip chip-green">Yes</span></span><span><strong>Available</strong> &nbsp;Tracks name and date so you know where it is.</span></li>
+      </ul>
+      <ul>
+        <li>Click <span class="chip chip-red">Bring Back</span> to recall a shared item.</li>
+        <li>Click <span class="chip chip-green">Accept</span> or <span class="chip chip-red">Deny</span> to control restricted items.</li>
+        <li>Click <span class="chip chip-green">Resolve</span> to clear outstanding debts.</li>
+      </ul>
+      <p><strong>To borrow an item:</strong></p>
+      <ol>
+        <li>Toggle the main <span class="chip">Search Bar</span> to All.</li>
+        <li>Search for the item you need.</li>
+        <li>Enter your name, the date, and click <span class="chip chip-green">Borrow</span> or <span class="chip chip-yellow">Request</span>.</li>
+      </ol>
+      <ul>
+        <li>Click <span class="chip chip-green">Return</span> to give an item back.</li>
+        <li>Click <span class="chip chip-red">IOU</span> if you owe a replacement.</li>
+      </ul>
+      </div>
     </div>
   </div>
 </div>
@@ -555,10 +579,10 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
         <div class="loc-dims-row" id="loc-dims" style="display:none;">
           <div class="form-field">
             <label>Grid X · Y</label>
-            <div style="display:flex;gap:4px;align-items:center;justify-content:flex-end;">
-              <input id="dim-x" type="number" min="1" max="26" placeholder="c" style="width:42px;text-align:center;" oninput="applyDimensionsFromForm()">
+            <div style="display:flex;gap:4px;align-items:center;justify-content:flex-start;">
+              <input id="dim-x" type="number" min="1" max="26" placeholder="c" style="width:63px;text-align:center;" oninput="applyDimensionsFromForm()">
               <span style="color:var(--mut);font-size:14px;">·</span>
-              <input id="dim-y" type="number" min="1" max="26" placeholder="r" style="width:42px;text-align:center;" oninput="applyDimensionsFromForm()">
+              <input id="dim-y" type="number" min="1" max="26" placeholder="r" style="width:63px;text-align:center;" oninput="applyDimensionsFromForm()">
             </div>
           </div>
         </div>
@@ -887,7 +911,7 @@ async function loadData() {
   // Both URL and active lab are required. Without either, prompt the user toward Setup.
   if (!API_URL || !activeLab) {
     $('inv-body').innerHTML = '<tr><td colspan="4" class="empty">' +
-      'Click <strong>Setup</strong> in the top right to enter your data source URL and choose your lab.' +
+      'Click the <button class="btn btn-primary btn-sm" onclick="openSetup()">Setup</button> button to set your home lab.' +
       '</td></tr>';
     nextId = 0;
     buildFilterOptions();
@@ -2072,6 +2096,9 @@ function requestModalClose() {
     closeEditModal();                   // committed — now close
     return;
   }
+  // In move-mode, Done saves the pending location/box change (same as clicking Set), rather
+  // than discarding it. commitMove() resets modalMode to 'default' and persists.
+  if (modalMode === 'move') commitMove();
   closeEditModal();
 }
 
@@ -2599,16 +2626,17 @@ function renderUnplacedRows(sibs) {
   const cur = currentOwnItem();
   let html = '';
 
-  // (1) The current item's own unplaced units — selectable / placeable.
+  // (1) The current item's own unplaced units — selectable / placeable. Collapsed into a
+  // single "N unplaced" row (like the list view groups stock), not one row per unit.
   if (cur) {
     const myTokens   = parseBox2(cur.Box2).length;   // placed + unplaced
     const myUnplaced = box2ListCount(cur.Box2);       // unplaced only
     const isSel = !!(locSelected && locSelected.coord === '0');
     const short = cur.Name.length > 20 ? cur.Name.slice(0,19)+'…' : cur.Name;
-    for (let k = 0; k < myUnplaced; k++) {
+    if (myUnplaced > 0) {
       html += `<div class="bli bli-unplaced${isSel?' bli-selected':''}" onclick="locSelectUnplaced()">
-        <div class="bli-name" title="Click to place in a grid cell">□ ${esc(short)}</div>
-        <div class="bli-status">unplaced</div>
+        <div class="bli-name" title="Click to place one in a grid cell">□ ${esc(short)}</div>
+        <div class="bli-status">${myUnplaced} unplaced</div>
       </div>`;
     }
     // If the current item has NO units in the box at all (used down to zero), keep it listed
@@ -2632,10 +2660,10 @@ function renderUnplacedRows(sibs) {
   groups.forEach(({rep, surplus, outOfStock}) => {
     const short = rep.Name.length > 20 ? rep.Name.slice(0,19)+'…' : rep.Name;
     if (surplus) {
-      // A sibling's unplaced unit: click to switch to that item, then it can be placed.
+      // A sibling's unplaced units: click to switch to that item, then they can be placed.
       html += `<div class="bli bli-unplaced" onclick="locNavigateTo(${rep._id})">
         <div class="bli-name" title="Click to open this item">□ ${esc(short)}</div>
-        <div class="bli-status">unplaced</div>
+        <div class="bli-status">${surplus} unplaced</div>
       </div>`;
     } else if (outOfStock) {
       html += `<div class="bli bli-oos" onclick="locNavigateTo(${rep._id})">
@@ -3264,6 +3292,7 @@ function propagateGridXY(source) {
 
 // ── Setup ──────────────────────────────────────────────────────────────
 function openSetup() {
+  $('setup-url').value = API_URL || DEFAULT_URL;
   $('setup-pw').value = '';
   $('setup-new-lab').value = '';
   $('setup-new-lab').style.display = 'none';
@@ -3324,7 +3353,8 @@ function saveSetup() {
     }
   }
 
-  localStorage.setItem(KEY_URL, DEFAULT_URL);
+  const url = (fv('setup-url') || '').trim() || DEFAULT_URL;
+  localStorage.setItem(KEY_URL, url);
   localStorage.setItem(KEY_DEFAULT_LAB, lab);
   localStorage.setItem(KEY_ACTIVE_LAB, lab);
   location.reload();
