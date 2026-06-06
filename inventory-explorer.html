@@ -17,7 +17,7 @@
   --danger:#b00000;
   --yellow:#c49b00;--yellow-b:#8a6d00;
 }
-*{box-sizing:border-box;margin:0;padding:0;forced-color-adjust:none;}
+*{box-sizing:border-box;margin:0;padding:0;forced-color-adjust:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 html,body{height:100%;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:#fff !important;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 @media (prefers-color-scheme: dark){
   html,body,#topnav,#subnav,#content,.inv-table,.inv-table td,.inv-table th,
@@ -73,7 +73,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .modal-box.read-only :disabled{opacity:.55;cursor:not-allowed;}
 .modal-box.read-only #sharing-inline :disabled{opacity:1;cursor:auto;}
 
-#content{flex:1;overflow-y:auto;padding:18px;background:#fff !important;}
+#content{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 18px 18px;background:#fff !important;}
 
 .inv-table{width:100%;border-collapse:collapse;font-size:14px;background:#fff;}
 .inv-table th{text-align:left;padding:6px 8px;font-weight:400;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);border-bottom:1px solid var(--bord);position:sticky;top:0;background:var(--paper);z-index:1;cursor:pointer;user-select:none;white-space:nowrap;box-shadow:0 1px 0 var(--bord);}
@@ -84,6 +84,14 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .inv-table th.no-sort:hover{color:var(--mut);}
 .inv-table td{padding:6px 8px;border-bottom:1px solid #f0ede8;vertical-align:top;background:#fff;}
 .inv-table tr:hover td{background:#faf9f7 !important;}
+/* Policy indicator bar on the left edge of a row — reflects the sharing Policy using the
+   same colours as the modal's policy band (Ask=yellow, Yes=green). Private ("No") items
+   get no bar to keep the list calm. Drawn as a pseudo-element because border-collapse
+   swallows a td border-left. */
+.inv-table tr.policy-bar td:first-child{position:relative;}
+.inv-table tr.policy-bar td:first-child::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;}
+.inv-table tr.policy-bar-ask td:first-child::before{background:var(--yellow);}
+.inv-table tr.policy-bar-yes td:first-child::before{background:var(--ok);}
 
 .item-name a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--bord);}
 .item-name a:hover{border-bottom-color:var(--ink);}
@@ -93,12 +101,18 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
    stock number above it carries a 1px transparent border (for the editable focus state),
    adding ~2px of height the Name/Location first lines don't have — so this sub-line uses 0
    top margin to line up with .item-sub / .loc-sub in the neighbouring columns. */
-.sds-sub{display:block;font-size:12px;margin-top:0;line-height:1.4;color:var(--danger);text-decoration:none;border-bottom:1px dotted var(--danger);width:fit-content;}
-.sds-sub:hover{color:var(--danger);border-bottom-style:solid;}
+/* SDS column: a square red icon button mirroring the modal's SDS button, top-aligned so it
+   lines up with the Status button on the same row. */
+.sds-cell{vertical-align:middle;text-align:center;}
+.status-cell{vertical-align:middle;}
+.stock-cell-td{vertical-align:middle;}
+.sds-cell-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:1px solid var(--danger);border-radius:2px;background:#e03030;color:#fff;cursor:pointer;}
+.sds-cell-btn:hover{background:var(--danger);}
+.sds-cell-btn svg{width:18px;height:18px;display:block;}
 .loc-sub{color:var(--mut);font-size:12px;margin-top:2px;line-height:1.4;}
 .borrower-sub{color:var(--mut);font-size:12px;margin-top:3px;font-style:italic;}
 
-.status-btn{display:inline-block;box-sizing:border-box;width:120px;text-align:center;padding:1px 7px;border-radius:2px;font-size:14px;line-height:1.4;cursor:pointer;font-family:'DM Mono',monospace;border:1px solid var(--bord);background:var(--paper);color:var(--ink);white-space:nowrap;letter-spacing:.03em;}
+.status-btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:120px;height:28px;text-align:center;padding:0 7px;border-radius:2px;font-size:14px;line-height:1.4;cursor:pointer;font-family:'DM Mono',monospace;border:1px solid var(--bord);background:var(--paper);color:var(--ink);white-space:nowrap;letter-spacing:.03em;}
 .status-btn.in-stock    {background:var(--paper);border-color:var(--bord);color:var(--ink);}
 .status-btn.order-now,
 .status-btn.requested   {background:var(--warn);border-color:var(--warn-b);color:#fff;}
@@ -110,7 +124,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .status-btn.archived    {background:#b0a898;border-color:#888078;color:#fff;}
 
 .stock-cell{display:flex;align-items:center;gap:4px;white-space:nowrap;line-height:1.4;}
-.stock-num{display:inline-block;min-width:28px;text-align:center;font-family:'DM Mono',monospace;font-size:14px;line-height:1.4;font-weight:400;border:1px solid transparent;border-radius:2px;padding:0 2px;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+.stock-num{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:28px;height:28px;text-align:center;font-family:'DM Mono',monospace;font-size:14px;line-height:1.4;font-weight:400;border:1px solid transparent;border-radius:2px;padding:0 4px;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .stock-num:focus{border-color:var(--bord);outline:none;}
 .stock-num.readonly{cursor:not-allowed;}
 .stock-ok    {color:var(--ok);}
@@ -305,7 +319,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 /* Setup modal */
 #setup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;}
 #setup-overlay.open{display:flex;}
-.setup-box{background:#fff;border:1px solid var(--bord);border-radius:3px;padding:28px;width:560px;max-width:96vw;max-height:90vh;overflow-y:auto;}
+.setup-box{background:#fff;padding:28px;width:560px;max-width:96vw;max-height:90vh;overflow-y:auto;}
 
 /* In-app manual, appended below the Setup form. Inherits the app font ('DM Mono') from
    <body>; uses the same colour tokens and muted-uppercase heading treatment as the modals. */
@@ -324,6 +338,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .setup-manual .man-sec{margin:0 -28px;padding:16px 28px;border-left:3px solid var(--bord);}
 .setup-manual .man-sec h3{margin-top:0;}
 .setup-manual .man-sec > *:last-child{margin-bottom:0;}
+.setup-manual .man-sec:last-child{margin-bottom:-28px;}
 .setup-manual .man-sec-data{background:#fafaf8;border-left-color:#6b6359;}
 .setup-manual .man-sec-location{background:#eaf3fb;border-left-color:var(--vb-hi);}
 .setup-manual .man-sec-ordering{background:#fdf2e8;border-left-color:var(--warn);}
@@ -345,13 +360,15 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .setup-manual .chip-orange{background:var(--warn);border-color:var(--warn-b);color:#fff;}
 .setup-manual .chip-yellow{background:var(--yellow);border-color:var(--yellow-b);color:#fff;}
 .setup-manual .chip-grey{background:#6b6359;border-color:#544d45;color:#fff;}
-.setup-manual .arr{color:var(--mut);padding:0 4px;}
+.setup-manual .arr{display:inline-block;padding:0 5px;vertical-align:middle;}
+.setup-manual .arr svg{display:block;width:18px;height:12px;}
+.setup-manual .arr svg *{fill:var(--mut);stroke:var(--mut);}
 /* Sharing-policy keys: fixed-width term so the descriptions line up. */
 .setup-manual .man-policy{list-style:none;margin:0 0 10px 0;padding:0;}
 .setup-manual .man-policy li{display:flex;gap:8px;padding-left:0;}
 .setup-manual .man-policy li::before{content:none;}
 .setup-manual .man-policy .k{flex:0 0 54px;}
-.setup-manual .man-policy .k .chip{display:inline-block;min-width:34px;text-align:center;}
+.setup-manual .man-policy .k .chip{display:inline-block;min-width:40px;text-align:center;}
 
 /* ── Phones: full-screen modal, tighter spacing, responsive box grid ── */
 @media (max-width: 640px){
@@ -409,8 +426,9 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
     <thead><tr>
       <th class="no-sort" style="width:120px;">Status</th>
       <th onclick="sortBy('Stock')" data-col="Stock" style="width:90px;">Stock</th>
-      <th onclick="sortBy('Name')"  data-col="Name">Name</th>
-      <th onclick="sortBy('Location1')" data-col="Location1">Location</th>
+      <th class="no-sort">Name</th>
+      <th class="no-sort">Location</th>
+      <th class="no-sort" style="width:44px;">SDS</th>
     </tr></thead>
     <tbody id="inv-body"></tbody>
   </table>
@@ -418,7 +436,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 
 <div id="footer">
   <span id="section-counts"></span>
-  <span><a href="https://stevanspringer.github.io" target="_blank" rel="noopener">Springer Lab</a> · UPEI Biology · Copyright <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a></span>
 </div>
 </div>
 
@@ -442,7 +459,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
     <div class="form-field" style="display:flex;align-items:flex-end;gap:8px;">
       <div style="flex:1;">
         <label>Password</label>
-        <input id="setup-pw" type="password" placeholder="Enter lab name to agree" autocomplete="off">
+        <input id="setup-pw" type="password" placeholder="Enter password to agree" autocomplete="off">
       </div>
       <button class="btn btn-primary" onclick="saveSetup()">Agree</button>
       <button class="btn" onclick="closeSetup()">Cancel</button>
@@ -452,68 +469,65 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
     <div class="setup-manual">
       <div class="man-sec man-sec-data">
       <h3>1. Data</h3>
-      <p><strong>The program is simple. Everything saves automatically.</strong></p>
+      <p><strong>THE PROGRAM IS SIMPLE - EVERYTHING SAVES AUTOMATICALLY</strong></p>
       <ul>
-        <li>Click <span class="chip chip-green">New</span> and enter information for an item. <span class="man-note">In the panel clicking <span class="chip chip-green">New</span> copies the current location.</span></li>
-        <li>Click <span class="chip">Done</span> or click outside the panel to save your edits.</li>
-        <li>Click <span class="chip">Cancel</span> to cancel any edit.</li>
-        <li>Click <span class="chip chip-green">Import</span> when searching an item to copy its details. <span class="man-note">Easily bring (name, vendor, etc.) to a new item in your lab.</span></li>
+        <li>Click <span class="chip chip-green">New</span> and enter information to create an item.</li>
+        <li>Click <span class="chip chip-green">New</span> in the panel to use the current location.</li>
+        <li>Click <span class="chip chip-green">Import</span> to copy an item to your lab.</li>
       </ul>
-      <p><strong>SDS field holds links to safety data sheets:</strong></p>
+      <p><strong>SAFETY DATA SHEETS</strong></p>
       <ul>
-        <li>SDS link on main list to pull up safety info quickly.</li>
         <li>Place SDS sheets in a Google Drive folder to link to them.</li>
         <li>Search existing SDS sheets and link or copy to your folder.</li>
       </ul>
-      <p><strong>Barcode scanners work without any special setup.</strong></p>
+      <p><strong>BARCODE SCANNERS</strong></p>
       <ul>
-        <li><strong>Enter</strong> &mdash; Click the ID field and scan to fill.</li>
-        <li><strong>Search</strong> &mdash; Click the search field and scan to find.</li>
+        <li>Click the <span class="chip">ID Field</span> and scan to enter a barcode.</li>
+        <li>Click the <span class="chip">Search Field</span> and scan to find by barcode.</li>
       </ul>
       </div>
 
       <div class="man-sec man-sec-location">
       <h3>2. Location</h3>
-      <p><strong>Location allows you to search for them by where they are.</strong></p>
+      <p><strong>LOCATION ALLOWS YOU TO SEARCH FOR ITEMS BY WHERE THEY ARE</strong></p>
+      <p class="man-note" style="margin:0 0 8px;">(DSC 122 <span class="arr"><svg viewBox="0 0 18 12" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="11" y2="6" stroke-width="1.6"/><polygon points="10.2,1.5 18,6 10.2,10.5" stroke="none"/></svg></span> Fridge <span class="arr"><svg viewBox="0 0 18 12" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="11" y2="6" stroke-width="1.6"/><polygon points="10.2,1.5 18,6 10.2,10.5" stroke="none"/></svg></span> Shelf 2 <span class="arr"><svg viewBox="0 0 18 12" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="11" y2="6" stroke-width="1.6"/><polygon points="10.2,1.5 18,6 10.2,10.5" stroke="none"/></svg></span> PCR Box).</p>
       <ul>
-        <li>Track room, sublocations, and boxes. <span class="man-note">(DSC 122 <span class="arr">&rarr;</span> Fridge <span class="arr">&rarr;</span> Shelf 2 <span class="arr">&rarr;</span> PCR Box).</span></li>
-        <li>Click <span class="chip chip-blue">Location 1</span> or <span class="chip chip-blue">Location 2</span> to view all items there.</li>
-        <li>Place items in <strong>boxes</strong> to collect them as a <strong>list</strong> or <strong>grid</strong>.</li>
-        <li>Rearrange items within a grid by point and click.</li>
-        <li>Click <span class="chip chip-red">Use</span> to remove an item and decrease the stock number.</li>
-        <li><strong>Archive</strong> to show an item at the bottom of the list. <span class="man-note">Click <span class="chip chip-blue">Move</span> and then <span class="chip chip-red">Archive</span>.</span></li>
-        <li><span class="chip chip-green">Restore</span> or <span class="chip chip-red">Delete</span> an archived item. <span class="man-note">Nothing is permanently deleted. Recover from backup if needed.</span></li>
+        <li>Click <span class="chip chip-blue">Location 1</span> or <span class="chip chip-blue">Location 2</span> to view nearby items.</li>
+        <li>Place items in <span class="chip">Boxes</span> to collect them as a <span class="chip">List</span> or <span class="chip">Grid</span>.</li>
+        <li>Click <span class="chip chip-red">Use</span> to remove an item and decrease the <span class="chip">Stock</span>.</li>
+        <li>Click <span class="chip chip-blue">Move</span> then <span class="chip chip-red">Archive</span> to archive items temporarily. <span class="man-note">Accidentally deleted items can be recovered from the backup.</span></li>
       </ul>
       </div>
 
       <div class="man-sec man-sec-ordering">
       <h3>3. Ordering</h3>
-      <p><strong>Ordering tracks outstanding orders and lets you see arrivals so you can receive items in the procurement system.</strong></p>
-      <ul>
-        <li>Set a <strong>Threshold</strong> to determine when an item is <strong>Low Stock</strong>.</li>
-      </ul>
+      <p><strong>ORDERING TRACKS ORDERS AND ARRIVALS SO YOU CAN RECEIVE ITEMS</strong></p>
+      <p><strong>How to Order an Item:</strong></p>
       <ol>
-        <li>When you order an item, it moves to the top of the main list.<br>Click <span class="chip chip-orange">Order</span><span class="arr">&rarr;</span>Status changes to <span class="chip chip-orange">On Order</span></li>
-        <li>When an item arrives, your techs can update the stock.<br>Click <span class="chip chip-orange">Stock</span><span class="arr">&rarr;</span>Status changes to <span class="chip chip-orange">Arrived</span></li>
-        <li>Receive the item in the UPEI system.<br>Click <span class="chip chip-orange">Input</span><span class="arr">&rarr;</span>Status changes to <span class="chip">In Stock</span></li>
+        <li>When you order an item, it moves to the top of the main list.<br>Click <span class="chip chip-orange">Order</span><span class="arr"><svg viewBox="0 0 18 12" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="11" y2="6" stroke-width="1.6"/><polygon points="10.2,1.5 18,6 10.2,10.5" stroke="none"/></svg></span>Status changes to <span class="chip chip-orange">On Order</span></li>
+        <li>When an item arrives, your team can update the stock.<br>Click <span class="chip chip-orange">Stock</span><span class="arr"><svg viewBox="0 0 18 12" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="11" y2="6" stroke-width="1.6"/><polygon points="10.2,1.5 18,6 10.2,10.5" stroke="none"/></svg></span>Status changes to <span class="chip chip-orange">Arrived</span></li>
+        <li>Receive the item in the UPEI system.<br>Click <span class="chip chip-orange">Input</span><span class="arr"><svg viewBox="0 0 18 12" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="11" y2="6" stroke-width="1.6"/><polygon points="10.2,1.5 18,6 10.2,10.5" stroke="none"/></svg></span>Status changes to <span class="chip">In Stock</span></li>
       </ol>
+      <ul>
+        <li>Set a <span class="chip">Threshold</span> to determine when an item is <span class="chip chip-orange">Low Stock</span>.</li>
+      </ul>
       </div>
 
       <div class="man-sec man-sec-sharing">
       <h3>4. Sharing</h3>
-      <p><strong>Sharing tracks items that labs borrow from one another.</strong> <span class="man-note">Borrowed items sync so you can see who borrowed what and when.</span></p>
-      <p>Set a <strong>Policy</strong> to control your items:</p>
+      <p><strong>SHARING TRACKS ITEMS SO YOU CAN SEE WHO BORROWED WHAT AND WHEN</strong></p>
+      <p><strong>Set a Policy to Control Your Items:</strong></p>
       <ul class="man-policy">
-        <li><span class="k"><span class="chip chip-grey">No</span></span><span><strong>Private</strong> &nbsp;Others can&#8217;t borrow the item.</span></li>
-        <li><span class="k"><span class="chip chip-yellow">Ask</span></span><span><strong>Restricted</strong> &nbsp;Others must send a request.</span></li>
-        <li><span class="k"><span class="chip chip-green">Yes</span></span><span><strong>Available</strong> &nbsp;Tracks name and date so you know where it is.</span></li>
+        <li><span class="k"><span class="chip chip-grey">No</span></span><span>Others can&#8217;t borrow the item.</span></li>
+        <li><span class="k"><span class="chip chip-yellow">Ask</span></span><span>Others must send a request to borrow the item.</span></li>
+        <li><span class="k"><span class="chip chip-green">Yes</span></span><span>Tracks name and date so you know where items are.</span></li>
       </ul>
       <ul>
         <li>Click <span class="chip chip-red">Bring Back</span> to recall a shared item.</li>
         <li>Click <span class="chip chip-green">Accept</span> or <span class="chip chip-red">Deny</span> to control restricted items.</li>
         <li>Click <span class="chip chip-green">Resolve</span> to clear outstanding debts.</li>
       </ul>
-      <p><strong>To borrow an item:</strong></p>
+      <p><strong>How to Borrow an Item:</strong></p>
       <ol>
         <li>Toggle the main <span class="chip">Search Bar</span> to All.</li>
         <li>Search for the item you need.</li>
@@ -908,11 +922,9 @@ async function persistItem(item) {
 async function loadData() {
   items = []; filtered = [];
 
-  // Both URL and active lab are required. Without either, prompt the user toward Setup.
+  // Both URL and active lab are required. Without either, the empty-state render shows the
+  // Setup prompt; just stop here so we don't try to fetch.
   if (!API_URL || !activeLab) {
-    $('inv-body').innerHTML = '<tr><td colspan="4" class="empty">' +
-      'Click the <button class="btn btn-primary btn-sm" onclick="openSetup()">Setup</button> button to set your home lab.' +
-      '</td></tr>';
     nextId = 0;
     buildFilterOptions();
     applyFilters();
@@ -932,7 +944,7 @@ async function loadData() {
     setRefreshingHint(true);
     paintedFromCache = true;
   } else {
-    $('inv-body').innerHTML = `<tr><td colspan="4" class="empty">Loading <strong>${esc(activeLab)}</strong>…</td></tr>`;
+    $('inv-body').innerHTML = `<tr><td colspan="5" class="empty">Loading <strong>${esc(activeLab)}</strong>…</td></tr>`;
   }
 
   // 2. Always revalidate against the server.
@@ -940,7 +952,7 @@ async function loadData() {
   if (si === null) {
     setRefreshingHint(false);
     if (!paintedFromCache) {
-      $('inv-body').innerHTML = '<tr><td colspan="4" style="padding:20px;color:var(--danger);">Could not load data.</td></tr>';
+      $('inv-body').innerHTML = '<tr><td colspan="5" style="padding:20px;color:var(--danger);">Could not load data.</td></tr>';
     }
     // If we painted from cache, keep showing it — the network call failed but stale data
     // is better than an error wipe.
@@ -1488,7 +1500,7 @@ function applyEverywhere() {
 
   if (!q) {
     const pending = LAB_NAMES.filter(l => !Array.isArray(crossLabItems[l])).length;
-    tbody.innerHTML = '<tr><td colspan="4" class="empty">Enter a search term to look across all labs.'
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">Enter a search term to look across all labs.'
       + (pending ? ` <span style="color:var(--mut);">(${pending} lab${pending===1?'':'s'} still loading)</span>` : '')
       + '</td></tr>';
     $('section-counts').textContent = '';
@@ -1534,13 +1546,13 @@ function renderEverywhere(q) {
     const isForeign = lab !== activeLab;
     const hdr = document.createElement('tr');
     hdr.className = 'lab-group-row' + (isForeign ? ' foreign' : '');
-    hdr.innerHTML = `<td colspan="4">${esc(lab)}${isForeign ? ' — read-only' : ''} · ${matches.length}</td>`;
+    hdr.innerHTML = `<td colspan="5">${esc(lab)}${isForeign ? ' — read-only' : ''} · ${matches.length}</td>`;
     tbody.appendChild(hdr);
     matches.forEach(item => { tbody.appendChild(makeCrossLabRow(item, lab)); total++; });
   });
 
   if (!total) {
-    tbody.innerHTML = `<tr><td colspan="4" class="empty">No items match “${esc(q)}” in any loaded lab.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" class="empty">No items match “${esc(q)}” in any loaded lab.</td></tr>`;
   }
   $('section-counts').textContent = `${total} match${total===1?'':'es'} across ${labs.length} lab${labs.length===1?'':'s'} searched`;
 }
@@ -1560,9 +1572,15 @@ function nameSubText(item) {
 function locSubText(item) {
   return [item.Location2, item.Box1].filter(Boolean).join(', ');
 }
-function sdsSubHtml(item) {
+// Warning-triangle icon for the SDS link (matches the SDS button in the modal).
+const SDS_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 1.8 20.5h20.4z"/><path d="M12 9.5v5"/><path d="M12 17.6h.01"/></svg>';
+
+// The SDS column cell: a square red icon button (like the modal's SDS button) when the item
+// has a valid http(s) link, otherwise empty. Aligned to the top so it lines up with the
+// Status button on the same row.
+function sdsCellHtml(item) {
   return /^https?:\/\/\S+$/i.test((item.SDS||'').trim())
-    ? `<a class="sds-sub" href="${esc(item.SDS.trim())}" target="_blank" rel="noopener" onclick="event.stopPropagation()">SDS</a>` : '';
+    ? `<a class="sds-cell-btn" href="${esc(item.SDS.trim())}" target="_blank" rel="noopener" title="Open SDS in a new tab" onclick="event.stopPropagation()">${SDS_ICON}</a>` : '';
 }
 // The Name cell (linked name + vendor/catalog/size/price sub-line) and the Location cell
 // (Location 1 + room, with a Location 2 / Box sub-line) are identical across both renderers.
@@ -1588,10 +1606,11 @@ function makeCrossLabRow(item, lab) {
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td style="white-space:nowrap;"><button class="status-btn ${statusBtnClass(btnSt)}" onclick="${onclick}">${btnSt}</button></td>
-    <td><div class="stock-cell"><span class="stock-num ${stockCls} readonly">${stock}</span></div>${sdsSubHtml(item)}</td>
+    <td class="status-cell" style="white-space:nowrap;"><button class="status-btn ${statusBtnClass(btnSt)}" onclick="${onclick}">${btnSt}</button></td>
+    <td class="stock-cell-td"><div class="stock-cell"><span class="stock-num ${stockCls} readonly">${stock}</span></div></td>
     <td>${nameCellHtml(item)}</td>
-    <td>${locCellHtml(item)}</td>`;
+    <td>${locCellHtml(item)}</td>
+    <td class="sds-cell">${sdsCellHtml(item)}</td>`;
   return tr;
 }
 
@@ -1631,8 +1650,16 @@ function sortBy(col) {
 function renderInventory() {
   const tbody = $('inv-body');
   tbody.innerHTML = '';
+  // No lab (or URL) configured yet — prompt the user toward Setup, in the centre of the
+  // list where the empty-state message normally lives.
+  if (!API_URL || !activeLab) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">' +
+      'Click the <button class="btn btn-primary btn-sm" onclick="openSetup()">Setup</button> button to set your home lab.' +
+      '</td></tr>';
+    return;
+  }
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty">No items match your filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">No items match your filters.</td></tr>';
     return;
   }
   filtered.forEach(item => tbody.appendChild(makeItemRow(item)));
@@ -1658,14 +1685,17 @@ function makeItemRow(item) {
          onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">${stock}</span>`;
 
   const tr = document.createElement('tr');
+  const pol = (item.Policy||'No').trim().toLowerCase();
+  if (pol === 'ask' || pol === 'yes') tr.classList.add('policy-bar', 'policy-bar-' + pol);
   tr.innerHTML = `
-    <td style="white-space:nowrap;">
+    <td class="status-cell" style="white-space:nowrap;">
       <button class="status-btn ${statusBtnClass(btnSt)}" onclick="editItem(${item._id},${isShared})">${btnSt}</button>
       ${showBorr ? `<div class="borrower-sub">${esc(item.Borrower)}${item.Borrowed?' · '+esc(item.Borrowed.slice(0,10)):''}</div>` : ''}
     </td>
-    <td><div class="stock-cell">${stockCell}</div>${sdsSubHtml(item)}</td>
+    <td class="stock-cell-td"><div class="stock-cell">${stockCell}</div></td>
     <td>${nameCellHtml(item)}</td>
-    <td>${locCellHtml(item)}</td>`;
+    <td>${locCellHtml(item)}</td>
+    <td class="sds-cell">${sdsCellHtml(item)}</td>`;
   return tr;
 }
 
