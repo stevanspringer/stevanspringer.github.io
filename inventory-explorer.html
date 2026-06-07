@@ -42,7 +42,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .nav-spacer{flex:1;}
 
 #subnav{display:flex;align-items:center;padding:4px 18px;gap:7px;background:var(--paper);border-bottom:1px solid var(--bord);flex-shrink:0;flex-wrap:wrap;}
-.subnav-spacer{display:none;}
 /* New + search + toggle + Clear form one cluster (left); the four filter dropdowns form a
    second cluster (right). On a phone the dropdown cluster wraps below as a unit. */
 .subnav-main{display:flex;gap:7px;align-items:center;flex:1000 1 auto;min-width:0;}
@@ -52,7 +51,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 /* Filter dropdowns: uniform fixed width (sized for "Location", the longest field name).
    The default option shows the field name; selecting a value replaces it. Long selected
    values are clipped by the fixed width (no ellipsis). */
-.filter-select{flex:1 0 150px;min-width:150px;padding:3px 8px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);cursor:pointer;outline:none;text-overflow:clip;}
+.filter-select{flex:1 1 100px;min-width:100px;padding:3px 8px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);cursor:pointer;outline:none;text-overflow:clip;}
 /* A dropdown with an active (non-default) selection gets a subtle blue border to show it's filtering. */
 .filter-select.filtering{border-color:var(--vb-hi-b);}
 #search-box{padding:3px 10px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);flex:1 1 150px;min-width:90px;outline:none;}
@@ -61,9 +60,9 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 #clear-btn.active{background:var(--vb-hi) !important;border-color:var(--vb-hi-b) !important;color:#fff !important;}
 /* Lab ⟷ All scope toggle */
 .scope-toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;font-size:14px;white-space:nowrap;}
-.scope-label{color:var(--mut);letter-spacing:.03em;}
-.scope-toggle.is-all .scope-label-all{color:var(--vb-hi);font-weight:600;}
-.scope-toggle:not(.is-all) .scope-label-lab{color:var(--ink);font-weight:600;}
+.scope-label{color:var(--mut);letter-spacing:.03em;text-transform:uppercase;}
+.scope-toggle.is-all .scope-label-all{color:var(--vb-hi);}
+.scope-toggle:not(.is-all) .scope-label-lab{color:var(--ink);}
 .scope-switch{position:relative;width:34px;height:18px;border-radius:9px;background:var(--bord);transition:background .15s;flex:0 0 auto;}
 .scope-toggle.is-all .scope-switch{background:var(--vb-hi);}
 .scope-knob{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .15s;}
@@ -158,8 +157,16 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .btn-sm{padding:5px 10px!important;}
 /* Setup button is dark blue (like the Move button) while no home lab is loaded, prompting
    the user to set one up; it reverts to a plain white .btn once a lab is loaded. */
-#setup-btn.attention{background:var(--vb-hi);color:#fff;border-color:var(--vb-hi-b);}
-#setup-btn.attention:hover{background:var(--vb-hi-b);}
+#setup-btn{background:var(--vb-hi);color:#fff;border-color:var(--vb-hi-b);display:inline-flex;align-items:center;justify-content:center;padding:0;width:30px;height:30px;flex:0 0 auto;}
+#setup-btn:hover{background:var(--vb-hi-b);}
+#setup-btn svg{width:17px;height:17px;display:block;}
+.backup-btn{background:var(--ok);color:#fff;border-color:var(--ok-b);display:inline-flex;align-items:center;justify-content:center;padding:0;width:30px;height:30px;flex:0 0 auto;}
+.backup-btn:hover{background:var(--ok-b);}
+.backup-btn:disabled{background:var(--ok);border-color:var(--ok-b);color:#fff;opacity:.4;}
+.backup-btn:disabled:hover{background:var(--ok);}
+.backup-btn svg{width:18px;height:18px;display:block;}
+.inline-gear-btn{display:inline-flex;align-items:center;justify-content:center;padding:0;width:26px;height:26px;vertical-align:middle;}
+.inline-gear-btn svg{width:15px;height:15px;display:block;}
 
 /* ── Modal ── */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center;}
@@ -233,13 +240,13 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .share-title.ok{color:var(--ok);}
 .share-title.warn{color:var(--yellow-b);}
 /* Inline explanatory note in the sharing row — sits left, takes the slack so buttons go right. */
-.share-note{flex:1;min-width:0;font-size:13px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.share-note{flex:1;min-width:0;font-size:14px;color:var(--mut);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .form-field input:focus,.form-field select:focus,.form-field textarea:focus{border-color:var(--ink);}
 .combo-wrap{display:flex;flex-direction:column;gap:2px;}
 .combo-sel,.combo-inp{width:100%;padding:4px 7px;border:1px solid var(--bord);border-radius:2px;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:var(--paper);outline:none;}
 .combo-sel{cursor:pointer;}
 .combo-sel:focus,.combo-inp:focus{border-color:var(--ink);}
-.combo-back{font-size:11px;color:var(--mut);cursor:pointer;text-decoration:underline;align-self:flex-start;}
+.combo-back{font-size:12px;color:var(--mut);cursor:pointer;text-decoration:underline;align-self:flex-start;}
 .combo-back:hover{color:var(--ink);}
 .form-field textarea{resize:vertical;min-height:60px;}
 #f-notes-text{min-height:60px;}
@@ -296,7 +303,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 
 /* List mode */
 .box-list{display:flex;flex-direction:column;gap:3px;margin-bottom:8px;}
-.box-list-hdr{font-size:11px;font-weight:700;color:var(--mut);margin:6px 0 2px;text-transform:uppercase;letter-spacing:.04em;}
+.box-list-hdr{font-size:12px;font-weight:400;color:var(--mut);margin:6px 0 2px;text-transform:uppercase;letter-spacing:.04em;}
 .bli{display:flex;align-items:center;gap:8px;padding:5px 8px;border:1px solid var(--bord);border-radius:2px;background:var(--paper);font-size:14px;cursor:pointer;}
 .bli:hover{background:#f0ede8;}
 .bli.bli-active{background:#e8f4fd;border-color:var(--vb-lo-b);}
@@ -333,7 +340,16 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .setup-box > .man-title,.setup-manual .man-title{font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin-bottom:3px;}
 .setup-box > .man-sub,.setup-manual .man-sub{font-size:12px;color:var(--mut);margin-bottom:18px;line-height:1.5;}
 .setup-box > .man-disclaimer,.setup-manual .man-disclaimer{font-style:italic;font-size:12px;line-height:1.55;color:var(--ink);margin:0 -28px 20px;padding:13px 28px;background:#eaf3fb;border-left:3px solid var(--vb-hi);}
-.man-disclaimer-top{margin:0 0 20px 0!important;background:var(--paper)!important;border-left:none!important;padding:0!important;}
+.man-disclaimer-top{margin:0 0 20px 0!important;background:var(--paper)!important;border-left:none!important;padding:0!important;font-size:12px!important;font-style:italic!important;line-height:1.5;}
+.setup-disc-row{display:flex;align-items:flex-start;gap:16px;}
+.setup-disc-row .man-disclaimer-top{flex:1 1 auto;margin:0!important;}
+.setup-disc-row{margin-bottom:20px;}
+.setup-backup-btn{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:72px;height:72px;background:var(--ok);color:#fff;border:1px solid var(--ok-b);border-radius:3px;cursor:pointer;font-family:'DM Mono',monospace;}
+.setup-backup-btn:hover{background:var(--ok-b);}
+.setup-backup-btn:disabled{background:var(--paper);border-color:var(--bord);color:var(--mut);opacity:.45;cursor:not-allowed;}
+.setup-backup-btn:disabled:hover{background:var(--paper);}
+.setup-backup-label{font-size:14px;letter-spacing:.02em;}
+.setup-backup-btn svg{width:26px;height:26px;display:block;}
 .setup-box > .man-disclaimer:first-child{margin-top:-28px;border-radius:3px 3px 0 0;}
 .setup-manual h3{font-size:14px;font-weight:400;letter-spacing:.18em;text-transform:uppercase;color:var(--ink);margin:20px 0 8px;}
 .setup-manual h3:first-of-type{margin-top:0;}
@@ -349,10 +365,10 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .setup-manual .man-sec-location{background:#eaf3fb;border-left-color:var(--vb-hi);}
 .setup-manual .man-sec-ordering{background:#fdf2e8;border-left-color:var(--warn);}
 .setup-manual .man-sec-sharing{background:#eef7ea;border-left-color:var(--ok);}
-.setup-manual p{font-size:13px;line-height:1.55;color:var(--ink);margin-bottom:8px;}
+.setup-manual p{font-size:14px;line-height:1.55;color:var(--ink);margin-bottom:8px;}
 .setup-manual .man-note{display:block;font-size:12px;color:var(--mut);margin-top:2px;}
 .setup-manual ol,.setup-manual ul{margin:0 0 10px 22px;padding:0;}
-.setup-manual li{font-size:13px;line-height:1.55;color:var(--ink);margin-bottom:5px;}
+.setup-manual li{font-size:14px;line-height:1.55;color:var(--ink);margin-bottom:5px;}
 .setup-manual ul{list-style:none;margin-left:0;}
 .setup-manual ul > li{position:relative;padding-left:16px;}
 .setup-manual ul > li::before{content:"\2013";position:absolute;left:0;color:var(--mut);}
@@ -378,27 +394,23 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 
 /* ── Phones: full-screen modal, tighter spacing, responsive box grid ── */
 @media (max-width: 640px){
-  /* Toolbar: the search cluster takes the top row; the four dropdowns wrap below as a
-     full-width unit, each shrinking to share the width so all four fit on an iPhone. */
-  #subnav{padding:6px 10px;gap:6px;}
-  .subnav-spacer{display:none;}
-  .subnav-main{flex:1 1 100%;}
-  .subnav-filters{flex:1 1 100%;gap:5px;}
-  .subnav-filters .filter-select{flex:1 1 0;width:auto;min-width:0;padding:3px 4px;}
-  .modal-overlay{padding:0;}
+  /* Phone: let the four filter dropdowns shrink to share one full-width row. */
+  .subnav-filters .filter-select{flex:1 1 0;min-width:0;}
+  /* Full-screen modal sheet. */
   .modal-box{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0;border:0;}
-  .modal-band{padding:12px;}
-  .modal-bottom-actions{padding:8px 14px;gap:6px;}
-  .modal-bottom-actions > button{padding-left:10px;padding-right:10px;}
-  /* Box grid on phone: narrower row-label gutter; cell size is computed in JS per render. */
-  .grid-row{gap:0;margin-bottom:0;}
-  .grid-col-labels{gap:0;margin-left:20px;}
-  .grid-row-lbl{width:16px;padding-right:4px;}
-  /* Narrow screens: hide the Location column and surface its info under the item name
-     instead. The SDS column stays visible. */
+  /* Box grid: narrower row-label gutter so the grid fits. */
+  .grid-col-labels{margin-left:20px;}
+  .grid-row-lbl{width:16px;}
+}
+/* At this width the Name column would get tight: merge the Location column into Name (hide
+   it, surface its info under the item name) AND stack the toolbar so the filters drop to a
+   full-width second row. Both transitions happen together. */
+@media (max-width: 1000px){
   .loc-col{display:none;}
   .wide-sub{display:none;}
   .narrow-sub{display:block;}
+  .subnav-main{flex:1 1 100%;}
+  .subnav-filters{flex:1 1 100%;}
 }
 </style>
 </head>
@@ -408,8 +420,8 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 <div id="topnav">
   <div class="logo" id="app-title"><span class="logo-main">Inventory Explorer</span></div>
   <div class="nav-spacer"></div>
-  <button class="btn" onclick="exportCSV()" title="Download a CSV backup">↓ Backup</button>
-  <button class="btn" id="setup-btn" onclick="openSetup()">Setup</button>
+  <button class="btn backup-btn" id="backup-btn" onclick="exportCSV()" title="Download a CSV backup" aria-label="Download a CSV backup"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="3" x2="12" y2="13"/><polygon points="5,11 19,11 12,20" fill="currentColor" stroke="none"/></svg></button>
+  <button class="btn" id="setup-btn" onclick="openSetup()" title="Setup" aria-label="Setup"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/></svg></button>
 </div>
 
 <div id="subnav">
@@ -423,7 +435,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
     </span>
     <button class="btn" id="clear-btn" onclick="clearFilters()">Clear</button>
   </div>
-  <div class="subnav-spacer"></div>
   <div class="subnav-filters">
     <select class="filter-select" id="filter-vendor" onchange="applyFilters()"><option value="">Vendor</option></select>
     <select class="filter-select" id="filter-type" onchange="applyFilters()"><option value="">Type</option></select>
@@ -438,7 +449,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
       <th class="no-sort" style="width:116px;min-width:116px;max-width:116px;">Status</th>
       <th onclick="sortBy('Stock')" data-col="Stock" style="width:56px;min-width:56px;max-width:56px;">Stock</th>
       <th class="no-sort" style="width:auto;">Name</th>
-      <th class="no-sort loc-col" style="width:30%;">Location</th>
+      <th class="no-sort loc-col" style="width:300px;min-width:300px;max-width:300px;">Location</th>
       <th class="no-sort" style="width:44px;min-width:44px;">SDS</th>
     </tr></thead>
     <tbody id="inv-body"></tbody>
@@ -457,7 +468,13 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
   <div class="setup-box">
     <div class="man-title" style="margin-bottom:3px;">Inventory Explorer</div>
     <div class="man-sub" style="margin-bottom:16px;">Stevan Springer &middot; UPEI Biology &middot; Copyright CC BY-NC 4.0</div>
-    <p class="man-disclaimer man-disclaimer-top"><strong>Disclaimer:</strong> I hope <strong>Inventory Explorer</strong> will be useful, but I won&#8217;t help you use it. You should backup often. I am not responsible for lost data. I will not help you recover your data. By using this program, you release me from any liability related to its operation.</p>
+    <div class="setup-disc-row">
+      <p class="man-disclaimer man-disclaimer-top"><strong>Disclaimer:</strong> I hope <strong>Inventory Explorer</strong> will be useful, but I won&#8217;t help you use it. You should backup often. I am not responsible for lost data. I will not help you recover your data. By using this program, you release me from any liability related to its operation.</p>
+      <button class="setup-backup-btn" id="setup-backup-btn" onclick="exportCSV()" title="Download a CSV backup" aria-label="Download a CSV backup" disabled>
+        <span class="setup-backup-label">Backup</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="12"/><polygon points="4,10 20,10 12,21" fill="currentColor" stroke="none"/></svg>
+      </button>
+    </div>
     <div class="form-field" style="margin-bottom:16px;">
       <label>Google Apps Script URL</label>
       <input id="setup-url" type="text" placeholder="https://script.google.com/macros/s/&hellip;/exec" autocomplete="off">
@@ -514,7 +531,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
       <ol>
         <li>When you order an item, it moves to the top of the main list.<br>Click <span class="chip chip-orange">Order</span><span class="arr"><svg viewBox="0 0 18 12" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="11" y2="6" stroke-width="1.6"/><polygon points="10.2,1.5 18,6 10.2,10.5" stroke="none"/></svg></span>Status changes to <span class="chip chip-orange">On Order</span></li>
         <li>When an item arrives, your team can update the stock.<br>Click <span class="chip chip-orange">Stock</span><span class="arr"><svg viewBox="0 0 18 12" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="11" y2="6" stroke-width="1.6"/><polygon points="10.2,1.5 18,6 10.2,10.5" stroke="none"/></svg></span>Status changes to <span class="chip chip-orange">Arrived</span></li>
-        <li>Receive the item in the UPEI system.<br>Click <span class="chip chip-orange">Input</span><span class="arr"><svg viewBox="0 0 18 12" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="11" y2="6" stroke-width="1.6"/><polygon points="10.2,1.5 18,6 10.2,10.5" stroke="none"/></svg></span>Status changes to <span class="chip">In Stock</span></li>
+        <li>Receive the item in your procurement system.<br>Click <span class="chip chip-orange">Input</span><span class="arr"><svg viewBox="0 0 18 12" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="11" y2="6" stroke-width="1.6"/><polygon points="10.2,1.5 18,6 10.2,10.5" stroke="none"/></svg></span>Status changes to <span class="chip">In Stock</span></li>
       </ol>
       <ul>
         <li>Set a <span class="chip">Threshold</span> to determine when an item is <span class="chip chip-orange">Low Stock</span>.</li>
@@ -530,7 +547,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
         <li><span class="k"><span class="chip chip-green">Yes</span></span><span>Tracks name and date so you know where items are.</span></li>
       </ul>
       <ul>
-        <li>Click <span class="chip chip-red">Recall</span> to recall a shared item.</li>
+        <li>Click <span class="chip chip-red">Recall</span> to request return of a shared item.</li>
         <li>Click <span class="chip chip-green">Accept</span> or <span class="chip chip-red">Deny</span> to control restricted items.</li>
         <li>Click <span class="chip chip-green">Resolve</span> to clear outstanding debts.</li>
       </ul>
@@ -1667,7 +1684,7 @@ function renderInventory() {
   // list where the empty-state message normally lives.
   if (!API_URL || !activeLab) {
     tbody.innerHTML = '<tr><td colspan="5" class="empty">' +
-      'Click the <button class="btn btn-primary btn-sm" onclick="openSetup()">Setup</button> button to set your home lab.' +
+      'Click the <button class="btn btn-primary inline-gear-btn" onclick="openSetup()" title="Setup" aria-label="Setup"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/></svg></button> button to set your home lab.' +
       '</td></tr>';
     return;
   }
@@ -2618,10 +2635,10 @@ function renderScopedList(item, wrap) {
   });
 
   const title = loc2
-    ? `${esc(loc1)} \u203a <strong>${esc(loc2)}</strong>`
-    : `<strong>${esc(loc1)}</strong>`;
+    ? `${esc(loc1)} \u203a ${esc(loc2)}`
+    : `${esc(loc1)}`;
 
-  wrap.innerHTML = `<div style="font-size:13px;margin-bottom:6px;color:var(--mut);">Viewing ${title}</div>
+  wrap.innerHTML = `<div style="font-size:14px;margin-bottom:6px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;">Viewing ${title}</div>
     <div class="box-list">${html || '<div class="muted-italic">No items.</div>'}</div>`;
 }
 
@@ -3361,6 +3378,9 @@ function openSetup() {
   newOpt.value = '__new__'; newOpt.textContent = '— New —';
   sel.appendChild(newOpt);
   sel.onchange = onSetupLabChange;
+  // Backup is only meaningful once a home lab is set; fade it until then.
+  const sbb = $('setup-backup-btn');
+  if (sbb) sbb.disabled = !defaultLab;
   $('setup-overlay').classList.add('open');
 }
 
@@ -3474,14 +3494,11 @@ function applyLabBranding() {
   if (box && searchScope === 'local') {
     box.placeholder = defaultLab ? `Search ${defaultLab} Lab` : 'Search…';
   }
-  // Setup button is dark blue (attention) when no lab is loaded, plain white once one is.
-  const setupBtn = $('setup-btn');
-  if (setupBtn) setupBtn.classList.toggle('attention', !defaultLab);
 
   // Until a home lab is loaded, the New button and all search/filter controls are disabled
   // (white + greyed) — there's nothing to act on yet.
   const ready = !!defaultLab;
-  ['new-toolbar-btn','search-box','clear-btn','filter-vendor','filter-type','filter-loc','filter-box']
+  ['new-toolbar-btn','search-box','clear-btn','filter-vendor','filter-type','filter-loc','filter-box','backup-btn']
     .forEach(id => { const el = $(id); if (el) el.disabled = !ready; });
   const scope = $('scope-toggle');
   if (scope) scope.classList.toggle('disabled', !ready);
