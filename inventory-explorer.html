@@ -15,7 +15,7 @@
   --ok:#35974a;--ok-b:#1e6b33;
   --warn:#f07000;--warn-b:#c05000;
   --danger:#b00000;
-  --yellow:#c49b00;--yellow-b:#8a6d00;
+  --yellow:#e0a500;--yellow-b:#a97c00;
 }
 *{box-sizing:border-box;margin:0;padding:0;forced-color-adjust:none;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 html,body{height:100%;font-family:'DM Mono',monospace;font-size:14px;color:var(--ink);background:#fff !important;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
@@ -42,20 +42,20 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .nav-spacer{flex:1;}
 
 #subnav{display:flex;align-items:center;padding:4px 18px;gap:7px;background:var(--paper);border-bottom:1px solid var(--bord);flex-shrink:0;flex-wrap:wrap;}
-.subnav-spacer{flex:1;}
+.subnav-spacer{display:none;}
 /* New + search + toggle + Clear form one cluster (left); the four filter dropdowns form a
    second cluster (right). On a phone the dropdown cluster wraps below as a unit. */
-.subnav-main{display:flex;gap:7px;align-items:center;flex:1 1 auto;min-width:0;}
-.subnav-filters{display:flex;gap:7px;align-items:center;flex-wrap:wrap;}
+.subnav-main{display:flex;gap:7px;align-items:center;flex:1000 1 auto;min-width:0;}
+.subnav-filters{display:flex;gap:7px;align-items:center;flex-wrap:nowrap;flex:1 1 auto;min-width:0;}
 #new-toolbar-btn{font-size:14px;padding:3px 10px;flex:0 0 auto;}
 #clear-btn{font-size:14px;padding:3px 8px;flex:0 0 auto;}
 /* Filter dropdowns: uniform fixed width (sized for "Location", the longest field name).
    The default option shows the field name; selecting a value replaces it. Long selected
    values are clipped by the fixed width (no ellipsis). */
-.filter-select{width:104px;flex:0 0 104px;padding:3px 8px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);cursor:pointer;outline:none;text-overflow:clip;}
+.filter-select{flex:1 0 150px;min-width:150px;padding:3px 8px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);cursor:pointer;outline:none;text-overflow:clip;}
 /* A dropdown with an active (non-default) selection gets a subtle blue border to show it's filtering. */
 .filter-select.filtering{border-color:var(--vb-hi-b);}
-#search-box{padding:3px 10px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);flex:1 1 120px;min-width:80px;outline:none;}
+#search-box{padding:3px 10px;border-radius:2px;font-size:14px;border:1px solid var(--bord);background:var(--paper);font-family:'DM Mono',monospace;color:var(--ink);flex:1 1 150px;min-width:90px;outline:none;}
 #search-box:focus{border-color:var(--ink);}
 /* Clear button turns blue whenever a search or any dropdown is narrowing the list. */
 #clear-btn.active{background:var(--vb-hi) !important;border-color:var(--vb-hi-b) !important;color:#fff !important;}
@@ -75,7 +75,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 
 #content{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 18px 18px;background:#fff !important;}
 
-.inv-table{width:100%;border-collapse:collapse;font-size:14px;background:#fff;}
+.inv-table{width:100%;border-collapse:collapse;font-size:14px;background:#fff;table-layout:fixed;}
 .inv-table th{text-align:left;padding:6px 8px;font-weight:400;font-size:14px;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);border-bottom:1px solid var(--bord);position:sticky;top:0;background:var(--paper);z-index:1;cursor:pointer;user-select:none;white-space:nowrap;box-shadow:0 1px 0 var(--bord);}
 .inv-table th:hover{color:var(--ink);}
 .inv-table th.sort-asc::after{content:' ▲';font-size:12px;}
@@ -90,29 +90,34 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
    swallows a td border-left. */
 .inv-table tr.policy-bar td:first-child{position:relative;}
 .inv-table tr.policy-bar td:first-child::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;}
+.inv-table tr.policy-bar-no td:first-child::before{background:var(--mut);}
 .inv-table tr.policy-bar-ask td:first-child::before{background:var(--yellow);}
 .inv-table tr.policy-bar-yes td:first-child::before{background:var(--ok);}
 
 .item-name a{color:var(--ink);text-decoration:none;border-bottom:1px solid var(--bord);}
 .item-name a:hover{border-bottom-color:var(--ink);}
-.item-name,.loc-main{line-height:1.4;}
-.item-sub{color:var(--mut);font-size:12px;margin-top:2px;line-height:1.4;}
+.item-name,.loc-main{line-height:1.4;min-height:28px;display:flex;align-items:center;}
+.item-name{overflow:hidden;}
+.item-name > span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.loc-main{overflow:hidden;}
+.loc-main > span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.item-sub{color:var(--mut);font-size:12px;margin-top:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* SDS link under the stock number in the list: small + red, like the other sub-text. The
    stock number above it carries a 1px transparent border (for the editable focus state),
    adding ~2px of height the Name/Location first lines don't have — so this sub-line uses 0
    top margin to line up with .item-sub / .loc-sub in the neighbouring columns. */
 /* SDS column: a square red icon button mirroring the modal's SDS button, top-aligned so it
    lines up with the Status button on the same row. */
-.sds-cell{vertical-align:middle;text-align:center;}
-.status-cell{vertical-align:middle;}
-.stock-cell-td{vertical-align:middle;}
+.sds-cell{vertical-align:top;text-align:center;}
+.status-cell{vertical-align:top;}
+.stock-cell-td{vertical-align:top;}
 .sds-cell-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:1px solid var(--danger);border-radius:2px;background:#e03030;color:#fff;cursor:pointer;}
 .sds-cell-btn:hover{background:var(--danger);}
 .sds-cell-btn svg{width:18px;height:18px;display:block;}
-.loc-sub{color:var(--mut);font-size:12px;margin-top:2px;line-height:1.4;}
-.borrower-sub{color:var(--mut);font-size:12px;margin-top:3px;font-style:italic;}
+.loc-sub{color:var(--mut);font-size:12px;margin-top:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.borrower-sub{color:var(--mut);font-size:12px;margin-top:2px;line-height:1.4;}
 
-.status-btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:120px;height:28px;text-align:center;padding:0 7px;border-radius:2px;font-size:14px;line-height:1.4;cursor:pointer;font-family:'DM Mono',monospace;border:1px solid var(--bord);background:var(--paper);color:var(--ink);white-space:nowrap;letter-spacing:.03em;}
+.status-btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:100px;height:28px;text-align:center;padding:0 7px;border-radius:2px;font-size:14px;line-height:1.4;cursor:pointer;font-family:'DM Mono',monospace;border:1px solid var(--bord);background:var(--paper);color:var(--ink);white-space:nowrap;letter-spacing:.03em;}
 .status-btn.in-stock    {background:var(--paper);border-color:var(--bord);color:var(--ink);}
 .status-btn.order-now,
 .status-btn.requested   {background:var(--warn);border-color:var(--warn-b);color:#fff;}
@@ -120,10 +125,11 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .status-btn.arrived     {background:var(--warn);border-color:var(--warn-b);color:#fff;}
 .status-btn.shared      {background:var(--ok);border-color:var(--ok-b);color:#fff;}
 .status-btn.out-of-stock{background:var(--danger);border-color:#800000;color:#fff;}
-.status-btn.bring-back  {background:#e60000;border-color:#b30000;color:#fff;}
+.status-btn.recall  {background:#e60000;border-color:#b30000;color:#fff;}
 .status-btn.archived    {background:#b0a898;border-color:#888078;color:#fff;}
 
-.stock-cell{display:flex;align-items:center;gap:4px;white-space:nowrap;line-height:1.4;}
+.stock-cell{display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.4;}
+.narrow-sub{display:none;}
 .stock-num{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:28px;height:28px;text-align:center;font-family:'DM Mono',monospace;font-size:14px;line-height:1.4;font-weight:400;border:1px solid transparent;border-radius:2px;padding:0 4px;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .stock-num:focus{border-color:var(--bord);outline:none;}
 .stock-num.readonly{cursor:not-allowed;}
@@ -388,6 +394,11 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
   .grid-row{gap:0;margin-bottom:0;}
   .grid-col-labels{gap:0;margin-left:20px;}
   .grid-row-lbl{width:16px;padding-right:4px;}
+  /* Narrow screens: hide the Location column and surface its info under the item name
+     instead. The SDS column stays visible. */
+  .loc-col{display:none;}
+  .wide-sub{display:none;}
+  .narrow-sub{display:block;}
 }
 </style>
 </head>
@@ -424,11 +435,11 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 <div id="content">
   <table class="inv-table" id="inv-table">
     <thead><tr>
-      <th class="no-sort" style="width:120px;">Status</th>
-      <th onclick="sortBy('Stock')" data-col="Stock" style="width:90px;">Stock</th>
-      <th class="no-sort">Name</th>
-      <th class="no-sort">Location</th>
-      <th class="no-sort" style="width:44px;">SDS</th>
+      <th class="no-sort" style="width:116px;min-width:116px;max-width:116px;">Status</th>
+      <th onclick="sortBy('Stock')" data-col="Stock" style="width:56px;min-width:56px;max-width:56px;">Stock</th>
+      <th class="no-sort" style="width:auto;">Name</th>
+      <th class="no-sort loc-col" style="width:30%;">Location</th>
+      <th class="no-sort" style="width:44px;min-width:44px;">SDS</th>
     </tr></thead>
     <tbody id="inv-body"></tbody>
   </table>
@@ -468,7 +479,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
     <!-- In-app manual -->
     <div class="setup-manual">
       <div class="man-sec man-sec-data">
-      <h3>1. Data</h3>
       <p><strong>THE PROGRAM IS SIMPLE - EVERYTHING SAVES AUTOMATICALLY</strong></p>
       <ul>
         <li>Click <span class="chip chip-green">New</span> and enter information to create an item.</li>
@@ -488,7 +498,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
       </div>
 
       <div class="man-sec man-sec-location">
-      <h3>2. Location</h3>
       <p><strong>LOCATION ALLOWS YOU TO SEARCH FOR ITEMS BY WHERE THEY ARE</strong></p>
       <p class="man-note" style="margin:0 0 8px;">(DSC 122 <span class="arr"><svg viewBox="0 0 18 12" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="11" y2="6" stroke-width="1.6"/><polygon points="10.2,1.5 18,6 10.2,10.5" stroke="none"/></svg></span> Fridge <span class="arr"><svg viewBox="0 0 18 12" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="11" y2="6" stroke-width="1.6"/><polygon points="10.2,1.5 18,6 10.2,10.5" stroke="none"/></svg></span> Shelf 2 <span class="arr"><svg viewBox="0 0 18 12" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="6" x2="11" y2="6" stroke-width="1.6"/><polygon points="10.2,1.5 18,6 10.2,10.5" stroke="none"/></svg></span> PCR Box).</p>
       <ul>
@@ -500,7 +509,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
       </div>
 
       <div class="man-sec man-sec-ordering">
-      <h3>3. Ordering</h3>
       <p><strong>ORDERING TRACKS ORDERS AND ARRIVALS SO YOU CAN RECEIVE ITEMS</strong></p>
       <p><strong>How to Order an Item:</strong></p>
       <ol>
@@ -514,7 +522,6 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
       </div>
 
       <div class="man-sec man-sec-sharing">
-      <h3>4. Sharing</h3>
       <p><strong>SHARING TRACKS ITEMS SO YOU CAN SEE WHO BORROWED WHAT AND WHEN</strong></p>
       <p><strong>Set a Policy to Control Your Items:</strong></p>
       <ul class="man-policy">
@@ -523,7 +530,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
         <li><span class="k"><span class="chip chip-green">Yes</span></span><span>Tracks name and date so you know where items are.</span></li>
       </ul>
       <ul>
-        <li>Click <span class="chip chip-red">Bring Back</span> to recall a shared item.</li>
+        <li>Click <span class="chip chip-red">Recall</span> to recall a shared item.</li>
         <li>Click <span class="chip chip-green">Accept</span> or <span class="chip chip-red">Deny</span> to control restricted items.</li>
         <li>Click <span class="chip chip-green">Resolve</span> to clear outstanding debts.</li>
       </ul>
@@ -612,7 +619,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
           <div class="form-field"><label>Stock</label><input id="f-stock" type="number" value="1" min="0" oninput="autoSaveStockField()"></div>
           <div class="form-field"><label>Threshold</label><input id="f-threshold" type="number" value="1" min="0" onblur="autoSaveField()"></div>
           <div class="form-field"><label>Price</label><input id="f-price" type="text" placeholder="$0.00" onblur="autoSaveField()"></div>
-          <div class="form-field"><label>Date received</label><input id="f-date" type="date" onblur="autoSaveField()"></div>
+          <div class="form-field"><label>Date</label><input id="f-date" type="date" onblur="autoSaveField()"></div>
         </div>
       </div>
 
@@ -665,7 +672,7 @@ const LOCKED_ST       = new Set(['on order','arrived','archived']);
 const COMBO_NEW       = '\u2014 New \u2014';
 // The six transactional loan states (single source of truth). 'Borrowed' is the state a
 // borrowed COPY shows where the host shows 'Shared'. Used to recognise a loan state on read.
-const LOAN_STATE_SET = new Set(['Shared','Borrowed','Requested','IOU','Bring Back','Denied']);
+const LOAN_STATE_SET = new Set(['Shared','Borrowed','Requested','IOU','Recall','Denied']);
 
 // Lab list — each entry is both a Google Sheet tab name and the PI confirmation code
 // for that lab. The list is ordered alphabetically (matching the dropdown).
@@ -724,7 +731,7 @@ function esc(s) {
 function loc1WithRoom(item) {
   const l1 = esc(item.Location1 || '');
   const rm = (item.Room || '').trim();
-  return rm ? `${l1} (${esc(rm)})` : l1;
+  return rm ? `${l1} <span style="white-space:nowrap;">(${esc(rm)})</span>` : l1;
 }
 
 // ── API ────────────────────────────────────────────────────────────────
@@ -800,7 +807,7 @@ function isBorrowedCopy(row) {
 }
 
 // A borrowed copy is a read-only mirror living in the borrowing lab's tab. Its loan
-// state lives in the Sharing column (Requested → Borrowed → Bring Back → IOU), driven by
+// state lives in the Sharing column (Requested → Borrowed → Recall → IOU), driven by
 // host actions via syncCopy. Its Status column starts as a normal stock value and is
 // flipped to 'Deleted' on resolution (which hides it; the _deleted flag derives from
 // Status on read). Copy-detection is by Vendor (= host lab name ∈ LAB_NAMES), never by
@@ -1103,7 +1110,7 @@ function applyStockChange(item, newStock) {
 // ── Status / Sharing ───────────────────────────────────────────────────
 function stockDerivedStatus(item) {
   const s = getStock(item), t = getThreshold(item);
-  if (s <= 0) return 'Out of Stock';
+  if (s <= 0) return 'No Stock';
   if (s <= t) return 'Low Stock';
   return 'In Stock';
 }
@@ -1135,8 +1142,8 @@ function getSharingPolicy(item) {
 
 const STATUS_CSS = {
   'In Stock':'in-stock','Low Stock':'order-now','On Order':'on-order',
-  'Arrived':'arrived','Out of Stock':'out-of-stock',
-  'Shared':'shared','Borrowed':'shared','Requested':'requested','IOU':'bring-back','Bring Back':'bring-back','Denied':'bring-back','Archived':'archived',
+  'Arrived':'arrived','No Stock':'out-of-stock',
+  'Shared':'shared','Borrowed':'shared','Requested':'requested','IOU':'recall','Recall':'recall','Denied':'recall','Archived':'archived',
 };
 function statusBtnClass(s) { return STATUS_CSS[s] || 'in-stock'; }
 
@@ -1420,19 +1427,19 @@ function refreshFilterIndicators() {
 //   1 Sharing:  Requested, then Shared
 //   2 Low Stock
 //   3 In Stock
-//   4 Out of Stock
+//   4 No Stock
 //   5 Archived (and Deleted, though Deleted is filtered out upstream)
 function statusRank(item) {
   const sh = getSharingState(item);
   if (sh === 'Denied')     return 0.8;   // borrower must acknowledge — very top
-  if (sh === 'Bring Back') return 0.9;   // top of the Sharing cluster — needs attention
+  if (sh === 'Recall') return 0.9;   // top of the Sharing cluster — needs attention
   if (sh === 'Requested')  return 1.0;
   if (sh === 'Shared')     return 1.1;
   if (sh === 'IOU')        return 1.2;
   const st = getEffectiveStatus(item);
   switch (st) {
     case 'Denied':       return 0.8;   // borrowed copy: must acknowledge — very top
-    case 'Bring Back':   return 0.9;   // borrowed copy: recall — needs attention
+    case 'Recall':   return 0.9;   // borrowed copy: recall — needs attention
     case 'Requested':    return 1.0;   // borrowed copy: pending request
     case 'Borrowed':     return 1.1;   // borrowed copy: active loan
     case 'IOU':          return 1.2;   // borrowed copy: owed back
@@ -1440,7 +1447,7 @@ function statusRank(item) {
     case 'On Order':     return 0.1;
     case 'Low Stock':    return 2;
     case 'In Stock':     return 3;
-    case 'Out of Stock': return 4;
+    case 'No Stock': return 4;
     case 'Archived':     return 5;
     case 'Deleted':      return 6;
     default:             return 3;   // unknown → treat as In Stock
@@ -1586,11 +1593,17 @@ function sdsCellHtml(item) {
 // (Location 1 + room, with a Location 2 / Box sub-line) are identical across both renderers.
 function nameCellHtml(item) {
   const sub = nameSubText(item);
-  return `<div class="item-name">${nameLinkHtml(item)}</div>${sub ? `<div class="item-sub">${esc(sub)}</div>` : ''}`;
+  // On narrow screens the Location column is hidden; surface the location under the name
+  // instead (Location 1, Location 2, Box — no room). Both subs are rendered; CSS shows
+  // exactly one depending on viewport width.
+  const locSub = [item.Location1, item.Location2, item.Box1].filter(Boolean).join(', ');
+  return `<div class="item-name"><span>${nameLinkHtml(item)}</span></div>`
+    + (sub ? `<div class="item-sub wide-sub">${esc(sub)}</div>` : '')
+    + (locSub ? `<div class="item-sub narrow-sub">${esc(locSub)}</div>` : '');
 }
 function locCellHtml(item) {
   const sub = locSubText(item);
-  return `<div class="loc-main">${loc1WithRoom(item)}</div>${sub ? `<div class="loc-sub">${esc(sub)}</div>` : ''}`;
+  return `<div class="loc-main"><span>${loc1WithRoom(item)}</span></div>${sub ? `<div class="loc-sub">${esc(sub)}</div>` : ''}`;
 }
 
 // A row in everywhere mode. Active-lab rows are editable (open modal); foreign rows are
@@ -1606,10 +1619,10 @@ function makeCrossLabRow(item, lab) {
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td class="status-cell" style="white-space:nowrap;"><button class="status-btn ${statusBtnClass(btnSt)}" onclick="${onclick}">${btnSt}</button></td>
+    <td class="status-cell"><button class="status-btn ${statusBtnClass(btnSt)}" onclick="${onclick}">${btnSt}</button></td>
     <td class="stock-cell-td"><div class="stock-cell"><span class="stock-num ${stockCls} readonly">${stock}</span></div></td>
     <td>${nameCellHtml(item)}</td>
-    <td>${locCellHtml(item)}</td>
+    <td class="loc-col">${locCellHtml(item)}</td>
     <td class="sds-cell">${sdsCellHtml(item)}</td>`;
   return tr;
 }
@@ -1621,7 +1634,7 @@ const SECTIONS = [
   ['Shared',       i => LOAN_STATE_SET.has(displayStatus(i))],
   ['Arrived',      i => getEffectiveStatus(i) === 'Arrived'],
   ['Ordered',      i => getEffectiveStatus(i) === 'On Order'],
-  ['Out of Stock', i => getEffectiveStatus(i) === 'Out of Stock'],
+  ['No Stock', i => getEffectiveStatus(i) === 'No Stock'],
   ['Low Stock',    i => getEffectiveStatus(i) === 'Low Stock'],
   ['In Stock',     i => getEffectiveStatus(i) === 'In Stock'],
   ['Archived',     i => getEffectiveStatus(i) === 'Archived'],
@@ -1686,15 +1699,20 @@ function makeItemRow(item) {
 
   const tr = document.createElement('tr');
   const pol = (item.Policy||'No').trim().toLowerCase();
-  if (pol === 'ask' || pol === 'yes') tr.classList.add('policy-bar', 'policy-bar-' + pol);
+  if (pol === 'no' || pol === 'ask' || pol === 'yes') tr.classList.add('policy-bar', 'policy-bar-' + pol);
+  // On Order / Arrived show a labelled date ("Ordered · DATE" / "Arrived · DATE"), taken
+  // from the Date (Received) column and scrubbed to YYYY-MM-DD.
+  const dateSub = (btnSt === 'On Order' || btnSt === 'Arrived') && item.Received
+    ? `<div class="borrower-sub">${esc(String(item.Received).slice(0,10))}</div>` : '';
   tr.innerHTML = `
-    <td class="status-cell" style="white-space:nowrap;">
+    <td class="status-cell">
       <button class="status-btn ${statusBtnClass(btnSt)}" onclick="editItem(${item._id},${isShared})">${btnSt}</button>
-      ${showBorr ? `<div class="borrower-sub">${esc(item.Borrower)}${item.Borrowed?' · '+esc(item.Borrowed.slice(0,10)):''}</div>` : ''}
+      ${dateSub}
+      ${showBorr ? `<div class="borrower-sub">${esc(item.Borrower)}</div>` : ''}
     </td>
     <td class="stock-cell-td"><div class="stock-cell">${stockCell}</div></td>
     <td>${nameCellHtml(item)}</td>
-    <td>${locCellHtml(item)}</td>
+    <td class="loc-col">${locCellHtml(item)}</td>
     <td class="sds-cell">${sdsCellHtml(item)}</td>`;
   return tr;
 }
@@ -1879,7 +1897,7 @@ function configureActionForStatus(item, fromShared) {
     case 'Archived':
       configureOrderButton({ label:'Restore', cls:'btn-ok',    handler:restoreItem });
       break;
-    default: // In Stock, Low Stock, Out of Stock
+    default: // In Stock, Low Stock, No Stock
       configureOrderButton({ label:'Order',   cls:'btn-order', handler:orderItem });
   }
 
@@ -2969,8 +2987,8 @@ function commitAndStayOpen(mutator) {
 
 // With on-blur auto-save, the form's field values are already committed to the item.
 // These workflow handlers only need to update the lifecycle Status.
-function orderItem()      { commitAndStayOpen(item => updateStatus(item, 'On Order')); }
-function confirmArrived() { commitAndStayOpen(item => updateStatus(item, 'Arrived')); }
+function orderItem()      { commitAndStayOpen(item => { item.Received = todayLocal(); updateStatus(item, 'On Order'); }); }
+function confirmArrived() { commitAndStayOpen(item => { item.Received = todayLocal(); updateStatus(item, 'Arrived'); }); }
 function receiveItem()    { commitAndStayOpen(item => updateStatus(item, stockDerivedStatus(item))); }
 function restoreItem()    { commitAndStayOpen(item => updateStatus(item, stockDerivedStatus(item))); }
 
@@ -3041,9 +3059,9 @@ function renderSharingPanel(item, overridePolicy) {
   const own      = isOwnLab() && !isCopy;
 
   // Title accent colour (the standalone sharing card is gone; the accent now lives on the
-  // status title line). IOU / Bring Back / Denied are danger; Yes = ok; Ask = warn.
+  // status title line). IOU / Recall / Denied are danger; Yes = ok; Ask = warn.
   let accent = '';
-  if (sharing === 'IOU' || sharing === 'Bring Back' || sharing === 'Denied') accent = 'danger';
+  if (sharing === 'IOU' || sharing === 'Recall' || sharing === 'Denied') accent = 'danger';
   else if (policy === 'Yes') accent = 'ok';
   else if (policy === 'Ask') accent = 'warn';
 
@@ -3071,7 +3089,7 @@ function renderSharingPanel(item, overridePolicy) {
   let titleLabel;
   if (sharing === 'IOU' && borrower)             titleLabel = 'IOU';
   else if (sharing === 'Denied' && borrower)     titleLabel = 'Denied';
-  else if (sharing === 'Bring Back' && borrower) titleLabel = 'Bring Back';
+  else if (sharing === 'Recall' && borrower) titleLabel = 'Recall';
   else if (sharing === 'Requested' && borrower)  titleLabel = 'Request';
   else if (sharing === 'Shared' && borrower)     titleLabel = 'Shared';
   else if (policy === 'Yes')                     titleLabel = 'Sharing — Yes';
@@ -3096,7 +3114,7 @@ function renderSharingPanel(item, overridePolicy) {
     body = own
       ? `<div class="sharing-row">${note}<button class="btn btn-ok btn-sm" onclick="resolveSharing()">Resolved</button></div>`
       : `<div class="sharing-row"><span class="share-note">Item owed back to ${ownerLab ? esc(ownerLab) : 'the owning lab'}.</span></div>`;
-  } else if (sharing === 'Bring Back' && borrower) {
+  } else if (sharing === 'Recall' && borrower) {
     body = own
       ? `<div class="sharing-row">${note}<button class="btn btn-ok btn-sm" onclick="resolveSharing()">Resolved</button></div>`
       : `<div class="sharing-row">${note}
@@ -3112,7 +3130,7 @@ function renderSharingPanel(item, overridePolicy) {
       </div>`;
   } else if (sharing === 'Shared' && borrower) {
     body = own
-      ? `<div class="sharing-row">${note}<button class="btn btn-danger btn-sm" onclick="bringBackItem()">Bring Back</button></div>`
+      ? `<div class="sharing-row">${note}<button class="btn btn-danger btn-sm" onclick="recallItem()">Recall</button></div>`
       : `<div class="sharing-row">${note}
           <button class="btn btn-ok btn-sm" onclick="returnItem()">Return</button>
           <button class="btn btn-danger btn-sm" onclick="iouItem()">IOU</button>
@@ -3224,7 +3242,7 @@ function sharingPeers(item) {
 // ── Sharing transition primitives ─────────────────────────────────────
 // Both ends of an active loan transition together. The two patterns:
 //   loanStateChange — the loan stays active; both host Sharing and copy Sharing get the
-//                     same new value (IOU, Bring Back).
+//                     same new value (IOU, Recall).
 //   endLoan         — the loan ends; host goes idle (Sharing/Borrower/Borrowed cleared),
 //                     copy is soft-deleted (Status='Deleted').
 // Each primitive works from EITHER side: when invoked from a borrowed copy it drives the
@@ -3265,14 +3283,14 @@ function endLoan(item) {
   }
 }
 
-// Return: borrower ends an active loan (Shared or Bring Back). Host → idle, copy → Deleted.
+// Return: borrower ends an active loan (Shared or Recall). Host → idle, copy → Deleted.
 function returnItem()    { const it = modalFind(editIdx); if (it) endLoan(it); }
-// Resolve: host force-ends IOU / Bring Back. Same end-state as Return.
+// Resolve: host force-ends IOU / Recall. Same end-state as Return.
 function resolveSharing(){ const it = modalFind(editIdx); if (it) endLoan(it); }
 // IOU: borrower flags they consumed/owe the item. Both sides → Sharing='IOU'.
 function iouItem()       { const it = modalFind(editIdx); if (it) { loanStateChange(it, 'IOU');        refreshOpenModal(it); } }
-// Bring Back: host recalls a Shared item. Both sides → Sharing='Bring Back'.
-function bringBackItem() { const it = modalFind(editIdx); if (it) { loanStateChange(it, 'Bring Back'); refreshOpenModal(it); } }
+// Recall: host recalls a Shared item. Both sides → Sharing='Recall'.
+function recallItem() { const it = modalFind(editIdx); if (it) { loanStateChange(it, 'Recall'); refreshOpenModal(it); } }
 
 // Redraw the open modal in place for `item` (form fields, action buttons, location panel)
 // and refresh the underlying list. Used after an in-modal loan-state change.
