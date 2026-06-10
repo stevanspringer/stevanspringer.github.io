@@ -11,7 +11,7 @@
 :root{
   color-scheme: light;
   --paper:#fff;--bord:#ccc8c0;--ink:#1a1714;--mut:#888078;
-  --vb-lo:#bdd9f5;--vb-lo-b:#8bbfe8;--vb-hi:#2c7bb6;--vb-hi-b:#1d5a8a;
+  --vb-lo-b:#8bbfe8;--vb-hi:#2c7bb6;--vb-hi-b:#1d5a8a;
   --ok:#35974a;--ok-b:#1e6b33;
   --warn:#f07000;--warn-b:#c05000;
   --danger:#b00000;
@@ -107,16 +107,29 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
    top margin to line up with .item-sub / .loc-sub in the neighbouring columns. */
 /* SDS column: a square red icon button mirroring the modal's SDS button, top-aligned so it
    lines up with the Status button on the same row. */
-.sds-cell{vertical-align:top;text-align:center;}
+/* WEB + SDS columns: square icon buttons (blue = web link, red = SDS), top-aligned so they
+   line up with the Status button on the same row. Both cells are centred and the columns are
+   sized (37px) so two centred 30px icons land ~7px apart — matching the toolbar's icon-button
+   gap — with the spacing distributed symmetrically across both columns rather than shoved to
+   one side. Horizontal padding is trimmed to 3px so the 30px icon clears the cell box; the
+   `.inv-table td` prefix raises specificity above the table's default 8px cell padding. */
+.inv-table td.web-cell,
+.inv-table td.sds-cell{vertical-align:top;text-align:center;padding-left:3px;padding-right:3px;}
 .status-cell{vertical-align:top;}
 .stock-cell-td{vertical-align:top;}
-.sds-cell-btn{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:1px solid var(--danger);border-radius:2px;background:#e03030;color:#fff;cursor:pointer;}
+.sds-cell-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:1px solid var(--danger);border-radius:2px;background:#e03030;color:#fff;cursor:pointer;}
 .sds-cell-btn:hover{background:var(--danger);}
 .sds-cell-btn svg{width:18px;height:18px;display:block;}
+.web-cell-btn{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border:1px solid var(--vb-hi-b);border-radius:2px;background:var(--vb-hi);color:#fff;cursor:pointer;}
+.web-cell-btn:hover{background:var(--vb-hi-b);}
+.web-cell-btn svg{width:18px;height:18px;display:block;}
+/* Status / Stock / Name / Location cells all open the edit modal on click (the whole row's
+   left side is the affordance — not just the status chip, which users found confusing). */
+.row-open{cursor:pointer;}
 .loc-sub{color:var(--mut);font-size:12px;margin-top:2px;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .borrower-sub{color:var(--mut);font-size:12px;margin-top:2px;line-height:1.4;}
 
-.status-btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:100px;height:28px;text-align:center;padding:0 7px;border-radius:2px;font-size:14px;line-height:1.4;cursor:pointer;font-family:'DM Mono',monospace;border:1px solid var(--bord);background:var(--paper);color:var(--ink);white-space:nowrap;letter-spacing:.03em;}
+.status-btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:100px;height:30px;text-align:center;padding:0 7px;border-radius:2px;font-size:14px;line-height:1.4;cursor:pointer;font-family:'DM Mono',monospace;border:1px solid var(--bord);background:var(--paper);color:var(--ink);white-space:nowrap;letter-spacing:.03em;}
 .status-btn.in-stock    {background:var(--paper);border-color:var(--bord);color:var(--ink);}
 .status-btn.order-now,
 .status-btn.requested   {background:var(--warn);border-color:var(--warn-b);color:#fff;}
@@ -129,9 +142,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 
 .stock-cell{display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap;line-height:1.4;}
 .narrow-sub{display:none;}
-.stock-num{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:28px;height:28px;text-align:center;font-family:'DM Mono',monospace;font-size:14px;line-height:1.4;font-weight:400;border:1px solid transparent;border-radius:2px;padding:0 4px;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
-.stock-num:focus{border-color:var(--bord);outline:none;}
-.stock-num.readonly{cursor:not-allowed;}
+.stock-num{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-width:28px;height:30px;text-align:center;font-family:'DM Mono',monospace;font-size:14px;line-height:1.4;font-weight:400;border:1px solid transparent;border-radius:2px;padding:0 4px;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
 .stock-ok    {color:var(--ok);}
 .stock-warn  {color:var(--warn);}
 .stock-danger{color:var(--danger);}
@@ -205,7 +216,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .link-btn:not(:disabled):hover{background:var(--vb-hi-b);}
 .sds-btn{background:#e03030;color:#fff;border-color:var(--danger);}
 .sds-btn:not(:disabled):hover{background:var(--danger);}
-.view-btn{flex:0 0 auto;width:28px;height:28px;padding:0!important;display:inline-flex;align-items:center;justify-content:center;}
+.view-btn{flex:0 0 auto;width:30px;height:30px;padding:0!important;display:inline-flex;align-items:center;justify-content:center;}
 .view-btn.is-active{background:var(--vb-hi)!important;color:#fff!important;border-color:var(--vb-hi-b)!important;}
 .view-btn:disabled{opacity:.35;cursor:not-allowed;}
 .view-btn svg{width:18px;height:18px;display:block;}
@@ -275,7 +286,7 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .loc-inner{display:flex;flex-direction:column;}
 
 /* Grid */
-.grid-outer{overflow-x:hidden;overflow-y:auto;margin-bottom:8px;--cell:28px;}
+.grid-outer{overflow-x:hidden;overflow-y:auto;margin-bottom:8px;--cell:32px;}
 .grid-col-labels{display:flex;margin-left:26px;gap:0;margin-bottom:0;}
 .grid-col-lbl{width:var(--cell);text-align:center;font-size:12px;color:var(--mut);}
 .grid-col-lbl + .grid-col-lbl{margin-left:-1px;}
@@ -341,9 +352,8 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
 .setup-box > .man-sub,.setup-manual .man-sub{font-size:12px;color:var(--mut);margin-bottom:18px;line-height:1.5;}
 .setup-box > .man-disclaimer,.setup-manual .man-disclaimer{font-style:italic;font-size:12px;line-height:1.55;color:var(--ink);margin:0 -28px 20px;padding:13px 28px;background:#eaf3fb;border-left:3px solid var(--vb-hi);}
 .man-disclaimer-top{margin:0 0 20px 0!important;background:var(--paper)!important;border-left:none!important;padding:0!important;font-size:12px!important;font-style:italic!important;line-height:1.5;}
-.setup-disc-row{display:flex;align-items:flex-start;gap:16px;}
+.setup-disc-row{display:flex;align-items:flex-start;gap:16px;margin-bottom:20px;}
 .setup-disc-row .man-disclaimer-top{flex:1 1 auto;margin:0!important;}
-.setup-disc-row{margin-bottom:20px;}
 .setup-backup-btn{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;width:72px;height:72px;background:var(--ok);color:#fff;border:1px solid var(--ok-b);border-radius:3px;cursor:pointer;font-family:'DM Mono',monospace;}
 .setup-backup-btn:hover{background:var(--ok-b);}
 .setup-backup-btn:disabled{background:var(--paper);border-color:var(--bord);color:var(--mut);opacity:.45;cursor:not-allowed;}
@@ -451,7 +461,8 @@ html, body{position:fixed;inset:0;overflow:hidden;overscroll-behavior:none;}
       <th onclick="sortBy('Stock')" data-col="Stock" style="width:56px;min-width:56px;max-width:56px;">Stock</th>
       <th class="no-sort" style="width:auto;">Name</th>
       <th class="no-sort loc-col" style="width:300px;min-width:300px;max-width:300px;">Location</th>
-      <th class="no-sort" style="width:44px;min-width:44px;">SDS</th>
+      <th class="no-sort" style="width:37px;min-width:37px;max-width:37px;text-align:center;padding-left:3px;padding-right:3px;">WEB</th>
+      <th class="no-sort" style="width:37px;min-width:37px;max-width:37px;text-align:center;padding-left:3px;padding-right:3px;">SDS</th>
     </tr></thead>
     <tbody id="inv-body"></tbody>
   </table>
@@ -969,7 +980,7 @@ async function loadData() {
     setRefreshingHint(true);
     paintedFromCache = true;
   } else {
-    $('inv-body').innerHTML = `<tr><td colspan="5" class="empty">Loading <strong>${esc(activeLab)}</strong>…</td></tr>`;
+    $('inv-body').innerHTML = `<tr><td colspan="6" class="empty">Loading <strong>${esc(activeLab)}</strong>…</td></tr>`;
   }
 
   // 2. Always revalidate against the server.
@@ -977,7 +988,7 @@ async function loadData() {
   if (si === null) {
     setRefreshingHint(false);
     if (!paintedFromCache) {
-      $('inv-body').innerHTML = '<tr><td colspan="5" style="padding:20px;color:var(--danger);">Could not load data.</td></tr>';
+      $('inv-body').innerHTML = '<tr><td colspan="6" style="padding:20px;color:var(--danger);">Could not load data.</td></tr>';
     }
     // If we painted from cache, keep showing it — the network call failed but stale data
     // is better than an error wipe.
@@ -1404,7 +1415,7 @@ function applyFilters() {
     // appear in the Archived section — only true deletions are removed from rendering.
     if ((item.Status||'').toLowerCase().trim() === 'deleted') return false;
     if (!q) return true;
-    const hay = [item.Name,item.Vendor,item.Notes,item.Location1,item.Location2,
+    const hay = [item.Name,item.ID,item.Vendor,item.Notes,item.Location1,item.Location2,
                  item.Box1,item.Room,item.GridXY,item.Catalog,item.CAS,item.Container,item.Safety,item.Borrower].join(' ').toLowerCase();
     return hay.includes(q);
   }).sort((a,b) => {
@@ -1525,7 +1536,7 @@ function applyEverywhere() {
 
   if (!q) {
     const pending = LAB_NAMES.filter(l => !Array.isArray(crossLabItems[l])).length;
-    tbody.innerHTML = '<tr><td colspan="5" class="empty">Enter a search term to look across all labs.'
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">Enter a search term to look across all labs.'
       + (pending ? ` <span style="color:var(--mut);">(${pending} lab${pending===1?'':'s'} still loading)</span>` : '')
       + '</td></tr>';
     $('section-counts').textContent = '';
@@ -1561,7 +1572,7 @@ function renderEverywhere(q) {
   labs.forEach(lab => {
     const matches = (crossLabItems[lab] || []).filter(item => {
       if (item._deleted) return false;
-      const hay = [item.Name,item.Vendor,item.Notes,item.Location1,item.Location2,
+      const hay = [item.Name,item.ID,item.Vendor,item.Notes,item.Location1,item.Location2,
                    item.Box1,item.Room,item.GridXY,item.Catalog,item.CAS,item.Container,item.Safety,item.Borrower]
                    .join(' ').toLowerCase();
       return hay.includes(q);
@@ -1571,13 +1582,13 @@ function renderEverywhere(q) {
     const isForeign = lab !== activeLab;
     const hdr = document.createElement('tr');
     hdr.className = 'lab-group-row' + (isForeign ? ' foreign' : '');
-    hdr.innerHTML = `<td colspan="5">${esc(lab)}${isForeign ? ' — read-only' : ''} · ${matches.length}</td>`;
+    hdr.innerHTML = `<td colspan="6">${esc(lab)}${isForeign ? ' — read-only' : ''} · ${matches.length}</td>`;
     tbody.appendChild(hdr);
     matches.forEach(item => { tbody.appendChild(makeCrossLabRow(item, lab)); total++; });
   });
 
   if (!total) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty">No items match “${esc(q)}” in any loaded lab.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">No items match “${esc(q)}” in any loaded lab.</td></tr>`;
   }
   $('section-counts').textContent = `${total} match${total===1?'':'es'} across ${labs.length} lab${labs.length===1?'':'s'} searched`;
 }
@@ -1588,8 +1599,8 @@ function stockClassFor(stock, thresh) {
   return stock <= 0 ? 'stock-danger' : stock <= thresh ? 'stock-warn' : 'stock-ok';
 }
 function nameLinkHtml(item) {
-  return item.URL && item.URL !== 'N/A'
-    ? `<a href="${esc(item.URL)}" target="_blank">${esc(item.Name)}</a>` : esc(item.Name);
+  // The web link now lives in its own WEB column (see webCellHtml); the name is plain text.
+  return esc(item.Name);
 }
 function nameSubText(item) {
   return [(item.Vendor||'').split('(')[0].trim(), item.Catalog, item.Size, item.Price].filter(Boolean).join(' · ');
@@ -1599,13 +1610,24 @@ function locSubText(item) {
 }
 // Warning-triangle icon for the SDS link (matches the SDS button in the modal).
 const SDS_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 1.8 20.5h20.4z"/><path d="M12 9.5v5"/><path d="M12 17.6h.01"/></svg>';
+// Chain-link icon for the WEB link (matches the URL button in the modal).
+const WEB_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5"/></svg>';
 
 // The SDS column cell: a square red icon button (like the modal's SDS button) when the item
 // has a valid http(s) link, otherwise empty. Aligned to the top so it lines up with the
 // Status button on the same row.
 function sdsCellHtml(item) {
-  return /^https?:\/\/\S+$/i.test((item.SDS||'').trim())
-    ? `<a class="sds-cell-btn" href="${esc(item.SDS.trim())}" target="_blank" rel="noopener" title="Open SDS in a new tab" onclick="event.stopPropagation()">${SDS_ICON}</a>` : '';
+  const sds = String(item.SDS || '').trim();
+  return /^https?:\/\/\S+$/i.test(sds)
+    ? `<a class="sds-cell-btn" href="${esc(sds)}" target="_blank" rel="noopener" title="Open SDS in a new tab" onclick="event.stopPropagation()">${SDS_ICON}</a>` : '';
+}
+// The WEB column cell: a square blue icon button (like the modal's URL button) when the item
+// has a valid http(s) link in URL, otherwise empty. This is where the item's web link now
+// lives — it used to wrap the item name in the Name column.
+function webCellHtml(item) {
+  const url = String(item.URL || '').trim();
+  return /^https?:\/\/\S+$/i.test(url)
+    ? `<a class="web-cell-btn" href="${esc(url)}" target="_blank" rel="noopener" title="Open web link in a new tab" onclick="event.stopPropagation()">${WEB_ICON}</a>` : '';
 }
 // The Name cell (linked name + vendor/catalog/size/price sub-line) and the Location cell
 // (Location 1 + room, with a Location 2 / Box sub-line) are identical across both renderers.
@@ -1624,8 +1646,9 @@ function locCellHtml(item) {
   return `<div class="loc-main"><span>${loc1WithRoom(item)}</span></div>${sub ? `<div class="loc-sub">${esc(sub)}</div>` : ''}`;
 }
 
-// A row in everywhere mode. Active-lab rows are editable (open modal); foreign rows are
-// read-only — clicking does nothing destructive, the status button is non-interactive.
+// A row in everywhere mode. Active-lab rows open the editable modal; foreign rows open a
+// read-only view instead. Clicking the Status / Stock / Name / Location cells opens the
+// relevant modal; the WEB / SDS link cells open their links and don't trigger it.
 function makeCrossLabRow(item, lab) {
   const isForeign = lab !== activeLab;
   const stock     = getStock(item);
@@ -1637,10 +1660,11 @@ function makeCrossLabRow(item, lab) {
 
   const tr = document.createElement('tr');
   tr.innerHTML = `
-    <td class="status-cell"><button class="status-btn ${statusBtnClass(btnSt)}" onclick="${onclick}">${btnSt}</button></td>
-    <td class="stock-cell-td"><div class="stock-cell"><span class="stock-num ${stockCls} readonly">${stock}</span></div></td>
-    <td>${nameCellHtml(item)}</td>
-    <td class="loc-col">${locCellHtml(item)}</td>
+    <td class="status-cell row-open" onclick="${onclick}"><button class="status-btn ${statusBtnClass(btnSt)}" tabindex="-1">${btnSt}</button></td>
+    <td class="stock-cell-td row-open" onclick="${onclick}"><div class="stock-cell"><span class="stock-num ${stockCls} readonly">${stock}</span></div></td>
+    <td class="row-open" onclick="${onclick}">${nameCellHtml(item)}</td>
+    <td class="loc-col row-open" onclick="${onclick}">${locCellHtml(item)}</td>
+    <td class="web-cell">${webCellHtml(item)}</td>
     <td class="sds-cell">${sdsCellHtml(item)}</td>`;
   return tr;
 }
@@ -1684,13 +1708,13 @@ function renderInventory() {
   // No lab (or URL) configured yet — prompt the user toward Setup, in the centre of the
   // list where the empty-state message normally lives.
   if (!API_URL || !activeLab) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty">' +
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">' +
       'Click the <button class="btn btn-primary inline-gear-btn" onclick="openSetup()" title="Setup" aria-label="Setup"><svg viewBox="0 0 16 16" fill="currentColor"><path d="M9.405 1.05c-.413-1.4-2.397-1.4-2.81 0l-.1.34a1.464 1.464 0 0 1-2.105.872l-.31-.17c-1.283-.698-2.686.705-1.987 1.987l.169.311c.446.82.023 1.841-.872 2.105l-.34.1c-1.4.413-1.4 2.397 0 2.81l.34.1a1.464 1.464 0 0 1 .872 2.105l-.17.31c-.698 1.283.705 2.686 1.987 1.987l.311-.169a1.464 1.464 0 0 1 2.105.872l.1.34c.413 1.4 2.397 1.4 2.81 0l.1-.34a1.464 1.464 0 0 1 2.105-.872l.31.17c1.283.698 2.686-.705 1.987-1.987l-.169-.311a1.464 1.464 0 0 1 .872-2.105l.34-.1c1.4-.413 1.4-2.397 0-2.81l-.34-.1a1.464 1.464 0 0 1-.872-2.105l.17-.31c.698-1.283-.705-2.686-1.987-1.987l-.311.169a1.464 1.464 0 0 1-2.105-.872zM8 10.93a2.929 2.929 0 1 1 0-5.86 2.929 2.929 0 0 1 0 5.858z"/></svg></button> button to set your home lab.' +
       '</td></tr>';
     return;
   }
   if (!filtered.length) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty">No items match your filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">No items match your filters.</td></tr>';
     return;
   }
   filtered.forEach(item => tbody.appendChild(makeItemRow(item)));
@@ -1708,41 +1732,32 @@ function makeItemRow(item) {
   // loan record (state in Status, no Sharing), so it always shows its borrower line.
   const showBorr = (isShared || isBorrowedCopy(item)) && item.Borrower;
 
-  // Boxed items edit stock via the grid (read-only here); loose items edit inline.
-  const stockCell = item.Box1
-    ? `<span class="stock-num ${stockCls} readonly" title="Boxed item — edit via grid">${stock}</span>`
-    : `<span class="stock-num ${stockCls}" contenteditable="true"
-         onblur="setStockDirect(${item._id},this.textContent)"
-         onkeydown="if(event.key==='Enter'){event.preventDefault();this.blur();}">${stock}</span>`;
+  // Stock is display-only in the list; both boxed and loose items are edited in the modal
+  // (boxed via the grid). Clicking the cell opens that modal.
+  const stockCell = `<span class="stock-num ${stockCls} readonly">${stock}</span>`;
 
   const tr = document.createElement('tr');
   const pol = (item.Policy||'No').trim().toLowerCase();
   if (pol === 'no' || pol === 'ask' || pol === 'yes') tr.classList.add('policy-bar', 'policy-bar-' + pol);
-  // On Order / Arrived show a labelled date ("Ordered · DATE" / "Arrived · DATE"), taken
-  // from the Date (Received) column and scrubbed to YYYY-MM-DD.
+  // On Order / Arrived show the date (from the Date/Received column, scrubbed to YYYY-MM-DD)
+  // below the status chip.
   const dateSub = (btnSt === 'On Order' || btnSt === 'Arrived') && item.Received
     ? `<div class="borrower-sub">${esc(String(item.Received).slice(0,10))}</div>` : '';
+  // The whole left side of the row (Status / Stock / Name / Location) opens the edit modal —
+  // not just the status chip, which users found confusing.
+  const open = `editItem(${item._id},${isShared})`;
   tr.innerHTML = `
-    <td class="status-cell">
-      <button class="status-btn ${statusBtnClass(btnSt)}" onclick="editItem(${item._id},${isShared})">${btnSt}</button>
+    <td class="status-cell row-open" onclick="${open}">
+      <button class="status-btn ${statusBtnClass(btnSt)}" tabindex="-1">${btnSt}</button>
       ${dateSub}
       ${showBorr ? `<div class="borrower-sub">${esc(item.Borrower)}</div>` : ''}
     </td>
-    <td class="stock-cell-td"><div class="stock-cell">${stockCell}</div></td>
-    <td>${nameCellHtml(item)}</td>
-    <td class="loc-col">${locCellHtml(item)}</td>
+    <td class="stock-cell-td row-open" onclick="${open}"><div class="stock-cell">${stockCell}</div></td>
+    <td class="row-open" onclick="${open}">${nameCellHtml(item)}</td>
+    <td class="loc-col row-open" onclick="${open}">${locCellHtml(item)}</td>
+    <td class="web-cell">${webCellHtml(item)}</td>
     <td class="sds-cell">${sdsCellHtml(item)}</td>`;
   return tr;
-}
-
-function setStockDirect(id, val) {
-  const item = items.find(i => i._id === id);
-  if (!item || item.Box1) { applyFilters(); return; }
-  const n = parseInt(String(val).replace(/\D/g,''), 10);
-  if (isNaN(n)) { applyFilters(); return; }
-  applyStockChange(item, n);
-  persistWithStockStatus(item);
-  applyFilters();
 }
 
 // ── Modal: open Add ────────────────────────────────────────────────────
@@ -2137,11 +2152,11 @@ function autoSaveStockField() {
 }
 
 // Commit the new item being entered. Returns true if created, false if blocked (no Name).
-// Name is required: if it's missing we alert and leave the modal open so the user can either
-// enter a name or Cancel — this prevents both data loss and nameless junk rows.
+// Name is required: if it's missing we alert and leave the modal open so the user can enter
+// a name (or discard by closing the modal) — this prevents both data loss and nameless rows.
 function createItem() {
   const name = fv('f-name');
-  if (!name) { alert('Name is required — enter a name, or click Cancel to discard.'); $('f-name').focus(); return false; }
+  if (!name) { alert('Name is required — enter a name to keep this item.'); $('f-name').focus(); return false; }
   const f = readForm();
   const stock = fnOr('f-stock', 1);
   const newItem = makeNewItem(f, stock);
