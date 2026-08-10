@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Library Explorer</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bord: #ccc8c0;
+    --ink:  #1a1714;
+    --mut:  #888078;
+    --paper:#ffffff;
+    --font: 'DM Mono', monospace;
+    --fs: 14px;
+
+    --vb-lo:      #9dd8c8;
+    --vb-lo-bord: #6bbfad;
+    --vb-lo-text: #1a1714;
+    --vb-hi:      #2c7bb6;
+    --vb-hi-bord: #1d5a8a;
+    --vb-hi-text: #ffffff;
+
+    --warn: #e07800;
+    --warn-bord: #b25e00;
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: var(--fs);
+    font-weight: 400;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Row 1 — Header ── */
+  #hdr {
+    display: flex; align-items: center; padding: 0 20px; height: 52px;
+    background: var(--paper); border-bottom: 1px solid var(--bord);
+    flex-shrink: 0; gap: 10px;
+  }
+  .logo { font-size: var(--fs); font-weight: 400; letter-spacing: .08em; text-transform: uppercase; color: var(--ink); }
+  .hdr-gap { flex: 1; }
+
+  .abtn {
+    font-family: var(--font); font-size: var(--fs); font-weight: 400;
+    height: 36px; padding: 0 14px; border: 1px solid var(--vb-hi-bord);
+    background: var(--vb-hi); color: var(--vb-hi-text); border-radius: 2px;
+    cursor: pointer; transition: background .12s, border-color .12s;
+    white-space: nowrap; display: inline-flex; align-items: center;
+  }
+  .abtn:hover { background: var(--vb-hi-bord); border-color: var(--vb-hi-bord); }
+  .abtn:disabled { opacity: .35; cursor: default; }
+
+  .fbtn {
+    font-family: var(--font); font-size: var(--fs); font-weight: 400;
+    height: 36px; padding: 0 14px; border: 1px solid var(--vb-lo-bord);
+    background: var(--vb-lo); color: var(--vb-lo-text); border-radius: 2px;
+    cursor: pointer; transition: background .12s, border-color .12s;
+    white-space: nowrap; display: inline-flex; align-items: center;
+  }
+  .fbtn:hover { background: var(--vb-lo-bord); border-color: var(--vb-lo-bord); }
+
+  #file-input { display: none; }
+
+  /* ── Row 2 — Consensus sequence / ORF / range panel ── */
+  #orfBar {
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 12px 20px; background: var(--paper);
+    border-bottom: 1px solid var(--bord); flex-shrink: 0;
+  }
+  .lbl { font-size: var(--fs); font-weight: 400; color: var(--mut); }
+  .lbl[for] { cursor: pointer; }
+  .field { display: flex; flex-direction: column; gap: 3px; }
+  .field .lbl { font-size: 13px; letter-spacing: .03em; text-transform: uppercase; }
+
+  #consensus-input {
+    font-family: var(--font); font-size: var(--fs); font-weight: 400;
+    width: 100%; height: 46px; resize: vertical; box-sizing: border-box;
+    border: 1px solid var(--bord); border-radius: 2px; padding: 6px 8px;
+    color: var(--ink); outline: none; line-height: 1.4;
+    word-break: break-all;
+  }
+  #consensus-input:focus { border-color: var(--mut); }
+
+  .orf-controls-row { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 14px; }
+  .orf-controls-row .field { flex-direction: row; align-items: center; gap: 6px; }
+  .orf-controls-row .field .lbl { white-space: nowrap; }
+
+  .tb-num {
+    font-family: var(--font); font-size: var(--fs); font-weight: 400;
+    height: 28px; padding: 0 6px; border: 1px solid var(--bord);
+    background: var(--paper); color: var(--ink); border-radius: 2px;
+    text-align: center; outline: none;
+  }
+  .tb-num:focus { border-color: var(--mut); }
+  #flank-input { width: 72px; }
+  #coding-input { width: 100px; text-align: left; }
+  #library-input { width: 220px; text-align: left; }
+  .tb-text { font-variant-numeric: tabular-nums; }
+  #cellw-input { width: 56px; }
+  #ncols-input { width: 56px; }
+  #width-input { width: 80px; }
+
+  .range-divider { width: 1px; align-self: stretch; background: var(--bord); margin: 0 2px; }
+
+  #seqMeta { font-size: 13px; color: var(--mut); margin-top: 2px; }
+  #seqMeta .warn { color: var(--warn-bord); }
+
+  #analyzeBtn {
+    font-family: var(--font); font-size: var(--fs); font-weight: 400;
+    height: 36px; padding: 0 16px;
+    border: 1px solid var(--vb-hi-bord); background: var(--vb-hi); color: var(--vb-hi-text);
+    border-radius: 2px; cursor: pointer; white-space: nowrap;
+  }
+  #analyzeBtn:hover:not(:disabled) { background: var(--vb-hi-bord); }
+  #analyzeBtn:disabled { opacity: .35; cursor: default; }
+
+  /* ── Sequence track (consensus + AA translation + analysis-range highlight) ── */
+  #seqTrackWrap { overflow-x: auto; overflow-y: hidden; border: 1px solid var(--bord); border-radius: 2px; background: #fafaf8; }
+  #seqTrack { display: flex; align-items: flex-end; padding: 6px 8px; width: max-content; }
+  .nt-cell, .codon-cell {
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    font-family: var(--font); flex-shrink: 0;
+  }
+  .nt-cell { width: 10px; }
+  .codon-cell { width: 30px; border-left: 1px solid transparent; border-right: 1px solid transparent; }
+  .cell-num { font-size: 9px; color: var(--vb-hi); height: 11px; line-height: 11px; white-space: nowrap; }
+  .cell-aa  { font-size: 13px; color: var(--ink); height: 16px; line-height: 16px; font-weight: 400; }
+  .cell-nt  { font-size: 10px; color: var(--mut); height: 13px; line-height: 13px; letter-spacing: 0.5px; }
+  .nt-cell .cell-nt { color: var(--bord); }
+  .nt-cell.partial .cell-nt { color: var(--warn); }
+  .codon-cell.in-range { background: var(--vb-lo); }
+  .codon-cell.in-range .cell-nt { color: var(--vb-hi-bord); }
+  .codon-cell.orf-start { border-left: 2px solid var(--vb-hi); }
+  .codon-cell.orf-end   { border-right: 2px solid var(--vb-hi); }
+
+  /* ── Row 3 — Status bar ── */
+  #statusBar {
+    display: none; align-items: center; padding: 0 20px; height: 32px;
+    background: var(--vb-lo); border-bottom: 1px solid var(--vb-lo-bord);
+    flex-shrink: 0; font-size: var(--fs); font-weight: 400; color: var(--vb-lo-text); gap: 12px;
+  }
+  #statusLeft { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #clearBtn {
+    font-family: var(--font); font-size: 14px; font-weight: 400; height: 22px; padding: 0 10px;
+    border: 1px solid var(--vb-lo-bord); background: transparent; color: var(--vb-lo-text);
+    border-radius: 2px; cursor: pointer;
+  }
+  #clearBtn:hover { background: var(--vb-lo-bord); }
+
+  /* ── Row 4 — Toolbar ── */
+  #toolBar {
+    display: flex; align-items: center; padding: 0 20px; height: 40px;
+    background: var(--paper); border-bottom: 1px solid var(--bord); flex-shrink: 0; gap: 12px;
+  }
+  #toolBar .field { flex-direction: row; align-items: center; gap: 6px; }
+  #toolBar .lbl { text-transform: uppercase; letter-spacing: .03em; font-size: 13px; }
+  #cutoff-input { width: 64px; }
+  .tb-gap { flex: 1; }
+  #downloadBtn {
+    font-family: var(--font); font-size: var(--fs); font-weight: 400;
+    height: 36px; padding: 0 14px; border: 1px solid var(--vb-hi-bord);
+    background: var(--vb-hi); color: var(--vb-hi-text); border-radius: 2px;
+    cursor: pointer; white-space: nowrap;
+  }
+  #downloadBtn:hover:not(:disabled) { background: var(--vb-hi-bord); }
+  #downloadBtn:disabled { opacity: 0.35; cursor: default; }
+
+  .mode-toggle { display: inline-flex; border: 1px solid var(--vb-hi-bord); border-radius: 2px; overflow: hidden; }
+  .mode-btn {
+    font-family: var(--font); font-size: var(--fs); font-weight: 400;
+    height: 28px; padding: 0 12px; border: none; background: var(--paper); color: var(--vb-hi);
+    cursor: pointer; white-space: nowrap;
+  }
+  .mode-btn + .mode-btn { border-left: 1px solid var(--vb-hi-bord); }
+  .mode-btn.active { background: var(--vb-hi); color: var(--vb-hi-text); }
+  .mode-btn:hover:not(.active) { background: var(--vb-lo); }
+  #site-input { width: 64px; }
+
+  /* ── Drop zone ── */
+  #dropZone { flex: 1; position: relative; overflow: auto; background: var(--paper); }
+  #dropZone.drag-over::before {
+    content: ''; position: fixed; inset: 0; background: rgba(44,123,182,.06);
+    border: 3px dashed var(--vb-hi); z-index: 200; pointer-events: none;
+  }
+  #dropZone.drag-over::after {
+    content: 'Drop FASTQ files to load'; position: fixed; top: 50%; left: 50%;
+    transform: translate(-50%,-50%); font-family: var(--font); font-size: var(--fs); font-weight: 400;
+    color: var(--vb-hi); background: var(--paper); padding: 12px 24px; border: 2px solid var(--vb-hi);
+    z-index: 201; pointer-events: none;
+  }
+
+  #welcome {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; padding: 80px 28px; gap: 14px; text-align: center;
+  }
+  #welcome h2 { font-size: var(--fs); font-weight: 400; color: var(--mut); text-transform: uppercase; letter-spacing: .1em; }
+  #welcome p  { font-size: var(--fs); font-weight: 400; color: var(--mut); line-height: 1.8; max-width: 640px; }
+  #welcome strong { font-weight: 400; color: var(--ink); }
+  #welcome .drop-hint {
+    font-size: var(--fs); font-weight: 400; color: var(--vb-hi);
+    border: 1px dashed var(--vb-hi); padding: 10px 24px; margin-top: 8px; opacity: .8;
+  }
+
+  #loading {
+    display: none; font-size: var(--fs); font-weight: 400; color: var(--mut);
+    padding: 100px 28px; text-align: center; letter-spacing: .05em;
+  }
+
+  #main { padding: 16px 20px 52px; display: none; background: var(--paper); }
+  .grid-wrapper { display: inline-block; }
+  #grid { display: grid; }
+  .panel-cell { background: var(--paper); }
+  .panel-cell svg { display: block; }
+
+  #footerArea { margin-top: 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  #legendSvg { display: block; }
+  #plotTitle    { font-size: var(--fs); font-weight: 400; color: var(--ink); text-align: center; }
+  #plotSubtitle { font-size: var(--fs); font-weight: 400; color: var(--mut); text-align: center; max-width: 700px; }
+</style>
+</head>
+<body>
+
+<!-- Row 1: Header -->
+<div id="hdr">
+  <span class="logo">Library Explorer</span>
+  <div class="hdr-gap"></div>
+  <button class="abtn" id="uploadBtn">Load FASTQ File(s)</button>
+  <button class="fbtn" id="loadExBtn">Load Example</button>
+  <button class="fbtn" id="dlExBtn">Download Example</button>
+  <input type="file" id="file-input" accept=".fastq,.fq,.fastq.gz,.txt" multiple>
+</div>
+
+<!-- Row 2: Consensus sequence / ORF / analysis-range panel -->
+<div id="orfBar">
+  <div class="field">
+    <label class="lbl" for="consensus-input">Consensus sequence (5&rarr;3)</label>
+    <textarea id="consensus-input" placeholder="Paste the full consensus/reference sequence here (may include primer or vector sequence flanking the ORF).&#10;FASTA headers and whitespace are stripped automatically.">AGCATGACTGGTGGACAGCAAATGGGTCGCGGATCCATGATGAAGAGAGAGAAAAATGTTATATATGGACCCGAACCCCTACACCCCTTGGAAGACAAAACAGCAGGAGAAATGCTCTTCAGGGCCCTTCGAAAACATTCTCATTTACCGCAGGCTATAGTAGATGTGTTTGGTGACGAATCGCTTTCCTATAAAGAGTTTTTTGAAGCTACATGCCTCCTAGCGCAAAGTCTCCACAATTGTGGATACAAGATGAATGATGTAGTGTCGATCTGCGCCGAGAACAATAAAAGATTTTTTATTCCCATTATTGCAGCTTGGTATATTGGTATGATTGTAGCACCTGTTAATGAAAGTTACATCCCAGATGAACTCTGTAAGGTCATGGGTATATCGAAACCACAAATAGTTTTTTGTACAAAGAACATTTTAAATAAGGTATTGGAGGTACAGAGCAGAACTAATTTCATAAAAAGGATCATCATACTTGATACTGTAGAAAACATACACGGTTGTGAAAGTCTTCCCAATTTTATTTCTCGTTATTCGGATGGAAATATTGCCAACTTCAAACCTTTACATTACGATCCTGTTGAGCAAGTGGCAGCTATCTTATGTTCGTCAGGTACCACCGGTTTACCGAAAGGTGTAATGCAAACTCACCAAAATATTTGTGTCCGACTTATACATGCTTTAGACCCCGAGGCAGGAACGCAACTTATTCCTGGTGTGACAGTCTTAGTATATGTGCCTTTTTTCCATGCTTTTGGGTTCTCTATAAACTTGGGATACTTCATGGTGGGCCTTAGGGTCATCATGCTGAGGCGATTTGAGCAAGAAGCATTTCTAAAAGCTATTCAGGATTATGAAGTTCGAAGTATAGTTAACGTTCCAGCAATAATATTGTTCTTATCGAAAAGTCCTTTGGTTGACAAATACGATTTATCAAGTTTAAGGGAATTGTGTTGCGGTGCGGCACCATTAGCAAAGGAAGTTGCTGAGATTGCAGTAAAACGATTAAACTTGCCAGGAATTCGCTGTGGATTTGGTTTGACAGAATCTACTTCAGCTAATATACACAGTCTTGGGGATGAATTTAAATCAGGATCACTTGGAAGAGTTACTCCTTTAATGGCAGCTAAAATAGCAGATAGGGAAACTGGTAAAGCATTGGGACCAAATCAAGTTGGTGAATTATGCATTAAAGGTCCCATGGTATCGAAAGGTTACGTGAACAATGTAAAAGCTACCAAAGAAGCTATTGATGATGATGGTTGGCTTCACTCTGGAGACTTTGGATACTATGATGAGGATGAGCATTTCTATGTGGTGGACCGTTACAAGGAATTGATTAAATATAAGGGCTCTCAGGTAGCACCTGCAGAACTAGAAGAGATTTTATTGAAAAATCCATGTATCAGAGATGTTGCTGTGGTTGGTATTCCTGATCTAGAAGCTGGAGAACTGCCATCTGCGTTTGTGGTTATACAGCCCGGAAAGGAGATTACAGCTAAAGAAGTTTACGATTATCTTGCCGAGAGGGTCTCCCATACAAAGTATTTGCGTGGAGGGGTTCGATTCGTTGATAGCATACCAAGGAATGTTACAGGTAAAATTACAAGAAAGGAACTTCTGAAGCAGTTGCTGGAGAAGAGTTCTAAACTTTAACTCGAGCACCACCACCACCACCACTGAGATCCGGCT</textarea>
+  </div>
+  <div class="orf-controls-row">
+    <div class="field">
+      <label class="lbl" for="coding-input">Coding (NT)</label>
+      <input type="text" id="coding-input" class="tb-num tb-text" value="37-1665" placeholder="start-end">
+    </div>
+    <div class="range-divider"></div>
+    <div class="field">
+      <label class="lbl" for="library-input" title="Comma-separated AA positions and/or ranges to search for variants, e.g. 205-252,351">Library (AA)</label>
+      <input type="text" id="library-input" class="tb-num tb-text tb-wide" value="205-252" placeholder="e.g. 205-252,351">
+    </div>
+    <div class="range-divider"></div>
+    <div class="field">
+      <label class="lbl" for="flank-input" title="Number of conserved amino acids used on each side of the focal codon to anchor the search">Flank (AA)</label>
+      <input type="number" id="flank-input" class="tb-num" value="4" min="2" max="10" step="1">
+    </div>
+    <div class="tb-gap"></div>
+    <button id="analyzeBtn" disabled>Analyze</button>
+  </div>
+  <div id="seqTrackWrap"><div id="seqTrack"></div></div>
+  <div id="seqMeta"></div>
+</div>
+
+<!-- Row 3: Status bar -->
+<div id="statusBar">
+  <span id="statusLeft"></span>
+  <button id="clearBtn">Clear all</button>
+</div>
+
+<!-- Row 4: Toolbar -->
+<div id="toolBar">
+  <label class="lbl">Sites:</label>
+  <div class="mode-toggle">
+    <button class="mode-btn active" id="modeAllBtn" type="button">All</button>
+    <button class="mode-btn" id="modeOneBtn" type="button">One</button>
+  </div>
+  <div class="field" id="siteField" style="display:none">
+    <input type="number" id="site-input" class="tb-num" value="205" min="1" step="1" title="AA position to show, one 96-well plate at a time">
+  </div>
+  <div class="field">
+    <label class="lbl" for="cutoff-input" title="Hide variant codon calls supported by fewer than this many reads (applies in both All and One views)">Cutoff</label>
+    <input type="number" id="cutoff-input" class="tb-num" value="2" min="1" step="1">
+  </div>
+  <div class="tb-gap"></div>
+  <label class="lbl" for="cellw-input">Cell width (px):</label>
+  <input type="number" id="cellw-input" class="tb-num" value="26" min="8" max="60" step="1">
+  <label class="lbl" for="ncols-input">Columns:</label>
+  <input type="number" id="ncols-input" class="tb-num" value="12" min="1" max="24">
+  <label class="lbl" for="width-input">PNG width (px):</label>
+  <input type="number" id="width-input" class="tb-num" value="2400" min="400" max="16000" step="100">
+  <button id="downloadBtn" disabled>Download PNG</button>
+</div>
+
+<!-- Content -->
+<div id="dropZone">
+  <div id="loading">Scanning reads for codon variants&hellip;</div>
+
+  <div id="welcome">
+    <h2>No data loaded</h2>
+    <p>
+      Click <strong>Load FASTQ File(s)</strong> to open one or more Nanopore FASTQ files &mdash;
+      or <strong>Load Example</strong> to explore a synthetic dataset.<br><br>
+      Each file should be named so it contains its plate well (e.g. <strong>E12</strong> or <strong>H6</strong>) &mdash;
+      one file (or more) per well. Paste the construct's <strong>ORF</strong> above, set the <strong>AA min/max</strong>
+      range to scan, then click <strong>Analyze</strong>.<br><br>
+      For each position in range, Library Explorer searches every read (both strands) for the focal codon flanked by the
+      conserved amino acids on either side &mdash; the same logic as
+      <span style="color:var(--ink)">grep -o 'FLANK_UP[ACGT]{3}FLANK_DOWN'</span> &mdash; and tallies which 3 bases
+      appear there.
+    </p>
+    <div class="drop-hint">or drag &amp; drop FASTQ files anywhere on this page</div>
+  </div>
+
+  <div id="main">
+    <div class="grid-wrapper"><div id="grid"></div><div id="diversityWrap" style="display:none"></div></div>
+    <div id="footerArea">
+      <svg id="legendSvg"></svg>
+      <div id="plotTitle"></div>
+      <div id="plotSubtitle">Yellow = consensus (WT) &middot; other colours = amino acid class &middot; faint background = that class, even where unobserved &middot; opacity = relative abundance among non-consensus variants</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Figure-internal text — not interface text
+const SVG_FS    = '11px';
+const SVG_FS_LG = '13px';
+const SVG_FONT  = "'DM Mono', monospace";
+const INK  = '#1a1714';
+const MUT  = '#888078';
+const BORD = '#ccc8c0';
+
+// ─── Genetic code ──────────────────────────────────────────────────────────
+const CODON_TABLE = {
+  TTT:'F',TTC:'F',TTA:'L',TTG:'L',CTT:'L',CTC:'L',CTA:'L',CTG:'L',
+  ATT:'I',ATC:'I',ATA:'I',ATG:'M',GTT:'V',GTC:'V',GTA:'V',GTG:'V',
+  TCT:'S',TCC:'S',TCA:'S',TCG:'S',CCT:'P',CCC:'P',CCA:'P',CCG:'P',
+  ACT:'T',ACC:'T',ACA:'T',ACG:'T',GCT:'A',GCC:'A',GCA:'A',GCG:'A',
+  TAT:'Y',TAC:'Y',TAA:'*',TAG:'*',CAT:'H',CAC:'H',CAA:'Q',CAG:'Q',
+  AAT:'N',AAC:'N',AAA:'K',AAG:'K',GAT:'D',GAC:'D',GAA:'E',GAG:'E',
+  TGT:'C',TGC:'C',TGA:'*',TGG:'W',CGT:'R',CGC:'R',CGA:'R',CGG:'R',
+  AGT:'S',AGC:'S',AGA:'R',AGG:'R',GGT:'G',GGC:'G',GGA:'G',GGG:'G'
+};
+const AA_CATEGORY = {
+  A:'nonpolar',V:'nonpolar',L:'nonpolar',I:'nonpolar',M:'nonpolar',G:'nonpolar',P:'nonpolar',
+  F:'aromatic',W:'aromatic',Y:'aromatic',
+  S:'polar',T:'polar',C:'polar',N:'polar',Q:'polar',
+  D:'acidic',E:'acidic',
+  K:'basic',R:'basic',H:'basic',
+  '*':'stop', X:'unknown'
+};
+const CATEGORY_COLOR = {
+  nonpolar:'#a8a296', aromatic:'#7b3fa0', polar:'#2c7bb6',
+  acidic:'#c0392b', basic:'#1d8a5a', stop:'#1a1714', unknown:'#888078'
+};
+const CATEGORY_LABEL = {
+  nonpolar:'Nonpolar (A V L I M G P)', aromatic:'Aromatic (F W Y)', polar:'Polar (S T C N Q)',
+  acidic:'Acidic (D E)', basic:'Basic (K R H)', stop:'Stop'
+};
+// Fixed row order for the diversity table — grouped by category, matching the legend.
+const AA_ROW_ORDER = ['A','V','L','I','M','G','P','F','W','Y','S','T','C','N','Q','D','E','K','R','H'];
+
+// Consensus/WT colour — a real 574 nm (yellow) wavelength, via the same
+// wavelength→RGB mapping used elsewhere in the Explorer app family, so
+// "the consensus codon" reads consistently as a physical colour rather than
+// an arbitrary UI grey.
+function wavelengthToColor(nm) {
+  const stops = [
+    {w:400,r:46, g:0,  b:84 },{w:450,r:75, g:0,  b:130},
+    {w:475,r:0,  g:0,  b:255},{w:510,r:0,  g:255,b:255},
+    {w:540,r:0,  g:255,b:0  },{w:570,r:255,g:255,b:0  },
+    {w:590,r:255,g:165,b:0  },{w:620,r:255,g:0,  b:0  },
+    {w:700,r:139,g:0,  b:0  }
+  ];
+  nm = Math.max(400, Math.min(700, nm));
+  let i = 0;
+  while (i < stops.length-2 && stops[i+1].w <= nm) i++;
+  const lo=stops[i], hi=stops[i+1], t=(nm-lo.w)/(hi.w-lo.w);
+  return `rgb(${Math.round(lo.r+t*(hi.r-lo.r))},${Math.round(lo.g+t*(hi.g-lo.g))},${Math.round(lo.b+t*(hi.b-lo.b))})`;
+}
+const WT_COLOR = wavelengthToColor(574); // rgb(255,237,0)
+const WT_BORD  = '#c7ab00';
+
+function revcomp(seq) {
+  const map = {A:'T',T:'A',C:'G',G:'C',N:'N'};
+  let out = '';
+  for (let i = seq.length - 1; i >= 0; i--) out += map[seq[i]] || 'N';
+  return out;
+}
+
+// ─── FASTQ parsing ───────────────────────────────────────────────────────────
+// Standard 4-line-per-record FASTQ (Nanopore basecaller output — dorado/guppy).
+function parseFastq(text) {
+  text = text.replace(/\r\n/g,'\n').replace(/\r/g,'\n').trim();
+  if (!text) return [];
+  const lines = text.split('\n');
+  const seqs = [];
+  for (let i = 0; i < lines.length; i += 4) {
+    const header = lines[i], seq = lines[i+1];
+    if (header && header.startsWith('@') && seq) seqs.push(seq.trim().toUpperCase());
+  }
+  return seqs;
+}
+
+// ─── Well-name parsing from filename ──────────────────────────────────────────
+function parseWellName(filename) {
+  const base = filename.replace(/\.[^.]+$/,'').replace(/\.fastq$/i,'');
+  const tokens = base.split(/[^A-Za-z0-9]+/).filter(Boolean);
+  for (const tok of tokens) {
+    const m = tok.match(/^([A-Ha-h])(0?[1-9]|1[0-2])$/);
+    if (m) return m[1].toUpperCase() + String(parseInt(m[2],10));
+  }
+  for (const tok of tokens) {
+    const m = tok.match(/^([A-Pa-p])(0?[1-9]|1[0-9]|2[0-4])$/);
+    if (m) return m[1].toUpperCase() + String(parseInt(m[2],10));
+  }
+  return base || filename;
+}
+function wellRowCol(name) {
+  const m = name.match(/^([A-Z])(\d+)$/);
+  if (!m) return null;
+  return { row: m[1].charCodeAt(0) - 65, col: parseInt(m[2],10) - 1 };
+}
+function detectPlate(wellNames) {
+  let maxRow = -1, maxCol = -1;
+  for (const n of wellNames) {
+    const rc = wellRowCol(n);
+    if (!rc) return null;
+    if (rc.row > maxRow) maxRow = rc.row;
+    if (rc.col > maxCol) maxCol = rc.col;
+  }
+  if (maxRow < 0) return null;
+  if (maxRow <= 7  && maxCol <= 11) return { rows: 8,  cols: 12 };
+  if (maxRow <= 15 && maxCol <= 23) return { rows: 16, cols: 24 };
+  return null;
+}
+
+// ─── Consensus / ORF handling ─────────────────────────────────────────────
+// Cleans a pasted consensus sequence: strips FASTA header lines and whitespace,
+// uppercases, and drops any non-ACGT characters. Position indices used
+// throughout (ORF start/end, nt positions) refer to this cleaned sequence.
+function cleanConsensus(raw) {
+  let seq = raw.toUpperCase().split('\n').filter(l => !l.trim().startsWith('>')).join('');
+  const before = seq.replace(/\s/g,'').length;
+  seq = seq.replace(/[^ACGT]/g,'');
+  return { seq, droppedChars: before - seq.length };
+}
+
+// Builds ORF info (codons/AAs) from a cleaned consensus sequence and a
+// 1-indexed inclusive [start,end] nt window. Any trailing nt in the window
+// that don't complete a final codon are ignored (reported via partialNt).
+function buildOrfInfo(consensus, start, end) {
+  const len = consensus.length;
+  if (!len) return null;
+  const s = Math.max(1, Math.min(start || 1, len));
+  const e = Math.max(s, Math.min(end || len, len));
+  const windowLen = e - s + 1;
+  const nAA = Math.floor(windowLen / 3);
+  const usedLen = nAA * 3;
+  const codons = [];
+  for (let i = 0; i < nAA; i++) codons.push(consensus.substr(s - 1 + i*3, 3));
+  const aas = codons.map(c => CODON_TABLE[c] || 'X');
+  return { codons, aas, nAA, start: s, end: e, partialNt: windowLen - usedLen };
+}
+function flanksForPosition(orfInfo, pos, flankAA) {
+  const idx = pos - 1;
+  if (idx - flankAA < 0 || idx + flankAA >= orfInfo.nAA) return null;
+  return {
+    up:      orfInfo.codons.slice(idx - flankAA, idx).join(''),
+    down:    orfInfo.codons.slice(idx + 1, idx + 1 + flankAA).join(''),
+    wtCodon: orfInfo.codons[idx],
+    wtAA:    orfInfo.aas[idx]
+  };
+}
+
+// ─── Coding-window / library-site spec parsing ────────────────────────────
+// "Coding (NT)" — a single "start-end" nt range.
+function parseCodingSpec(str) {
+  const m = String(str || '').trim().match(/^(\d+)\s*-\s*(\d+)$/);
+  if (!m) return null;
+  const start = parseInt(m[1],10), end = parseInt(m[2],10);
+  if (!(start >= 1) || !(end >= start)) return null;
+  return { start, end };
+}
+// "Library (AA)" — comma-separated AA positions and/or ranges, e.g. "205-252,351".
+// Returns a de-duplicated, sorted position list plus any tokens that couldn't
+// be parsed or fell outside the ORF.
+function parseLibrarySpec(str, nAA) {
+  const tokens = String(str || '').split(',').map(t => t.trim()).filter(Boolean);
+  const set = new Set();
+  const warnings = [];
+  for (const tok of tokens) {
+    const range = tok.match(/^(\d+)\s*-\s*(\d+)$/);
+    const single = tok.match(/^(\d+)$/);
+    let a, b;
+    if (range) { a = parseInt(range[1],10); b = parseInt(range[2],10); if (a > b) [a,b] = [b,a]; }
+    else if (single) { a = b = parseInt(single[1],10); }
+    else { warnings.push(`could not parse "${tok}" (expected a number or a range like 205-252)`); continue; }
+    for (let p = a; p <= b; p++) {
+      if (nAA == null || (p >= 1 && p <= nAA)) set.add(p);
+      else warnings.push(`AA ${p} is outside the ORF (1\u2013${nAA}) — skipped`);
+    }
+  }
+  return { positions: [...set].sort((x,y) => x-y), warnings };
+}
+// Collapses a sorted position list back into compact "205-252,351" form.
+function formatPositions(positions) {
+  if (!positions || !positions.length) return '';
+  const parts = [];
+  let s = positions[0], p = positions[0];
+  for (let i = 1; i < positions.length; i++) {
+    const v = positions[i];
+    if (v === p + 1) { p = v; continue; }
+    parts.push(s === p ? `${s}` : `${s}-${p}`);
+    s = p = v;
+  }
+  parts.push(s === p ? `${s}` : `${s}-${p}`);
+  return parts.join(',');
+}
+
+// ─── Sequence track (consensus + AA translation + library-site highlight) ────
+// Renders the whole consensus as a horizontal strip: leader/trailer nt outside
+// the ORF window shown dim as single bases, ORF nt grouped into codon cells
+// with the translated AA above, and the current library AA positions
+// highlighted (independently per position, so disjoint ranges/sites all work).
+// Position numbers are shown every 10th codon plus at the ORF boundaries.
+function renderSeqTrack() {
+  const track = document.getElementById('seqTrack');
+  const metaEl = document.getElementById('seqMeta');
+  track.innerHTML = '';
+
+  const { seq: consensus } = cleanConsensus(document.getElementById('consensus-input').value);
+  if (!consensus.length) {
+    metaEl.textContent = '';
+    orfInfo = null;
+    lastPositions = [];
+    updateAnalyzeEnabled();
+    return;
+  }
+
+  const codingInput = document.getElementById('coding-input');
+  const coding = parseCodingSpec(codingInput.value);
+  let start = coding ? coding.start : 1;
+  let end   = coding ? coding.end   : consensus.length;
+  start = Math.max(1, Math.min(start, consensus.length));
+  end   = Math.max(start, Math.min(end, consensus.length));
+
+  orfInfo = buildOrfInfo(consensus, start, end);
+  const nAA = orfInfo.nAA;
+
+  const libInput = document.getElementById('library-input');
+  const lib = parseLibrarySpec(libInput.value, nAA);
+  lastPositions = lib.positions;
+  const libSet = new Set(lastPositions);
+
+  const usedEnd = start + nAA*3 - 1; // last nt actually used by a full codon
+
+  function addNtCell(nt, opts) {
+    const cell = document.createElement('div');
+    cell.className = 'nt-cell' + (opts && opts.partial ? ' partial' : '');
+    const num = document.createElement('div'); num.className = 'cell-num';
+    const aa  = document.createElement('div'); aa.className = 'cell-aa';
+    const ntd = document.createElement('div'); ntd.className = 'cell-nt'; ntd.textContent = nt;
+    cell.append(num, aa, ntd);
+    track.appendChild(cell);
+  }
+  function addCodonCell(codon, aa, aaPos, inLibrary, isFirst, isLast) {
+    const cell = document.createElement('div');
+    cell.className = 'codon-cell' + (inLibrary ? ' in-range' : '') +
+      (isFirst ? ' orf-start' : '') + (isLast ? ' orf-end' : '');
+    const showNum = (aaPos === 1) || (aaPos === nAA) || (aaPos % 10 === 0) || inLibrary;
+    const num = document.createElement('div'); num.className = 'cell-num'; num.textContent = showNum ? aaPos : '';
+    const aad = document.createElement('div'); aad.className = 'cell-aa'; aad.textContent = aa;
+    const ntd = document.createElement('div'); ntd.className = 'cell-nt'; ntd.textContent = codon;
+    cell.title = `AA ${aaPos}: ${aa} (${codon})`;
+    cell.append(num, aad, ntd);
+    track.appendChild(cell);
+  }
+
+  for (let i = 1; i < start; i++) addNtCell(consensus[i-1]);
+  for (let i = 0; i < nAA; i++) {
+    const aaPos = i + 1;
+    addCodonCell(orfInfo.codons[i], orfInfo.aas[i], aaPos, libSet.has(aaPos), i === 0, i === nAA - 1);
+  }
+  for (let i = usedEnd + 1; i <= end; i++) addNtCell(consensus[i-1], { partial: true });
+  for (let i = end + 1; i <= consensus.length; i++) addNtCell(consensus[i-1]);
+
+  const warnings = [];
+  if (!coding) warnings.push(`could not parse Coding (NT) — expected "start-end" (using ${start}\u2013${end})`);
+  if (orfInfo.partialNt) warnings.push(`ORF window is not a multiple of 3 — ${orfInfo.partialNt} trailing nt ignored`);
+  if (orfInfo.aas.includes('X')) warnings.push('some codons contain ambiguous bases and translate as X');
+  warnings.push(...lib.warnings);
+  if (!lastPositions.length) warnings.push('Library (AA) has no valid sites to analyze');
+  metaEl.innerHTML = `${consensus.length} nt consensus &middot; ORF nt ${start}\u2013${end} (${nAA} AA) &middot; library ${formatPositions(lastPositions) || '\u2014'} (${lastPositions.length} sites)` +
+    (warnings.length ? ` &middot; <span class="warn">${warnings.join('; ')}</span>` : '');
+
+  updateAnalyzeEnabled();
+}
+
+// ─── Codon search (grep-style literal-flank scan, both strands) ──────────────
+function findCodonMatches(seq, up, down) {
+  const matches = [];
+  let idx = 0;
+  const upLen = up.length, downLen = down.length;
+  while ((idx = seq.indexOf(up, idx)) !== -1) {
+    const codonStart = idx + upLen, downStart = codonStart + 3;
+    if (seq.substr(downStart, downLen) === down) matches.push(seq.substr(codonStart, 3));
+    idx += 1;
+  }
+  return matches;
+}
+
+function analyzeWell(reads, rcReads, orfInfo, sitePositions, flankAA) {
+  const positions = [];
+  for (const pos of sitePositions) {
+    const flanks = flanksForPosition(orfInfo, pos, flankAA);
+    if (!flanks) { positions.push({ pos, insufficient: true }); continue; }
+    const counts = new Map();
+    for (let i = 0; i < reads.length; i++) {
+      for (const m of findCodonMatches(reads[i],   flanks.up, flanks.down)) counts.set(m, (counts.get(m)||0)+1);
+      for (const m of findCodonMatches(rcReads[i],  flanks.up, flanks.down)) counts.set(m, (counts.get(m)||0)+1);
+    }
+    let total = 0;
+    for (const c of counts.values()) total += c;
+    const ranked = [...counts.entries()].sort((a,b) => b[1]-a[1]);
+    const wtCount = counts.get(flanks.wtCodon) || 0;
+    // This is a pooled library screen, not an isogenic pick — the consensus/WT
+    // codon dominates every position by construction. The codon variant of
+    // interest is the most abundant NON-WT codon, not the overall top codon.
+    const variant = ranked.find(([codon]) => codon !== flanks.wtCodon);
+    positions.push({
+      pos, wtAA: flanks.wtAA, wtCodon: flanks.wtCodon, wtCount, total,
+      topCodon: variant ? variant[0] : null,
+      topAA: variant ? (CODON_TABLE[variant[0]] || 'X') : null,
+      topCount: variant ? variant[1] : 0,
+      confidence: total ? (variant ? variant[1]/total : 0) : 0,
+      ranked
+    });
+  }
+  return positions;
+}
+
+// ─── Well store ────────────────────────────────────────────────────────────
+// name -> { reads: [...], rc: [...], fileNames: [...] }
+let wells = new Map();
+let wellPositions = new Map(); // name -> analyzed positions array
+let orfInfo = null;
+let lastPositions = [];  // parsed "Library (AA)" position list, source of truth for analysis
+let lastFlank = null;
+let loadedBasename = 'library_explorer_export';
+
+function addFilesToWells(entries) {
+  for (const { name, text } of entries) {
+    const wellName = parseWellName(name);
+    const reads = parseFastq(text);
+    if (!reads.length) continue;
+    if (!wells.has(wellName)) wells.set(wellName, { reads: [], rc: [], fileNames: [] });
+    const w = wells.get(wellName);
+    w.reads.push(...reads);
+    w.rc.push(...reads.map(revcomp));
+    w.fileNames.push(name);
+  }
+}
+
+// ─── ORF meta / validation ─────────────────────────────────────────────────
+function updateAnalyzeEnabled() {
+  document.getElementById('analyzeBtn').disabled = !(orfInfo && orfInfo.nAA > 0 && lastPositions.length > 0 && wells.size > 0);
+}
+
+// ─── Analysis ──────────────────────────────────────────────────────────────
+let siteMode = 'all';       // 'all' | 'one'
+let minReadCutoff = 2;      // variant codon calls below this many reads are hidden, in both views
+let selectedSite = null;    // AA position shown in 'one' mode
+
+function clampSite(v) {
+  if (!lastPositions.length) return v;
+  if (!isNaN(v) && lastPositions.includes(v)) return v;
+  const target = isNaN(v) ? (selectedSite != null ? selectedSite : lastPositions[0]) : v;
+  let best = lastPositions[0], bestDist = Math.abs(target - best);
+  for (const p of lastPositions) {
+    const d = Math.abs(target - p);
+    if (d < bestDist) { best = p; bestDist = d; }
+  }
+  return best;
+}
+
+function runAnalysis() {
+  renderSeqTrack(); // ensure orfInfo/lastPositions reflect current inputs before scanning reads
+  if (!orfInfo || orfInfo.nAA < 1 || !lastPositions.length || wells.size === 0) return;
+  const flankAA = Math.max(1, Math.min(10, parseInt(document.getElementById('flank-input').value) || 4));
+
+  showLoading();
+  requestAnimationFrame(() => setTimeout(() => {
+    wellPositions = new Map();
+    for (const [name, w] of wells.entries()) {
+      wellPositions.set(name, analyzeWell(w.reads, w.rc, orfInfo, lastPositions, flankAA));
+    }
+    lastFlank = flankAA;
+
+    const siteInput = document.getElementById('site-input');
+    siteInput.min = Math.min(...lastPositions); siteInput.max = Math.max(...lastPositions);
+    if (selectedSite == null || !lastPositions.includes(selectedSite)) selectedSite = lastPositions[0];
+    siteInput.value = selectedSite;
+
+    draw();
+    document.getElementById('loading').style.display = 'none';
+  }, 20));
+}
+
+function showLoading() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('welcome').style.display = 'none';
+}
+
+// ─── Rendering ─────────────────────────────────────────────────────────────
+function aaTextColor(category) {
+  return INK; // always dark — cell fill opacity varies with confidence, so
+              // white text can't reliably contrast against it
+}
+
+// One-site view cell: well name (top-left) / total read count (top-right, bare
+// number) above a boxed, abundance-ranked list of AA+codon rows with each
+// codon's read count on the right. WT row is yellow; others use category colour.
+function drawSiteWellCell(g, wellName, totalReads, p, boxW, opts) {
+  opts = opts || {};
+  const headerH = 16, rowH = opts.rowH || 15, maxRows = opts.maxRows || 5;
+  const boxH = maxRows * rowH;
+
+  g.append('text').attr('x',0).attr('y',0)
+    .attr('text-anchor','start').attr('dominant-baseline','hanging')
+    .attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
+    .attr('font-weight','400').attr('fill',INK).text(wellName);
+  g.append('text').attr('x',boxW).attr('y',0)
+    .attr('text-anchor','end').attr('dominant-baseline','hanging')
+    .attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
+    .attr('font-weight','400').attr('fill',MUT).text(totalReads);
+
+  const box = g.append('g').attr('transform', `translate(0,${headerH})`);
+  const title = box.append('title');
+
+  if (p.insufficient || !p.total) {
+    box.append('rect').attr('width',boxW).attr('height',boxH)
+      .attr('fill','#f5f3f0').attr('stroke',BORD).attr('stroke-width',0.5).attr('stroke-dasharray','2,2');
+    box.append('text').attr('x',boxW/2).attr('y',boxH/2)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('font-family',SVG_FONT).attr('font-size',SVG_FS).attr('fill',BORD)
+      .text(p.insufficient ? 'no flank' : 'no reads');
+    title.text(p.insufficient
+      ? `pos ${p.pos}: insufficient flank (near ORF end)`
+      : `${wellName} pos ${p.pos} (WT ${p.wtAA}, ${p.wtCodon}): no reads matched flanks`);
+    return { width: boxW, height: headerH + boxH };
+  }
+
+  box.append('rect').attr('width',boxW).attr('height',boxH)
+    .attr('fill','#ffffff').attr('stroke',BORD).attr('stroke-width',0.5);
+
+  const filtered = p.ranked.filter(([codon,count]) => codon === p.wtCodon || count >= minReadCutoff);
+  const shown = filtered.slice(0, maxRows);
+  for (let i = 0; i < maxRows; i++) {
+    const rowY = i * rowH;
+    if (i >= shown.length) {
+      box.append('rect').attr('x',0).attr('y',rowY).attr('width',boxW).attr('height',rowH)
+        .attr('fill','#fafaf8').attr('stroke',BORD).attr('stroke-width',0.3);
+      continue;
+    }
+    const [codon, count] = shown[i];
+    const aa = CODON_TABLE[codon] || 'X';
+    const isWT = codon === p.wtCodon;
+    const category = AA_CATEGORY[aa] || 'unknown';
+    const fill = isWT ? WT_COLOR : CATEGORY_COLOR[category];
+    const textFill = INK;
+    box.append('rect').attr('x',0).attr('y',rowY).attr('width',boxW).attr('height',rowH)
+      .attr('fill',fill).attr('fill-opacity', isWT ? 1 : 0.18)
+      .attr('stroke', isWT ? WT_BORD : CATEGORY_COLOR[category]).attr('stroke-opacity', isWT ? 1 : 0.5).attr('stroke-width',0.4);
+    box.append('text').attr('x',4).attr('y',rowY+rowH/2)
+      .attr('text-anchor','start').attr('dominant-baseline','middle')
+      .attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
+      .attr('font-weight','400').attr('fill',textFill).text(`${aa} ${codon}`);
+    box.append('text').attr('x',boxW-4).attr('y',rowY+rowH/2)
+      .attr('text-anchor','end').attr('dominant-baseline','middle')
+      .attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
+      .attr('font-weight','400').attr('fill',textFill).text(count);
+  }
+
+  const extra = filtered.length - shown.length;
+  const detail = p.ranked.map(([codon,c]) => `${CODON_TABLE[codon]||'X'} ${codon} x${c}`).join(', ');
+  title.text(
+    `${wellName} pos ${p.pos} — ${p.total} reads\nWT: ${p.wtAA} (${p.wtCodon})\nAll codons: ${detail}` +
+    (extra > 0 ? `\n(+${extra} more not shown in box)` : '')
+  );
+
+  return { width: boxW, height: headerH + boxH };
+}
+
+function drawEmptyPanel(g, posName, width, height) {
+  g.append('rect').attr('width',width).attr('height',height)
+    .attr('fill','#ffffff').attr('stroke',BORD).attr('stroke-width',0.5)
+    .attr('stroke-dasharray','2,3').attr('opacity',0.5);
+  g.append('text').attr('x',width-3).attr('y',2)
+    .attr('text-anchor','end').attr('dominant-baseline','hanging')
+    .attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
+    .attr('font-weight','400').attr('fill',BORD).text(posName);
+}
+
+function drawLegendInto(parent, cx, oy) {
+  const cats = ['nonpolar','aromatic','polar','acidic','basic','stop'];
+  const labels = ['Consensus (WT, 574 nm)', ...cats.map(c => CATEGORY_LABEL[c])];
+  const colors = [WT_COLOR, ...cats.map(c => CATEGORY_COLOR[c])];
+  const borders = [WT_BORD, ...cats.map(c => CATEGORY_COLOR[c])];
+  const swW = 14, gap = 10, fontW = 6.3;
+  const widths = labels.map(l => swW + 5 + l.length*fontW + gap);
+  const totalW = widths.reduce((a,b)=>a+b,0);
+  let x = cx - totalW/2;
+  labels.forEach((label,i) => {
+    parent.append('rect').attr('x',x).attr('y',oy).attr('width',swW).attr('height',swW)
+      .attr('fill',colors[i]).attr('stroke',borders[i]).attr('stroke-width',0.5);
+    parent.append('text').attr('x',x+swW+5).attr('y',oy+swW/2)
+      .attr('dominant-baseline','middle').attr('text-anchor','start')
+      .attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
+      .attr('font-weight','400').attr('fill',MUT).text(label);
+    x += widths[i];
+  });
+}
+
+let currentWellOrder = [];
+let currentPlate = null;
+
+function computeLayout(forcePlate) {
+  const names = [...wellPositions.keys()];
+  let plate = detectPlate(names);
+  if (!plate && forcePlate) plate = { rows: 8, cols: 12 };
+  currentPlate = plate;
+  currentWellOrder = plate ? names : names.sort();
+  return plate;
+}
+
+function draw() {
+  if (wellPositions.size === 0) return;
+  if (siteMode === 'all') { drawDiversityTable(); return; }
+  drawSitePlate();
+}
+
+// ─── One-site mode: 96-well plate, one AA/codon cell per well ──────────────
+function drawSitePlate() {
+  document.getElementById('diversityWrap').style.display = 'none';
+  const grid = document.getElementById('grid');
+  grid.style.display = 'grid';
+
+  const site = clampSite(selectedSite);
+  const cellW = Math.max(8, Math.min(60, parseInt(document.getElementById('cellw-input').value) || 16));
+  const uiCols = Math.max(1, Math.min(24, parseInt(document.getElementById('ncols-input').value) || 12));
+  const plate = computeLayout(true);
+  const usePlate = !!(plate && uiCols === plate.cols);
+  const nCols = usePlate ? plate.cols : uiCols;
+
+  const panelW = Math.max(92, cellW * 6);
+  const panelH = 16 + 5*15;
+  const mg = { top: 10, right: 14, bottom: 10, left: 14 };
+  const cellOuterW = panelW + mg.left + mg.right;
+  const cellOuterH = panelH + mg.top + mg.bottom;
+
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = `repeat(${nCols},${cellOuterW}px)`;
+
+  function renderInto(container, wellName) {
+    const svg = d3.create('svg').attr('width',cellOuterW).attr('height',cellOuterH);
+    const g = svg.append('g').attr('transform',`translate(${mg.left},${mg.top})`);
+    const posArr = wellPositions.get(wellName);
+    const p = posArr && posArr.find(pp => pp.pos === site);
+    if (p) {
+      const w = wells.get(wellName);
+      drawSiteWellCell(g, wellName, w.reads.length, p, panelW);
+    } else {
+      drawEmptyPanel(g, wellName, panelW, panelH);
+    }
+    container.appendChild(svg.node());
+  }
+
+  if (usePlate) {
+    const totalSlots = plate.rows * plate.cols;
+    for (let i = 0; i < totalSlots; i++) {
+      const row = Math.floor(i / plate.cols), col = i % plate.cols;
+      const name = String.fromCharCode(65+row) + (col+1);
+      const cell = document.createElement('div');
+      cell.className = 'panel-cell';
+      if (wellPositions.has(name)) renderInto(cell, name);
+      else {
+        const svg = d3.create('svg').attr('width',cellOuterW).attr('height',cellOuterH);
+        const g = svg.append('g').attr('transform',`translate(${mg.left},${mg.top})`);
+        drawEmptyPanel(g, name, panelW, panelH);
+        cell.appendChild(svg.node());
+      }
+      grid.appendChild(cell);
+    }
+  } else {
+    currentWellOrder.forEach(name => {
+      const cell = document.createElement('div');
+      cell.className = 'panel-cell';
+      renderInto(cell, name);
+      grid.appendChild(cell);
+    });
+  }
+
+  drawLegend();
+  const plateLabel = usePlate ? ` · ${plate.rows*plate.cols}-well plate layout` : '';
+  const idx = site - 1;
+  const wtLabel = (orfInfo && idx >= 0 && idx < orfInfo.nAA) ? ` · WT ${orfInfo.aas[idx]} (${orfInfo.codons[idx]})` : '';
+  document.getElementById('plotTitle').textContent =
+    `Site AA ${site}${wtLabel} · ${wellPositions.size} well${wellPositions.size>1?'s':''}${plateLabel}`;
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  document.getElementById('downloadBtn').disabled = false;
+}
+
+// ─── All-sites mode: AA x position diversity table ─────────────────────────
+// For each position, which of the 20 amino acids has been captured by at
+// least one well's dominant call (pooled across the whole loaded dataset)?
+// pos -> Map(AA -> Map(codon -> [{well, count, confidence}, ...]))
+// Codon calls supported by only a single read are dropped as noise (a
+// singleton non-WT read in a pooled screen is almost always a sequencing
+// error, not a genuine variant).
+function computeDiversity() {
+  const div = new Map();
+  for (const p of lastPositions) div.set(p, new Map());
+  for (const [wellName, positions] of wellPositions.entries()) {
+    for (const p of positions) {
+      if (p.insufficient || !p.total || !p.topAA || p.topCount < minReadCutoff) continue;
+      const m = div.get(p.pos);
+      if (!m) continue;
+      if (!m.has(p.topAA)) m.set(p.topAA, new Map());
+      const codonMap = m.get(p.topAA);
+      if (!codonMap.has(p.topCodon)) codonMap.set(p.topCodon, []);
+      codonMap.get(p.topCodon).push({ well: wellName, count: p.topCount, confidence: p.confidence });
+    }
+  }
+  return div;
+}
+function codonMapTotal(wellsArr) { return wellsArr.reduce((s,w) => s + w.count, 0); }
+// Relative intensity for a (position, AA) cell — the strongest per-well call
+// purity among the wells that support it (each well's own variant-read
+// fraction at that position), NOT a comparison against other AAs/positions.
+// A well that's 90% one variant shades solidly regardless of what any other
+// well or site looks like; a barely-there call shades faint on its own terms.
+function cellConfidence(codonMap) {
+  let max = 0;
+  for (const wellsArr of codonMap.values()) {
+    for (const w of wellsArr) max = Math.max(max, w.confidence);
+  }
+  return max;
+}
+// The codon shown in the main grid for a (position, AA) cell — when several
+// synonymous codons were observed, show only the most frequent by total reads;
+// the full per-codon, per-well breakdown is available in the cell's tooltip.
+function pickTopCodon(codonMap) {
+  let best = null, bestTotal = -1;
+  for (const [codon, wellsArr] of codonMap.entries()) {
+    const total = codonMapTotal(wellsArr);
+    if (total > bestTotal) { bestTotal = total; best = codon; }
+  }
+  return best;
+}
+
+function diversityDims(cellW) {
+  const nPos = lastPositions.length;
+  const rowLabelW = 28, cellH = 26, headerH = 14 + 16 + 14;
+  const GAP_W = 10; // white space between non-contiguous stretches of the library
+  const colX = [];
+  let x = 0;
+  lastPositions.forEach((pos, i) => {
+    if (i > 0 && pos !== lastPositions[i-1] + 1) x += GAP_W;
+    colX.push(x);
+    x += cellW;
+  });
+  const totalW = rowLabelW + x;
+  const totalH = headerH + AA_ROW_ORDER.length*cellH;
+  return { nPos, rowLabelW, cellH, headerH, totalW, totalH, colX };
+}
+
+// Contiguous [startIdx, endIdx] runs within lastPositions (inclusive), used to
+// draw the per-row property background only under real columns, not the gaps.
+function contiguousSegments() {
+  const segs = [];
+  let start = 0;
+  for (let i = 1; i <= lastPositions.length; i++) {
+    if (i === lastPositions.length || lastPositions[i] !== lastPositions[i-1] + 1) {
+      segs.push([start, i-1]);
+      start = i;
+    }
+  }
+  return segs;
+}
+
+function renderDiversityInto(root, cellW) {
+  const dims = diversityDims(cellW);
+  const { nPos, rowLabelW, cellH, headerH, colX } = dims;
+  const segments = contiguousSegments();
+  const div = computeDiversity();
+  const numRowH = 14; // top band reserved for the position-number row, kept outside the yellow fill
+  const bandH = headerH - numRowH;
+
+  root.append('rect').attr('x',0).attr('y',numRowH).attr('width',rowLabelW).attr('height',bandH)
+    .attr('fill',WT_COLOR).attr('stroke',WT_BORD).attr('stroke-width',0.5);
+
+  lastPositions.forEach((pos, i) => {
+    const idx = pos - 1;
+    const codon = orfInfo.codons[idx], aa = orfInfo.aas[idx];
+    const cx = rowLabelW + colX[i];
+    const cell = root.append('g').attr('transform', `translate(${cx},0)`);
+    cell.append('rect').attr('y',numRowH).attr('width',cellW).attr('height',bandH)
+      .attr('fill',WT_COLOR).attr('stroke',WT_BORD).attr('stroke-width',0.5);
+    const showNum = (i===0) || (i===nPos-1) || (pos % 10 === 0);
+    cell.append('text').attr('x',cellW/2).attr('y',2)
+      .attr('text-anchor','middle').attr('dominant-baseline','hanging')
+      .attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
+      .attr('font-weight','400').attr('fill',MUT).text(showNum ? pos : '');
+    cell.append('text').attr('x',cellW/2).attr('y',numRowH+bandH*0.36)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('font-family',SVG_FONT).attr('font-size',SVG_FS_LG)
+      .attr('font-weight','400').attr('fill',INK).text(aa);
+    cell.append('text').attr('x',cellW/2).attr('y',headerH-3)
+      .attr('text-anchor','middle').attr('dominant-baseline','auto')
+      .attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
+      .attr('font-weight','400').attr('fill',INK).attr('letter-spacing','0.5px').text(codon);
+    cell.append('title').text(`Consensus AA ${pos}: ${aa} (${codon})`);
+  });
+
+  AA_ROW_ORDER.forEach((aa, ri) => {
+    const category = AA_CATEGORY[aa];
+    const color = CATEGORY_COLOR[category];
+    const ry = headerH + ri*cellH;
+
+    root.append('rect').attr('x',0).attr('y',ry).attr('width',rowLabelW).attr('height',cellH)
+      .attr('fill','#fafaf8').attr('stroke',BORD).attr('stroke-width',0.5);
+    root.append('text').attr('x',rowLabelW/2).attr('y',ry+cellH/2)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('font-family',SVG_FONT).attr('font-size',SVG_FS_LG)
+      .attr('font-weight','400').attr('fill',INK).text(aa);
+
+    // Faint property background spanning each contiguous run of positions —
+    // a 10px gap of plain white marks a non-contiguous jump in the library.
+    segments.forEach(([s,e]) => {
+      const segX = rowLabelW + colX[s];
+      const segW = colX[e] + cellW - colX[s];
+      root.append('rect').attr('x',segX).attr('y',ry).attr('width',segW).attr('height',cellH)
+        .attr('fill',color).attr('fill-opacity',0.12);
+    });
+
+    lastPositions.forEach((pos, i) => {
+      const idx = pos - 1;
+      const wtAA = orfInfo.aas[idx];
+      const wtCodon = orfInfo.codons[idx];
+      const isWT = (aa === wtAA);
+      const cx = rowLabelW + colX[i];
+      const cell = root.append('g').attr('transform', `translate(${cx},${ry})`);
+      const codonMap = div.get(pos).get(aa);
+      const title = cell.append('title');
+      if (isWT) {
+        // The consensus row always shows at every position — it's the
+        // reference, present by definition, regardless of whether any well
+        // happened to also turn up a synonymous (silent) codon here.
+        cell.append('rect').attr('width',cellW).attr('height',cellH)
+          .attr('fill',WT_COLOR).attr('stroke',WT_BORD).attr('stroke-width',0.75);
+        cell.append('text').attr('x',cellW/2).attr('y',cellH/2)
+          .attr('text-anchor','middle').attr('dominant-baseline','middle')
+          .attr('font-family',SVG_FONT).attr('font-size',SVG_FS).attr('font-weight','400')
+          .attr('fill',INK).text(wtCodon);
+        let tip = `AA ${pos}, ${aa} (consensus): ${wtCodon}`;
+        if (codonMap) {
+          const codonLines = [...codonMap.entries()]
+            .sort((a,b) => codonMapTotal(b[1]) - codonMapTotal(a[1]))
+            .map(([codon, wellsArr]) => {
+              const wellsStr = wellsArr.slice().sort((a,b)=>b.count-a.count)
+                .map(w => `${w.well} (${w.count})`).join(', ');
+              return `${codon}: ${wellsStr}`;
+            }).join('\n');
+          tip += `\nAlso observed as a synonymous codon:\n${codonLines}`;
+        }
+        title.text(tip);
+      } else if (codonMap) {
+        const label = pickTopCodon(codonMap);
+        // Relative intensity per well, not per site: the strongest supporting
+        // well's own call purity, independent of other AAs/positions.
+        const intensity = cellConfidence(codonMap);
+        cell.append('rect').attr('width',cellW).attr('height',cellH)
+          .attr('fill', color).attr('fill-opacity', intensity)
+          .attr('stroke', color).attr('stroke-opacity', Math.max(0.35, intensity))
+          .attr('stroke-width', 1.25);
+        cell.append('text').attr('x',cellW/2).attr('y',cellH/2)
+          .attr('text-anchor','middle').attr('dominant-baseline','middle')
+          .attr('font-family',SVG_FONT).attr('font-size',SVG_FS).attr('font-weight','400')
+          .attr('fill', aaTextColor(category))
+          .attr('fill-opacity', Math.max(0.5, intensity))
+          .text(label);
+        // Tooltip: full per-codon, per-well breakdown, ranked by total reads.
+        const codonLines = [...codonMap.entries()]
+          .sort((a,b) => codonMapTotal(b[1]) - codonMapTotal(a[1]))
+          .map(([codon, wellsArr]) => {
+            const wellsStr = wellsArr.slice().sort((a,b)=>b.count-a.count)
+              .map(w => `${w.well} (${w.count})`).join(', ');
+            return `${codon}: ${wellsStr}`;
+          }).join('\n');
+        title.text(`AA ${pos}, ${aa}\n${codonLines}`);
+      } else {
+        cell.append('rect').attr('width',cellW).attr('height',cellH)
+          .attr('fill','none').attr('stroke',BORD).attr('stroke-width',0.5).attr('stroke-dasharray','2,3').attr('stroke-opacity',0.6);
+        title.text(`AA ${pos}, ${aa}: not observed in dataset`);
+      }
+    });
+  });
+
+  return dims;
+}
+
+function drawDiversityTable() {
+  document.getElementById('grid').style.display = 'none';
+  const wrap = document.getElementById('diversityWrap');
+  wrap.style.display = 'block';
+  wrap.innerHTML = '';
+
+  const cellW = Math.max(8, Math.min(60, parseInt(document.getElementById('cellw-input').value) || 16));
+  const svg = d3.create('svg');
+  const dims = renderDiversityInto(svg, cellW);
+  svg.attr('width', dims.totalW).attr('height', dims.totalH);
+  wrap.appendChild(svg.node());
+
+  drawLegend();
+  document.getElementById('plotTitle').textContent =
+    `Diversity observed across dataset · AA ${formatPositions(lastPositions)} · ${wellPositions.size} well${wellPositions.size>1?'s':''}`;
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('main').style.display = 'block';
+  document.getElementById('downloadBtn').disabled = false;
+}
+
+function drawLegend() {
+  const svg = d3.select('#legendSvg');
+  svg.selectAll('*').remove();
+  const W = 900, H = 30;
+  svg.attr('width',W).attr('height',H);
+  drawLegendInto(svg, W/2, 4);
+}
+
+// ─── PNG export ────────────────────────────────────────────────────────────
+function rasterizeAndDownload(svgEl) {
+  const blob = new Blob([new XMLSerializer().serializeToString(svgEl)],{type:'image/svg+xml'});
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = +svgEl.getAttribute('width');
+    canvas.height = +svgEl.getAttribute('height');
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img,0,0);
+    URL.revokeObjectURL(url);
+    canvas.toBlob(pngBlob => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(pngBlob);
+      a.download = `${loadedBasename}.png`; a.click();
+    }, 'image/png');
+  };
+  img.onerror = () => { URL.revokeObjectURL(url); alert('PNG export failed.'); };
+  img.src = url;
+}
+
+function downloadPNG() {
+  if (wellPositions.size === 0) return;
+  if (siteMode === 'all') { downloadDiversityPNG(); return; }
+  downloadSitePlatePNG();
+}
+
+function downloadSitePlatePNG() {
+  const targetW = Math.max(400, Math.min(16000, parseInt(document.getElementById('width-input').value) || 2400));
+  const cellW = Math.max(8, Math.min(60, parseInt(document.getElementById('cellw-input').value) || 16));
+  const uiCols = Math.max(1, Math.min(24, parseInt(document.getElementById('ncols-input').value) || 12));
+  const plate = currentPlate;
+  const usePlate = !!(plate && uiCols === plate.cols);
+  const nCols = usePlate ? plate.cols : uiCols;
+  const nRows = usePlate ? plate.rows : Math.ceil(currentWellOrder.length / nCols);
+  const site = clampSite(selectedSite);
+
+  const panelW = Math.max(92, cellW * 6);
+  const panelH = 16 + 5*15;
+  const mg = { top: 10, right: 14, bottom: 10, left: 14 };
+  const cellOuterW = panelW + mg.left + mg.right, cellOuterH = panelH + mg.top + mg.bottom;
+  const gridW = nCols*cellOuterW, gridH = nRows*cellOuterH;
+  const footerH = 30+20+16+16;
+  const totalW = gridW, totalH = gridH+footerH+14;
+  const scale = targetW/totalW;
+
+  const svgEl = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svgEl.setAttribute('xmlns','http://www.w3.org/2000/svg');
+  svgEl.setAttribute('width', String(targetW));
+  svgEl.setAttribute('height', String(Math.round(totalH*scale)));
+  svgEl.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`);
+  const root = d3.select(svgEl);
+  root.append('rect').attr('width',totalW).attr('height',totalH).attr('fill','#ffffff');
+
+  function place(i, name) {
+    const row = Math.floor(i/nCols), col = i%nCols;
+    const ox = col*cellOuterW+mg.left, oy = row*cellOuterH+mg.top;
+    const g = root.append('g').attr('transform',`translate(${ox},${oy})`);
+    const posArr = wellPositions.get(name);
+    const p = posArr && posArr.find(pp => pp.pos === site);
+    if (p) drawSiteWellCell(g, name, wells.get(name).reads.length, p, panelW);
+    else drawEmptyPanel(g, name, panelW, panelH);
+  }
+
+  if (usePlate) {
+    const totalSlots = plate.rows*plate.cols;
+    for (let i=0;i<totalSlots;i++) {
+      const row = Math.floor(i/plate.cols), col = i%plate.cols;
+      place(i, String.fromCharCode(65+row)+(col+1));
+    }
+  } else {
+    currentWellOrder.forEach((name, idx) => place(idx, name));
+  }
+
+  const fy = gridH+14;
+  drawLegendInto(root, totalW/2, fy);
+  const plateLabel = usePlate ? ` · ${plate.rows*plate.cols}-well plate layout` : '';
+  const idx = site - 1;
+  const wtLabel = (orfInfo && idx >= 0 && idx < orfInfo.nAA) ? ` \u00b7 WT ${orfInfo.aas[idx]} (${orfInfo.codons[idx]})` : '';
+  root.append('text').attr('x',totalW/2).attr('y',fy+46)
+    .attr('text-anchor','middle').attr('dominant-baseline','hanging')
+    .attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
+    .attr('font-weight','400').attr('fill',INK)
+    .text(`Site AA ${site}${wtLabel} \u00b7 ${wellPositions.size} wells${plateLabel}`);
+
+  rasterizeAndDownload(svgEl);
+}
+
+function downloadDiversityPNG() {
+  const targetW = Math.max(400, Math.min(16000, parseInt(document.getElementById('width-input').value) || 2400));
+  const cellW = Math.max(8, Math.min(60, parseInt(document.getElementById('cellw-input').value) || 16));
+  const dims = diversityDims(cellW);
+  const footerH = 30+20+16+16;
+  const totalW = dims.totalW, totalH = dims.totalH + footerH + 14;
+  const scale = targetW/totalW;
+
+  const svgEl = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svgEl.setAttribute('xmlns','http://www.w3.org/2000/svg');
+  svgEl.setAttribute('width', String(targetW));
+  svgEl.setAttribute('height', String(Math.round(totalH*scale)));
+  svgEl.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`);
+  const root = d3.select(svgEl);
+  root.append('rect').attr('width',totalW).attr('height',totalH).attr('fill','#ffffff');
+
+  renderDiversityInto(root, cellW);
+
+  const fy = dims.totalH + 14;
+  drawLegendInto(root, totalW/2, fy);
+  root.append('text').attr('x',totalW/2).attr('y',fy+46)
+    .attr('text-anchor','middle').attr('dominant-baseline','hanging')
+    .attr('font-family',SVG_FONT).attr('font-size',SVG_FS)
+    .attr('font-weight','400').attr('fill',INK)
+    .text(`Diversity observed across dataset \u00b7 AA ${formatPositions(lastPositions)} \u00b7 ${wellPositions.size} wells`);
+
+  rasterizeAndDownload(svgEl);
+}
+
+// ─── File loading / drag & drop ───────────────────────────────────────────
+function readFiles(files) {
+  const arr = Array.from(files);
+  if (!arr.length) return;
+  let pending = arr.length;
+  const entries = new Array(arr.length);
+  arr.forEach((file, i) => {
+    const r = new FileReader();
+    r.onload = e => {
+      entries[i] = { name: file.name, text: e.target.result };
+      pending--;
+      if (pending === 0) {
+        addFilesToWells(entries);
+        loadedBasename = 'library_explorer_export';
+        updateAnalyzeEnabled();
+        document.getElementById('statusLeft').textContent =
+          `${wells.size} well${wells.size>1?'s':''} loaded \u00b7 ` +
+          `${[...wells.values()].reduce((s,w)=>s+w.reads.length,0)} reads total`;
+        document.getElementById('statusBar').style.display = 'flex';
+        if (orfInfo && orfInfo.nAA > 0) runAnalysis();
+      }
+    };
+    r.onerror = () => alert('Could not read file: ' + file.name);
+    r.readAsText(file, 'utf-8');
+  });
+}
+
+function clearAll() {
+  wells = new Map();
+  wellPositions = new Map();
+  document.getElementById('statusBar').style.display = 'none';
+  document.getElementById('main').style.display = 'none';
+  document.getElementById('welcome').style.display = 'flex';
+  document.getElementById('downloadBtn').disabled = true;
+  updateAnalyzeEnabled();
+}
+
+// ─── Example data generator ────────────────────────────────────────────────
+function mulberry32(a) {
+  return function() {
+    let t = a += 0x6D2B79F5;
+    t = Math.imul(t ^ t>>>15, t | 1);
+    t ^= t + Math.imul(t ^ t>>>7, t | 61);
+    return ((t ^ t>>>14) >>> 0) / 4294967296;
+  };
+}
+function generateExampleData() {
+  // Built from the default consensus/ORF/analysis-range pre-loaded in the panel,
+  // so "Load Example" demonstrates a realistic case against real gene sequence.
+  const rng = mulberry32(42);
+  const bases = ['A','C','G','T'];
+  const consensus = document.getElementById('consensus-input').value.replace(/\s/g,'').toUpperCase();
+  const orfStart = 37, orfEnd = 1665;
+  const minPos = 205, maxPos = 252;
+  const leader  = consensus.slice(0, orfStart - 1);
+  const orf     = consensus.slice(orfStart - 1, orfEnd);
+  const trailer = consensus.slice(orfEnd);
+  const wtCodons = [];
+  for (let i = 0; i < orf.length; i += 3) wtCodons.push(orf.substr(i,3));
+
+  const varPositions = [212, 238]; // two randomized sites within the default analysis window
+  const nnkOptions = ['GCG','GAT','CTG','TGG','CGT','AAT','TTC','CCG','TAT','GGC','CAG','AGC'];
+  const wellNames = ['A1','A2','A5','B7','C3','D11','E6','H12'];
+  const files = [];
+  for (const wname of wellNames) {
+    const genotype = varPositions.map(() => nnkOptions[Math.floor(rng()*nnkOptions.length)]);
+    const nReads = 40 + Math.floor(rng()*60);
+    let fastq = '';
+    for (let r = 0; r < nReads; r++) {
+      const seqCodons = wtCodons.slice();
+      varPositions.forEach((p,vi) => { seqCodons[p-1] = genotype[vi]; });
+      let full = leader + seqCodons.join('') + trailer;
+      // ~4% per-base sequencing error, typical of raw Nanopore reads
+      full = full.split('').map(b => rng() < 0.04 ? bases[Math.floor(rng()*4)] : b).join('');
+      if (rng() < 0.4) full = revcomp(full); // simulate reverse-strand reads
+      const qual = 'I'.repeat(full.length);
+      fastq += `@read${r}_${wname}\n${full}\n+\n${qual}\n`;
+    }
+    files.push({ name: `LibraryExplorer_MasterPlate-${wname}.fastq`, text: fastq });
+  }
+  return { consensus, coding: `${orfStart}-${orfEnd}`, library: `${minPos}-${maxPos}`, flankAA: 4, files };
+}
+
+// ─── UI wiring ─────────────────────────────────────────────────────────────
+document.getElementById('uploadBtn').addEventListener('click', () => document.getElementById('file-input').click());
+document.getElementById('file-input').addEventListener('change', e => {
+  if (e.target.files.length) readFiles(e.target.files);
+  e.target.value = '';
+});
+document.getElementById('clearBtn').addEventListener('click', clearAll);
+document.getElementById('analyzeBtn').addEventListener('click', runAnalysis);
+document.getElementById('downloadBtn').addEventListener('click', downloadPNG);
+
+// Live-update the sequence track / range highlight as the panel inputs change.
+// This is cheap (just rebuilding the strip) — the expensive per-read scan
+// only runs when Analyze is clicked.
+['consensus-input','coding-input','library-input'].forEach(id => {
+  document.getElementById(id).addEventListener('input', renderSeqTrack);
+});
+
+// Each view has its own natural default cell size (26 → square cells in the
+// All-view grid; 16 → square 96-well plate cells in the One view), remembered
+// separately so switching views doesn't clobber a manual choice in either.
+let cellWByMode = { all: 26, one: 16 };
+
+['cellw-input','ncols-input'].forEach(id => {
+  document.getElementById(id).addEventListener('change', () => { if (wellPositions.size) draw(); });
+});
+document.getElementById('cellw-input').addEventListener('input', () => {
+  cellWByMode[siteMode] = parseInt(document.getElementById('cellw-input').value) || cellWByMode[siteMode];
+});
+
+function setSiteMode(mode) {
+  if (mode === siteMode) return;
+  siteMode = mode;
+  document.getElementById('modeAllBtn').classList.toggle('active', mode === 'all');
+  document.getElementById('modeOneBtn').classList.toggle('active', mode === 'one');
+  document.getElementById('siteField').style.display = (mode === 'one') ? '' : 'none';
+  document.getElementById('cellw-input').value = cellWByMode[mode];
+  if (wellPositions.size) draw();
+}
+document.getElementById('modeAllBtn').addEventListener('click', () => setSiteMode('all'));
+document.getElementById('modeOneBtn').addEventListener('click', () => setSiteMode('one'));
+document.getElementById('site-input').addEventListener('input', () => {
+  selectedSite = clampSite(parseInt(document.getElementById('site-input').value));
+  if (wellPositions.size) draw();
+});
+document.getElementById('site-input').addEventListener('change', () => {
+  document.getElementById('site-input').value = clampSite(parseInt(document.getElementById('site-input').value));
+});
+document.getElementById('cutoff-input').addEventListener('input', () => {
+  const v = parseInt(document.getElementById('cutoff-input').value);
+  minReadCutoff = Math.max(1, isNaN(v) ? 1 : v);
+  if (wellPositions.size) draw();
+});
+
+let exampleData = null;
+document.getElementById('loadExBtn').addEventListener('click', () => {
+  exampleData = exampleData || generateExampleData();
+  document.getElementById('consensus-input').value = exampleData.consensus;
+  document.getElementById('coding-input').value = exampleData.coding;
+  document.getElementById('library-input').value = exampleData.library;
+  document.getElementById('flank-input').value = exampleData.flankAA;
+  renderSeqTrack();
+  wells = new Map();
+  addFilesToWells(exampleData.files);
+  loadedBasename = 'library_explorer_example';
+  document.getElementById('statusLeft').textContent =
+    `${wells.size} wells loaded \u00b7 ${[...wells.values()].reduce((s,w)=>s+w.reads.length,0)} reads total (synthetic example)`;
+  document.getElementById('statusBar').style.display = 'flex';
+  updateAnalyzeEnabled();
+  runAnalysis();
+});
+document.getElementById('dlExBtn').addEventListener('click', () => {
+  exampleData = exampleData || generateExampleData();
+  exampleData.files.forEach((f, i) => {
+    setTimeout(() => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([f.text], {type:'text/plain'}));
+      a.download = f.name; a.click();
+    }, i*150);
+  });
+});
+
+// ─── Drag & drop ───────────────────────────────────────────────────────────
+const dz = document.getElementById('dropZone'); let dn = 0;
+document.addEventListener('dragenter', e => { e.preventDefault(); dn++; dz.classList.add('drag-over'); });
+document.addEventListener('dragleave', e => { e.preventDefault(); dn--; if (dn<=0){dn=0; dz.classList.remove('drag-over');} });
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', e => {
+  e.preventDefault(); dn = 0; dz.classList.remove('drag-over');
+  const files = e.dataTransfer.files;
+  if (files.length) readFiles(files);
+});
+
+// ─── Initial render ────────────────────────────────────────────────────────
+// The consensus/ORF/range panel ships pre-loaded with a default construct —
+// render the sequence track immediately so it's visible before any file is loaded.
+renderSeqTrack();
+</script>
+</body>
+</html>
